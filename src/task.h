@@ -11,6 +11,17 @@ class Task;
 
 typedef QSharedPointer<Task> TaskPtr;
 
+class DisplayDetail{
+public:
+    DisplayDetail(const QString& key_, const QString &label_,const QString& type_):
+        key(key_),
+        label(label_),
+        type(type_)
+    {}
+    QString key;
+    QString label;
+    QString type;
+};
 
 class Task
 {
@@ -30,7 +41,7 @@ public:
     int state;
     QList<TaskPtr > children;
     QPair<QStringList,QStringList> display_keys;
-    QList<QStringList> display_details;
+    QList<DisplayDetail> display_details;
 };
 
 #endif // TASK_H

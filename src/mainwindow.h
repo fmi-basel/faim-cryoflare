@@ -30,6 +30,8 @@ public slots:
     void onAvgSourceDirTextChanged(const QString & dir);
     void onStackSourceDirTextChanged(const QString & dir);
     void onDestinationDirTextChanged(const QString & dir);
+    void updateDetailsfromModel(const QModelIndex & topLeft, const QModelIndex & bottomRight);
+    void updateDetailsfromView(const QModelIndex & index);
 signals:
     void avgSourceDirChanged(QString);
     void stackSourceDirChanged(QString);
@@ -37,6 +39,7 @@ signals:
     void startStop(bool start);
 
 private:
+    void UpdateDetails_(int row);
     Ui::MainWindow *ui;
     ImageTableModel *model_;
     QSortFilterProxyModel *sort_proxy_;

@@ -12,8 +12,9 @@ TARGET = StackGUI
 TEMPLATE = app
 
 
-SOURCES += main.cpp\
-        mainwindow.cpp \
+SOURCES += \
+    main.cpp\
+    mainwindow.cpp \
     filesystemwatcher.cpp \
     filesystemwatcherimpl.cpp \
     epuimageinfo.cpp \
@@ -24,7 +25,8 @@ SOURCES += main.cpp\
 
 
 
-HEADERS  += mainwindow.h \
+HEADERS  += \
+    mainwindow.h \
     filesystemwatcher.h \
     filesystemwatcherimpl.h \
     epuimageinfo.h \

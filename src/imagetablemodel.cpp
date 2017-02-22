@@ -39,6 +39,11 @@ QVariant ImageTableModel::headerData(int section, Qt::Orientation orientation, i
     }
 }
 
+DataPtr ImageTableModel::image(int row)
+{
+    return data_[row];
+}
+
 void ImageTableModel::addImage(const DataPtr &data)
 {
     beginInsertRows(QModelIndex(),rowCount(QModelIndex()),rowCount(QModelIndex()));

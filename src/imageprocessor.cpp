@@ -68,23 +68,24 @@ ImageProcessor::ImageProcessor():
     gpu_task_stack_(),
     cpu_processes_(),
     gpu_processes_(),
-    root_task_(new Task("root","dummy",DataPtr(new Data)))
+    root_task_(new Task("General","dummy",DataPtr(new Data)))
 {
     root_task_->addColumn("name","Image name");
     root_task_->addColumn("defocus","Nominal defocus");
     root_task_->addColumn("exposure_time","Exposure time");
     root_task_->addColumn("num_frames","# frames");
-    TaskPtr stack_task(new Task("stack","./stack.sh",DataPtr(new Data)));
-    TaskPtr unblur_task(new Task("unblur","./unblur.sh",DataPtr(new Data)));
+    TaskPtr stack_task(new Task("Stacking","./stack.sh",DataPtr(new Data)));
+    TaskPtr unblur_task(new Task("Drift correction","./unblur.sh",DataPtr(new Data)));
     unblur_task->addColumn("unblur_score","Unblur Score");
-    TaskPtr gctf_task(new Task("gctf","./gctf.sh",DataPtr(new Data),true));
+    TaskPtr gctf_task(new Task("CTF determination","./gctf.sh",DataPtr(new Data),true));
     gctf_task->addColumn("epa_limit","EPA limit");
     gctf_task->addColumn("defocus_u","Defocus U");
     gctf_task->addColumn("defocus_v","Defocus V");
     gctf_task->addColumn("defocus_angle","Defocus Angle");
-    TaskPtr gautomatch_task(new Task("gautomatch","./gautomatch.sh",DataPtr(new Data),true));
+    TaskPtr gautomatch_task(new Task("Particle picking","./gautomatch.sh",DataPtr(new Data),true));
     gautomatch_task->addColumn("num_particles","# particles");
     unblur_task->children.append(gctf_task);
+    gautomatch_task->addDetail("picked_particles.png","picked_particles","image");
     unblur_task->children.append(gautomatch_task);
     stack_task->children.append(unblur_task);
     root_task_->children.append(stack_task);
@@ -182,7 +183,8 @@ void ImageProcessor::onGPUTaskFinished(const TaskPtr &task)
 
 void ImageProcessor::init()
 {
-    emit columnsChanged(root_task_->getDisplayKeys());
+
+    emit tasksChanged(root_task_);
 }
 
 void ImageProcessor::updateGridSquare_(const QString &grid_square)

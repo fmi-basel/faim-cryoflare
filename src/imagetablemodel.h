@@ -16,6 +16,7 @@ public:
     virtual int columnCount(const QModelIndex &parent) const;
     virtual QVariant data(const QModelIndex &index, int role) const;
     virtual QVariant headerData(int section, Qt::Orientation orientation, int role) const;
+    DataPtr image(int row);
     void addImage(const DataPtr & data);
     void setColumns(const QPair<QStringList,QStringList>  &columns);
     void onDataChanged(const DataPtr &data);

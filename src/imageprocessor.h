@@ -31,7 +31,7 @@ signals:
     void newImage(DataPtr data);
     void dataChanged(DataPtr data);
     void imageUpdated(const QString& image);
-    void columnsChanged(const QPair<QStringList,QStringList>  &columns);
+    void tasksChanged(const TaskPtr &root);
 
 private:
     void updateGridSquare_(const QString& grid_square);

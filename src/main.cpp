@@ -3,6 +3,7 @@
 #include <QApplication>
 #include <QHash>
 #include <QTimer>
+#include <QDebug>
 
 
 QCoreApplication* createApplication(int &argc, char *argv[])
@@ -28,11 +29,13 @@ int main(int argc, char* argv[])
         QObject::connect(&w, SIGNAL(destinationDirChanged(QString)), &processor, SLOT(setDestinationPath(const QString&)));
         QObject::connect(&w, SIGNAL(startStop(bool)), &processor, SLOT(startStop(bool)));
         QObject::connect(&processor, SIGNAL(newImage(DataPtr)), &w, SLOT(addImage(DataPtr)));
-        QObject::connect(&processor, SIGNAL(columnsChanged(QPair<QStringList,QStringList> )), &w, SLOT(setColumns(QPair<QStringList,QStringList> )));
+        QObject::connect(&processor, SIGNAL(tasksChanged(TaskPtr)), &w, SLOT(onTasksChanged(TaskPtr)));
         QObject::connect(&processor, SIGNAL(dataChanged(DataPtr)), &w, SLOT(onDataChanged(DataPtr)));
         processor.init();
         w.init();
         w.show();
+        //next line within if to avoid MainWindow going out of scope
+        return app->exec();
      } else {
          // start non-GUI version...
         int path_count=0;
@@ -56,6 +59,6 @@ int main(int argc, char* argv[])
         }
         processor.init();
         QTimer::singleShot(0, &processor, SLOT(startStop()));
+        return app->exec();
      }
-     return app->exec();
 }

@@ -14,7 +14,6 @@ Task::Task(const QString &name_, const QString &script_, DataPtr data_, bool gpu
     display_keys(),
     display_details()
 {
-    display_details << QStringList() << QStringList() << QStringList();
 }
 
 void Task::setData(const DataPtr &data_)
@@ -33,9 +32,7 @@ void Task::addColumn(const QString &key, const QString &value)
 
 void Task::addDetail(const QString &key,const QString &label, const QString &type)
 {
-    display_details[0].append(key);
-    display_details[1].append(label);
-    display_details[2].append(type);
+    display_details.append(DisplayDetail(key,label,type));
 }
 
 QPair<QStringList,QStringList> Task::getDisplayKeys() const
