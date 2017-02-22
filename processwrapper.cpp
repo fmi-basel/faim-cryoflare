@@ -1,0 +1,59 @@
+#include <QtDebug>
+#include <QTextStream>
+#include "processwrapper.h"
+
+ProcessWrapper::ProcessWrapper(QObject *parent, int gpu_id) :
+    QObject(parent),
+    process_(new QProcess),
+    task_(),
+    gpu_id_(gpu_id),
+    running_(false)
+{
+    connect(process_,SIGNAL(finished(int)),this,SLOT(onFinished(int)));
+}
+
+bool ProcessWrapper::running() const
+{
+    return running_;
+}
+
+void ProcessWrapper::start(const TaskPtr &task)
+{
+    running_=true;
+    task_=task;
+    process_->start(task_->script);
+    foreach(QString key,task_->data->keys()){
+        QString val=task_->data->value(key);
+        process_->write(QString("%1=%2\n").arg(key,val).toLatin1());
+    }
+    if(-1!=gpu_id_){
+        process_->write(QString("gpu_id=%1\n").arg(gpu_id_).toLatin1());
+    }
+    process_->closeWriteChannel();
+
+}
+
+void ProcessWrapper::onFinished(int exitcode)
+{
+    QTextStream output_stream(process_->readAllStandardOutput(),QIODevice::ReadOnly);
+    QString result_token("RESULT_EXPORT:");
+    QString output;
+    QString line;
+    do {
+        line = output_stream.readLine();
+        if(line.startsWith(result_token)){
+            line.remove(0,result_token.size());
+            QStringList splitted=line.split("=");
+            task_->data->insert(splitted[0].trimmed(),splitted[1].trimmed());
+        }else{
+            output.append(line+"\n");
+        }
+    } while (!line.isNull());
+    task_->output=output;
+    task_->error=process_->readAllStandardError();
+    task_->state=exitcode;
+    TaskPtr task=task_;
+    task_.clear();
+    running_=false;
+    emit finished(task);
+}

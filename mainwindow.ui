@@ -1,0 +1,373 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1337</width>
+    <height>702</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <layout class="QHBoxLayout" name="horizontalLayout">
+    <item>
+     <widget class="QFrame" name="frame">
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Raised</enum>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout">
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <item>
+          <widget class="QLabel" name="label">
+           <property name="text">
+            <string>Average source</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="avg_source_dir"/>
+         </item>
+         <item>
+          <widget class="QPushButton" name="avg_source_dir_browse">
+           <property name="text">
+            <string>Browse...</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="label_2">
+           <property name="text">
+            <string>Stack source</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="stack_source_dir"/>
+         </item>
+         <item>
+          <widget class="QPushButton" name="stack_source_dir_browse">
+           <property name="text">
+            <string>Browse...</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="label_4">
+           <property name="text">
+            <string>Destination </string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="destination_dir"/>
+         </item>
+         <item>
+          <widget class="QPushButton" name="destination_dir_browse">
+           <property name="text">
+            <string>Browse...</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="start_stop">
+           <property name="text">
+            <string>Start</string>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="pushButton_4">
+           <property name="text">
+            <string>Settings</string>
+           </property>
+           <property name="icon">
+            <iconset theme="window-new">
+             <normaloff/>
+            </iconset>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="1,0">
+         <item>
+          <widget class="QTableView" name="image_list">
+           <property name="editTriggers">
+            <set>QAbstractItemView::NoEditTriggers</set>
+           </property>
+           <property name="showGrid">
+            <bool>true</bool>
+           </property>
+           <property name="sortingEnabled">
+            <bool>true</bool>
+           </property>
+           <attribute name="horizontalHeaderMinimumSectionSize">
+            <number>120</number>
+           </attribute>
+          </widget>
+         </item>
+         <item>
+          <widget class="QTabWidget" name="image_data">
+           <property name="minimumSize">
+            <size>
+             <width>500</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="currentIndex">
+            <number>0</number>
+           </property>
+           <widget class="QWidget" name="general">
+            <attribute name="title">
+             <string>General</string>
+            </attribute>
+           </widget>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1337</width>
+     <height>27</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QToolBar" name="mainToolBar">
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+  </widget>
+  <widget class="QStatusBar" name="statusBar"/>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>start_stop</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>avg_source_dir</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1174</x>
+     <y>72</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>265</x>
+     <y>75</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>start_stop</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>stack_source_dir</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1211</x>
+     <y>89</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>669</x>
+     <y>88</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>avg_source_dir_browse</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>onAvgSourceDirBrowse()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>396</x>
+     <y>89</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>5</x>
+     <y>49</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>stack_source_dir_browse</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>onStackSourceDirBrowse()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>760</x>
+     <y>89</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1023</x>
+     <y>45</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>start_stop</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>destination_dir</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1154</x>
+     <y>75</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>950</x>
+     <y>83</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>destination_dir_browse</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>onDestinationDirBrowse()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1062</x>
+     <y>75</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>895</x>
+     <y>50</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>avg_source_dir</sender>
+   <signal>textChanged(QString)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>onAvgSourceDirTextChanged(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>135</x>
+     <y>68</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>163</x>
+     <y>-9</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>stack_source_dir</sender>
+   <signal>textChanged(QString)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>onStackSourceDirTextChanged(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>669</x>
+     <y>88</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>559</x>
+     <y>-8</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>destination_dir</sender>
+   <signal>textChanged(QString)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>onDestinationDirTextChanged(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1029</x>
+     <y>88</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>914</x>
+     <y>-3</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>start_stop</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>avg_source_dir_browse</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1141</x>
+     <y>72</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>355</x>
+     <y>78</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>start_stop</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>stack_source_dir_browse</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1134</x>
+     <y>69</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>730</x>
+     <y>71</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>start_stop</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>destination_dir_browse</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1154</x>
+     <y>79</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1052</x>
+     <y>74</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <signal>avgSourceDirChanged()</signal>
+  <signal>stackSourceDirChanged()</signal>
+  <slot>onAvgSourceDirBrowse()</slot>
+  <slot>onStackSourceDirBrowse()</slot>
+  <slot>onDestinationDirBrowse()</slot>
+  <slot>onAvgSourceDirTextChanged(QString)</slot>
+  <slot>onStackSourceDirTextChanged(QString)</slot>
+  <slot>onDestinationDirTextChanged(QString)</slot>
+ </slots>
+</ui>
