@@ -104,6 +104,7 @@ void MainWindow::onTasksChanged(const TaskPtr &root)
                 layout->addWidget(pic);
             }
         }
+        layout->addStretch(1);
         widget->setLayout(layout);
         ui->image_data->addTab(widget,task->name);
         tasks.append(task->children);
@@ -147,20 +148,25 @@ void MainWindow::updateDetailsfromView(const QModelIndex &index)
 
 void MainWindow::UpdateDetails_(int row)
 {
+    qDebug() << row;
     DataPtr data=model_->image(row);
     for(int i=0;i< ui->image_data->count();++i){
         QWidget *widget_ptr=ui->image_data->widget(i);
         foreach( QObject* child, widget_ptr->children()){
             QVariant key= child->property("key");
             if(key.isValid()){
+                qDebug() << key.toString();
                 if(data->contains(key.toString())){
                     QVariant type=child->property("type");
                     if(type.isValid()){
+                        qDebug() << type.toString();
                         if(type.toString()=="image"){
                             QString path=data->value(key.toString());
+                            qDebug() << path;
                             if(QFileInfo(path).exists()){
-                                QLabel *label=qobject_cast<QLabel*>(widget_ptr);
+                                QLabel *label=qobject_cast<QLabel*>(child);
                                 if(label){
+                                    qDebug() << "setting pixmap";
                                     label->setPixmap(QPixmap(path));
                                 }
                             }

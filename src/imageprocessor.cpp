@@ -77,6 +77,7 @@ ImageProcessor::ImageProcessor():
     TaskPtr stack_task(new Task("Stacking","./stack.sh",DataPtr(new Data)));
     TaskPtr unblur_task(new Task("Drift correction","./unblur.sh",DataPtr(new Data)));
     unblur_task->addColumn("unblur_score","Unblur Score");
+    unblur_task->addDetail("aligned_avg_fft_thumbnail","aligned FFT","image");
     TaskPtr gctf_task(new Task("CTF determination","./gctf.sh",DataPtr(new Data),true));
     gctf_task->addColumn("epa_limit","EPA limit");
     gctf_task->addColumn("defocus_u","Defocus U");
@@ -85,7 +86,7 @@ ImageProcessor::ImageProcessor():
     TaskPtr gautomatch_task(new Task("Particle picking","./gautomatch.sh",DataPtr(new Data),true));
     gautomatch_task->addColumn("num_particles","# particles");
     unblur_task->children.append(gctf_task);
-    gautomatch_task->addDetail("picked_particles.png","picked_particles","image");
+    gautomatch_task->addDetail("aligned_avg_boxes_png","picked particles","image");
     unblur_task->children.append(gautomatch_task);
     stack_task->children.append(unblur_task);
     root_task_->children.append(stack_task);
