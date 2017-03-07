@@ -7,6 +7,7 @@ unblur_param=$destination_path/${name}_unblur.param
 unblur_log=$destination_path/${name}_unblur.log
 aligned_stack=$destination_path/${name}_aligned_movie.mrc
 aligned_avg=$destination_path/${name}_aligned.mrc
+aligned_avg_png=$destination_path/${name}_aligned.png
 aligned_avg_fft_thumbnail=$destination_path/${name}_aligned_fft.png
 shift_txt=$destination_path/${name}_shift.txt
 pixel_size=`calculate "1e10*$apix_x"`
@@ -35,9 +36,13 @@ if [ ! -e ${aligned_avg} ]; then
   
   e2proc2d.py --process math.realtofft --clip 512,512 --process mask.sharp:inner_radius=3 $aligned_avg $aligned_avg_fft_thumbnail
 fi
+if [ ! -e ${aligned_avg_png} ]; then 
+  e2proc2d.py --fouriershrink 7.49609375 ${aligned_avg} ${aligned_avg_png} 
+fi
 
 RESULTS["aligned_stack"]=${aligned_stack}s
 RESULTS["aligned_avg"]=${aligned_avg}
+RESULTS["aligned_avg_png"]=${aligned_avg_png}
 RESULTS["aligned_avg_fft_thumbnail"]=${aligned_avg_fft_thumbnail}
 RESULTS["unblur_score"]=`fgrep "Final Score" $unblur_log|cut -f2 -d:|xargs`
 

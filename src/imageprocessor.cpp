@@ -51,6 +51,9 @@ DataPtr parse_xml_data(const QString& xml_path){
     result->insert("x",stage.toElement().elementsByTagName("X").at(0).toElement().text());
     result->insert("y",stage.toElement().elementsByTagName("Y").at(0).toElement().text());
     result->insert("z",stage.toElement().elementsByTagName("Z").at(0).toElement().text());
+    
+    QDomNode datetime=dom_document.elementsByTagName("acquisitionDateTime").at(0);
+    result->insert("timestamp",datetime.toElement().text());
     return result;
 }
 
@@ -71,6 +74,7 @@ ImageProcessor::ImageProcessor():
     root_task_(new Task("General","dummy",DataPtr(new Data)))
 {
     root_task_->addColumn("name","Image name");
+    root_task_->addColumn("timestamp","Aquisition time");
     root_task_->addColumn("defocus","Nominal defocus");
     root_task_->addColumn("exposure_time","Exposure time");
     root_task_->addColumn("num_frames","# frames");
@@ -78,11 +82,15 @@ ImageProcessor::ImageProcessor():
     TaskPtr unblur_task(new Task("Drift correction","./unblur.sh",DataPtr(new Data)));
     unblur_task->addColumn("unblur_score","Unblur Score");
     unblur_task->addDetail("aligned_avg_fft_thumbnail","aligned FFT","image");
-    TaskPtr gctf_task(new Task("CTF determination","./gctf.sh",DataPtr(new Data),true));
-    gctf_task->addColumn("epa_limit","EPA limit");
+    unblur_task->addDetail("aligned_avg_png","aligned image","image");
+    //TaskPtr gctf_task(new Task("CTF determination","./gctf.sh",DataPtr(new Data),true));
+    TaskPtr gctf_task(new Task("CTF determination","./gctf.sh",DataPtr(new Data),false));
+    gctf_task->addColumn("max_res","CTF max res");
     gctf_task->addColumn("defocus_u","Defocus U");
     gctf_task->addColumn("defocus_v","Defocus V");
     gctf_task->addColumn("defocus_angle","Defocus Angle");
+    gctf_task->addColumn("phase_shift","Phase shift");
+    gctf_task->addDetail("ctffind_diag_file_png"," CTF fit","image");
     TaskPtr gautomatch_task(new Task("Particle picking","./gautomatch.sh",DataPtr(new Data),true));
     gautomatch_task->addColumn("num_particles","# particles");
     unblur_task->children.append(gctf_task);
@@ -140,7 +148,7 @@ void ImageProcessor::onFileChange(const QString &path)
 void ImageProcessor::onDirChange(const QString &path)
 {
     if(path==avg_source_path_){
-        QFileInfoList grid_squares=QDir(avg_source_path_).entryInfoList(QStringList("GridSquare_*"));
+        QFileInfoList grid_squares=QDir(avg_source_path_).entryInfoList(QStringList("GridSquare_*"),QDir::Dirs,QDir::Time | QDir::Reversed);
         for(int i=0;i<grid_squares.size();++i){
             updateGridSquare_(grid_squares.at(i).absoluteFilePath());
         }
@@ -221,7 +229,7 @@ void ImageProcessor::createTask_(const QString &path)
     data->insert("stack_source_path",stack_source_path_);
     QStringList stack_frames;
     for(int i=1;i<=data->value("num_frames").toInt();++i){
-        stack_frames.append(QString("%1/%2/Data/%3-????-%4.mrc").arg(stack_source_path_).arg(data->value("grid_name")).arg(data->value("name")).arg(i,4,10,QChar('0')));
+        stack_frames.append(QString("%1/%2/Data/%3-*-%4.???").arg(stack_source_path_).arg(data->value("grid_name")).arg(data->value("name")).arg(i,4,10,QChar('0')));
     }
     data->insert("stack_frames",stack_frames.join(" "));
     emit newImage(data);

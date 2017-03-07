@@ -19,8 +19,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->stack_source_dir, SIGNAL(textChanged(QString)), this, SIGNAL(stackSourceDirChanged(QString)));
     connect(ui->destination_dir, SIGNAL(textChanged(QString)), this, SIGNAL(destinationDirChanged(QString)));
     connect(ui->start_stop, SIGNAL(toggled(bool)), this, SLOT(onStartStop(bool)));
-    connect(ui->image_list,SIGNAL(clicked(QModelIndex)),this,SLOT(updateDetailsfromView(QModelIndex)));
     connect(model_,SIGNAL(dataChanged(QModelIndex,QModelIndex)),this,SLOT(updateDetailsfromModel(QModelIndex,QModelIndex)));
+    connect(ui->image_list->selectionModel(),SIGNAL(currentChanged(QModelIndex,QModelIndex)),this,SLOT(updateDetailsfromView(QModelIndex,QModelIndex)));
 }
 
 MainWindow::~MainWindow()
@@ -141,9 +141,10 @@ void MainWindow::updateDetailsfromModel(const QModelIndex &topLeft, const QModel
     }
 }
 
-void MainWindow::updateDetailsfromView(const QModelIndex &index)
+void MainWindow::updateDetailsfromView(const QModelIndex &topLeft, const QModelIndex &bottomRight)
 {
-    UpdateDetails_(index.row());
+    int current_row=ui->image_list->currentIndex().row();
+    UpdateDetails_(current_row);
 }
 
 void MainWindow::UpdateDetails_(int row)

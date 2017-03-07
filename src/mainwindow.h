@@ -31,7 +31,7 @@ public slots:
     void onStackSourceDirTextChanged(const QString & dir);
     void onDestinationDirTextChanged(const QString & dir);
     void updateDetailsfromModel(const QModelIndex & topLeft, const QModelIndex & bottomRight);
-    void updateDetailsfromView(const QModelIndex & index);
+    void updateDetailsfromView(const QModelIndex & topLeft, const QModelIndex & bottomRight);
 signals:
     void avgSourceDirChanged(QString);
     void stackSourceDirChanged(QString);
