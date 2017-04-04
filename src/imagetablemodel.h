@@ -18,7 +18,8 @@ public:
     virtual QVariant headerData(int section, Qt::Orientation orientation, int role) const;
     DataPtr image(int row);
     void addImage(const DataPtr & data);
-    void setColumns(const QPair<QStringList,QStringList>  &columns);
+    void addColumn(const QPair<QString,QString>  &column);
+    void clearColumns();
     void onDataChanged(const DataPtr &data);
 private:
     QList<DataPtr> data_;

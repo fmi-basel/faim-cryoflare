@@ -4,6 +4,11 @@
 #include <QtDebug>
 #include <QFileDialog>
 #include <QSettings>
+#include <QGroupBox>
+#include <QFormLayout>
+#include <settings.h>
+#include <QSpinBox>
+#include <QDoubleSpinBox>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -34,6 +39,7 @@ void MainWindow::init()
     ui->avg_source_dir->setText(settings.value("avg_source_dir").toString());
     ui->stack_source_dir->setText(settings.value("stack_source_dir").toString());
     ui->destination_dir->setText(settings.value("destination_dir").toString());
+    updateTaskWidgets();
 }
 
 void MainWindow::onAvgSourceDirBrowse()
@@ -80,37 +86,92 @@ void MainWindow::onDataChanged(const DataPtr &data)
     model_->onDataChanged(data);
 }
 
-void MainWindow::onTasksChanged(const TaskPtr &root)
+void MainWindow::updateTaskWidgets()
 {
-    model_->setColumns(root->getDisplayKeys());
-    for(int i=0;i< ui->image_data->count();++i){
+    for(int i=ui->image_data->count()-1;i>=0;--i){
         QWidget *widget_ptr=ui->image_data->widget(i);
         ui->image_data->removeTab(i);
         delete widget_ptr;
     }
-    QList<TaskPtr > tasks;
-    tasks.append(root);
-    while(! tasks.empty()){
-        TaskPtr task=tasks.takeFirst();
+    model_->clearColumns();
+    QSettings *settings=new QSettings;
+    settings->beginGroup("Tasks");
+    updateTaskWidget_(settings);
+    settings->endGroup();
+    delete settings;
+}
+
+void MainWindow::updateTaskWidget_(QSettings *settings)
+{
+    foreach(QString child_name, settings->childGroups()){
+        settings->beginGroup(child_name);
         QWidget* widget=new QWidget();
         QVBoxLayout *layout = new QVBoxLayout;
-        for(int i=0;i<task->display_details.size();++i){
-            layout->addWidget(new QLabel(task->display_details[i].label));
-            if(task->display_details[i].type=="image"){
-                QLabel *pic=new QLabel();
-                pic->setFixedSize(500,500);
-                pic->setProperty("type","image");
-                pic->setProperty("key",task->display_details[i].key);
-                layout->addWidget(pic);
+        QGroupBox *input_group=new QGroupBox("Input");
+        layout->addWidget(input_group);
+        QFormLayout *input_layout = new QFormLayout;
+        input_group->setLayout(input_layout);
+        QList<QVariant> variant_list=settings->value("input_variables").toList();
+        QSettings script_input_settings;
+        foreach(QVariant v,variant_list){
+            InputOutputVariable iov(v);
+            QWidget *widget;
+            if(iov.type==Image || iov.type==String){
+                QLineEdit *le_widget=new QLineEdit();
+                le_widget->setText(script_input_settings.value("ScriptInput/"+child_name+"/"+iov.label).toString());
+                widget=le_widget;
+                connect(widget,SIGNAL(textChanged(QString)),this,SLOT(inputDataChanged()));
+            }else if(iov.type==Int){
+                QSpinBox *sp_widget=new QSpinBox();
+                widget=sp_widget;
+                sp_widget->setValue(script_input_settings.value("ScriptInput/"+child_name+"/"+iov.label).toInt());
+                connect(widget,SIGNAL(valueChanged(int)),this,SLOT(inputDataChanged()));
+            }else if(iov.type==Float){
+                QDoubleSpinBox *sp_widget=new QDoubleSpinBox();
+                widget=sp_widget;
+                sp_widget->setValue(script_input_settings.value("ScriptInput/"+child_name+"/"+iov.label).toFloat());
+                connect(widget,SIGNAL(valueChanged(int)),this,SLOT(inputDataChanged()));
+            }
+            input_layout->addRow(iov.key,widget);
+            widget->setProperty("type",iov.type);
+            widget->setProperty("label",iov.label);
+            widget->setProperty("task",child_name);
+
+        }
+        QGroupBox *output_group=new QGroupBox("Output");
+        layout->addWidget(output_group);
+        QFormLayout *output_layout = new QFormLayout;
+        output_group->setLayout(output_layout);
+        variant_list=settings->value("output_variables").toList();
+        foreach(QVariant v,variant_list){
+            InputOutputVariable iov(v);
+            if(iov.in_column){
+                model_->addColumn(QPair<QString,QString>(iov.key,iov.label));
+            }else{
+                QLabel *label=new QLabel();
+                label->setProperty("type",iov.type);
+                label->setProperty("key",iov.key);
+                switch(iov.type){
+                    case String:
+                    case Int:
+                    case Float:
+                        output_layout->addRow(iov.key,label);
+                        break;
+                    case Image:
+                        output_layout->addRow(new QLabel(iov.key));
+                        label->setFixedSize(500,500);
+                        output_layout->addRow(label);
+                        break;
+                }
             }
         }
         layout->addStretch(1);
         widget->setLayout(layout);
-        ui->image_data->addTab(widget,task->name);
-        tasks.append(task->children);
+        ui->image_data->addTab(widget,child_name);
+        updateTaskWidget_(settings);
+        settings->endGroup();
     }
 }
-
 
 void MainWindow::onAvgSourceDirTextChanged(const QString &dir)
 {
@@ -137,38 +198,75 @@ void MainWindow::updateDetailsfromModel(const QModelIndex &topLeft, const QModel
 {
     int current_row=ui->image_list->currentIndex().row();
     if(topLeft.row()<=current_row && bottomRight.row()>=current_row){
-        UpdateDetails_(current_row);
+        updateDetails_(current_row);
     }
 }
 
 void MainWindow::updateDetailsfromView(const QModelIndex &topLeft, const QModelIndex &bottomRight)
 {
     int current_row=ui->image_list->currentIndex().row();
-    UpdateDetails_(current_row);
+    updateDetails_(current_row);
 }
 
-void MainWindow::UpdateDetails_(int row)
+void MainWindow::onSettings()
+{
+    Settings settings(this);
+    if (QDialog::Accepted==settings.exec()){
+        settings.saveSettings();
+        updateTaskWidgets();
+        emit settingsChanged();
+    }
+}
+
+void MainWindow::inputDataChanged()
+{
+    QObject *sender_widget=sender();
+    QVariant label= sender_widget->property("label");
+    QVariant type= sender_widget->property("type");
+    QVariant task= sender_widget->property("task");
+    if(label.isValid() && type.isValid() && task.isValid()){
+       QSettings settings;
+        settings.beginGroup("ScriptInput");
+        settings.beginGroup(task.toString());
+        switch(static_cast<VariableType>(type.toInt())){
+        case String:
+        case Image:
+            settings.setValue(label.toString(),qobject_cast<QLineEdit*>(sender_widget)->text());
+            break;
+        case Int:
+            settings.setValue(label.toString(),qobject_cast<QSpinBox*>(sender_widget)->value());
+            break;
+        case Float:
+            settings.setValue(label.toString(),qobject_cast<QDoubleSpinBox*>(sender_widget)->value());
+            break;
+        }
+        settings.endGroup();
+        settings.endGroup();
+    }
+}
+
+void MainWindow::updateDetails_(int row)
 {
     qDebug() << row;
     DataPtr data=model_->image(row);
     for(int i=0;i< ui->image_data->count();++i){
         QWidget *widget_ptr=ui->image_data->widget(i);
         foreach( QObject* child, widget_ptr->children()){
-            QVariant key= child->property("key");
-            if(key.isValid()){
-                qDebug() << key.toString();
-                if(data->contains(key.toString())){
+            QVariant label= child->property("label");
+            if(label.isValid()){
+                qDebug() << label.toString();
+                if(data->contains(label.toString())){
                     QVariant type=child->property("type");
                     if(type.isValid()){
                         qDebug() << type.toString();
                         if(type.toString()=="image"){
-                            QString path=data->value(key.toString());
+                            QString path=data->value(label.toString());
                             qDebug() << path;
                             if(QFileInfo(path).exists()){
-                                QLabel *label=qobject_cast<QLabel*>(child);
-                                if(label){
+                                QLabel *qlabel=qobject_cast<QLabel*>(child);
+                                if(qlabel){
                                     qDebug() << "setting pixmap";
-                                    label->setPixmap(QPixmap(path));
+                                    qlabel->setPixmap(QPixmap(path));
                                 }
                             }
                         }

@@ -94,7 +94,8 @@
            </property>
            <property name="icon">
             <iconset theme="window-new">
-             <normaloff>.</normaloff>.</iconset>
+             <normaloff/>
+            </iconset>
            </property>
           </widget>
          </item>
@@ -106,6 +107,9 @@
           <widget class="QTableView" name="image_list">
            <property name="editTriggers">
             <set>QAbstractItemView::NoEditTriggers</set>
+           </property>
+           <property name="alternatingRowColors">
+            <bool>true</bool>
            </property>
            <property name="selectionBehavior">
             <enum>QAbstractItemView::SelectRows</enum>
@@ -147,7 +151,7 @@
      <x>0</x>
      <y>0</y>
      <width>1337</width>
-     <height>26</height>
+     <height>20</height>
     </rect>
    </property>
   </widget>
@@ -356,6 +360,38 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>pushButton_4</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>onSettings()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1261</x>
+     <y>82</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1330</x>
+     <y>48</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>start_stop</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>pushButton_4</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1171</x>
+     <y>66</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1240</x>
+     <y>82</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <signal>avgSourceDirChanged()</signal>
@@ -366,5 +402,6 @@
   <slot>onAvgSourceDirTextChanged(QString)</slot>
   <slot>onStackSourceDirTextChanged(QString)</slot>
   <slot>onDestinationDirTextChanged(QString)</slot>
+  <slot>onSettings()</slot>
  </slots>
 </ui>

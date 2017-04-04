@@ -10,7 +10,7 @@
 //fw decl
 class FileSystemWatcher;
 class ProcessWrapper;
-
+class QSettings;
 
 class ImageProcessor: public QObject
 {
@@ -26,18 +26,19 @@ public slots:
     void onDirChange(const QString & path);
     void onCPUTaskFinished(const TaskPtr& task);
     void onGPUTaskFinished(const TaskPtr& task);
+    void loadSettings();
     void init();
 signals:
     void newImage(DataPtr data);
     void dataChanged(DataPtr data);
     void imageUpdated(const QString& image);
-    void tasksChanged(const TaskPtr &root);
 
 private:
     void updateGridSquare_(const QString& grid_square);
     void updateImages_(const QString& grid_square);
     void createTask_(const QString& path);
     void pushTask_(const TaskPtr& task);
+    void loadTask_(QSettings *setting,const TaskPtr& task);
 
     FileSystemWatcher* watcher_;
     QString avg_source_path_;

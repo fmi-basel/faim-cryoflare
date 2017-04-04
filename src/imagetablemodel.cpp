@@ -30,7 +30,12 @@ QVariant ImageTableModel::headerData(int section, Qt::Orientation orientation, i
 {
     if(role==Qt::DisplayRole){
         if(orientation==Qt::Horizontal){
-            return QString("%1").arg(columns_.second[section]);
+            if(columns_.second.size()>section){
+                return QString("%1").arg(columns_.first[section]);
+            }else{
+               return "invalid";
+            }
+
         }else{
             return section;
         }
@@ -51,13 +56,22 @@ void ImageTableModel::addImage(const DataPtr &data)
     endInsertRows();
 }
 
-void ImageTableModel::setColumns(const QPair<QStringList, QStringList> &columns)
+void ImageTableModel::addColumn(const QPair<QString, QString> &column)
 {
-    beginRemoveColumns(QModelIndex(),0,columns_.first.size()-1);
-    endRemoveColumns();
-    beginInsertColumns(QModelIndex(),0,columns.first.size()-1);
-    columns_=columns;
-    endInsertColumns();
+    beginResetModel();
+    columns_.first.append(column.first);
+    columns_.second.append(column.second);
+    endResetModel();
+}
+
+void ImageTableModel::clearColumns()
+{
+    if(! columns_.first.empty()){
+        beginResetModel();
+        columns_.first.clear();
+        columns_.second.clear();
+        endResetModel();
+    }
 }
 
 void ImageTableModel::onDataChanged(const DataPtr &data)

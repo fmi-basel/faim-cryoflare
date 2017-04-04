@@ -1,5 +1,6 @@
 #include <QtDebug>
 #include <QTextStream>
+#include <QSettings>
 #include "processwrapper.h"
 
 ProcessWrapper::ProcessWrapper(QObject *parent, int gpu_id) :
@@ -29,6 +30,15 @@ void ProcessWrapper::start(const TaskPtr &task)
     if(-1!=gpu_id_){
         process_->write(QString("gpu_id=%1\n").arg(gpu_id_).toLatin1());
     }
+    QSettings settings;
+    settings.beginGroup("ScriptInput");
+    settings.beginGroup(task->name);
+    foreach(QString name,settings.allKeys()){
+        QString value=settings.value(name).toString();
+        process_->write(QString("%1=%2\n").arg(name,value).toLatin1());
+    }
+    settings.endGroup();
+    settings.endGroup();
     process_->closeWriteChannel();
 
 }

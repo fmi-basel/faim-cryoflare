@@ -19,6 +19,7 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
     void init();
+    void updateTaskWidgets();
 public slots:
     void onAvgSourceDirBrowse();
     void onStackSourceDirBrowse();
@@ -26,20 +27,23 @@ public slots:
     void onStartStop(bool start);
     void addImage(const DataPtr &data);
     void onDataChanged(const DataPtr &data);
-    void onTasksChanged(const TaskPtr & root);
     void onAvgSourceDirTextChanged(const QString & dir);
     void onStackSourceDirTextChanged(const QString & dir);
     void onDestinationDirTextChanged(const QString & dir);
     void updateDetailsfromModel(const QModelIndex & topLeft, const QModelIndex & bottomRight);
     void updateDetailsfromView(const QModelIndex & topLeft, const QModelIndex & bottomRight);
+    void onSettings();
+    void inputDataChanged();
 signals:
     void avgSourceDirChanged(QString);
     void stackSourceDirChanged(QString);
     void destinationDirChanged(QString);
     void startStop(bool start);
+    void settingsChanged();
 
 private:
-    void UpdateDetails_(int row);
+    void updateDetails_(int row);
+    void updateTaskWidget_(QSettings *settings);
     Ui::MainWindow *ui;
     ImageTableModel *model_;
     QSortFilterProxyModel *sort_proxy_;

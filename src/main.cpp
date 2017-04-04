@@ -29,8 +29,8 @@ int main(int argc, char* argv[])
         QObject::connect(&w, SIGNAL(destinationDirChanged(QString)), &processor, SLOT(setDestinationPath(const QString&)));
         QObject::connect(&w, SIGNAL(startStop(bool)), &processor, SLOT(startStop(bool)));
         QObject::connect(&processor, SIGNAL(newImage(DataPtr)), &w, SLOT(addImage(DataPtr)));
-        QObject::connect(&processor, SIGNAL(tasksChanged(TaskPtr)), &w, SLOT(onTasksChanged(TaskPtr)));
         QObject::connect(&processor, SIGNAL(dataChanged(DataPtr)), &w, SLOT(onDataChanged(DataPtr)));
+        QObject::connect(&w,SIGNAL(settingsChanged()),&processor,SLOT(loadSettings()));
         processor.init();
         w.init();
         w.show();

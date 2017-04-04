@@ -1,4 +1,5 @@
 #include <QDir>
+#include <QSettings>
 #include <QtDebug>
 #include <filesystemwatcher.h>
 #include <QDomDocument>
@@ -73,40 +74,19 @@ ImageProcessor::ImageProcessor():
     gpu_processes_(),
     root_task_(new Task("General","dummy",DataPtr(new Data)))
 {
-    root_task_->addColumn("name","Image name");
-    root_task_->addColumn("timestamp","Aquisition time");
-    root_task_->addColumn("defocus","Nominal defocus");
-    root_task_->addColumn("exposure_time","Exposure time");
-    root_task_->addColumn("num_frames","# frames");
-    TaskPtr stack_task(new Task("Stacking","./stack.sh",DataPtr(new Data)));
-    TaskPtr unblur_task(new Task("Drift correction","./unblur.sh",DataPtr(new Data)));
-    unblur_task->addColumn("unblur_score","Unblur Score");
-    unblur_task->addDetail("aligned_avg_fft_thumbnail","aligned FFT","image");
-    unblur_task->addDetail("aligned_avg_png","aligned image","image");
-    //TaskPtr gctf_task(new Task("CTF determination","./gctf.sh",DataPtr(new Data),true));
-    TaskPtr gctf_task(new Task("CTF determination","./gctf.sh",DataPtr(new Data),false));
-    gctf_task->addColumn("max_res","CTF max res");
-    gctf_task->addColumn("defocus_u","Defocus U");
-    gctf_task->addColumn("defocus_v","Defocus V");
-    gctf_task->addColumn("defocus_angle","Defocus Angle");
-    gctf_task->addColumn("phase_shift","Phase shift");
-    gctf_task->addDetail("ctffind_diag_file_png"," CTF fit","image");
-    TaskPtr gautomatch_task(new Task("Particle picking","./gautomatch.sh",DataPtr(new Data),true));
-    gautomatch_task->addColumn("num_particles","# particles");
-    unblur_task->children.append(gctf_task);
-    gautomatch_task->addDetail("aligned_avg_boxes_png","picked particles","image");
-    unblur_task->children.append(gautomatch_task);
-    stack_task->children.append(unblur_task);
-    root_task_->children.append(stack_task);
+    loadSettings();
     connect(watcher_, SIGNAL(fileChanged(const QString &)), this, SLOT(onFileChange(const QString &)));
     connect(watcher_, SIGNAL(directoryChanged(const QString &)), this, SLOT(onDirChange(const QString &)));
-    for(int i=0;i<10;++i) {
+    QSettings settings;
+    int num_cpu=settings.value("num_cpu",10).toInt();
+    int num_gpu=settings.value("num_gpu",2).toInt();
+    for(int i=0;i<num_cpu;++i) {
         ProcessWrapper* wrapper=new ProcessWrapper(this,-1);
         connect(wrapper,SIGNAL(finished(TaskPtr)),this,SLOT(onCPUTaskFinished(TaskPtr)));
         cpu_processes_.append(wrapper);
 
     }
-    for(int i=0;i<2;++i) {
+    for(int i=0;i<num_gpu;++i) {
         ProcessWrapper* wrapper=new ProcessWrapper(this,i);
         connect(wrapper,SIGNAL(finished(TaskPtr)),this,SLOT(onGPUTaskFinished(TaskPtr)));
         gpu_processes_.append(wrapper);
@@ -173,6 +153,16 @@ void ImageProcessor::onCPUTaskFinished(const TaskPtr &task)
               wrapper->start(cpu_task_stack_.pop());
         }
     }
+    QFile f(destination_path_+"/"+task->name+"_out.log");
+    if (f.open(QIODevice::WriteOnly | QIODevice::Append)) {
+        QTextStream stream( &f );
+        stream << task->output << endl;
+    }
+    QFile ferr(destination_path_+"/"+task->name+"_error.log");
+    if (ferr.open(QIODevice::WriteOnly | QIODevice::Append)) {
+        QTextStream stream( &f );
+        stream << task->error << endl;
+    }
     emit dataChanged(task->data);
 }
 
@@ -187,13 +177,32 @@ void ImageProcessor::onGPUTaskFinished(const TaskPtr &task)
               wrapper->start(gpu_task_stack_.pop());
         }
     }
+    QFile f(destination_path_+"/"+task->name+"_out.log");
+    if (f.open(QIODevice::WriteOnly | QIODevice::Append)) {
+        QTextStream stream( &f );
+        stream << task->output << endl;
+    }
+    QFile ferr(destination_path_+"/"+task->name+"_error.log");
+    if (ferr.open(QIODevice::WriteOnly | QIODevice::Append)) {
+        QTextStream stream( &f );
+        stream << task->error << endl;
+    }
     emit dataChanged(task->data);
+}
+
+void ImageProcessor::loadSettings()
+{
+    root_task_->children.clear();
+    QSettings *settings=new QSettings;
+    settings->beginGroup("Tasks");
+    loadTask_(settings,root_task_);
+    settings->endGroup();
+    delete settings;
+
 }
 
 void ImageProcessor::init()
 {
-
-    emit tasksChanged(root_task_);
 }
 
 void ImageProcessor::updateGridSquare_(const QString &grid_square)
@@ -259,5 +268,17 @@ void ImageProcessor::pushTask_(const TaskPtr &task)
            }
         }
     }
+}
+
+void ImageProcessor::loadTask_(QSettings *settings, const TaskPtr &task)
+{
+    foreach(QString child_name,settings->childGroups()){
+        settings->beginGroup(child_name);
+        TaskPtr child(new Task(child_name,settings->value("script").toString(), DataPtr(new Data()),settings->value("is_gpu").toBool()));
+        task->children.append(child);
+        loadTask_(settings,child);
+        settings->endGroup();
+    }
+
 }
 

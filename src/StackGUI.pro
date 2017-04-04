@@ -21,7 +21,10 @@ SOURCES += \
     imageprocessor.cpp \
     processwrapper.cpp \
     task.cpp \
-    imagetablemodel.cpp
+    imagetablemodel.cpp \
+    settings.cpp \
+    tasktreewidgetitem.cpp \
+    pathedit.cpp
 
 
 
@@ -33,10 +36,15 @@ HEADERS  += \
     imageprocessor.h \
     processwrapper.h \
     task.h \
-    imagetablemodel.h
+    imagetablemodel.h \
+    settings.h \
+    pathedit.h \
+    variabletypes.h \
+    inputoutputvariable.h
 
 
-FORMS    += mainwindow.ui
+FORMS    += mainwindow.ui \
+    settings.ui
 
 #CONFIG += static
 #static {
