@@ -40,7 +40,13 @@ DataPtr parse_xml_data(const QString& xml_path){
     }
 
     QDomNode camera=dom_document.elementsByTagName("camera").at(0);
-    result->insert("num_frames",camera.toElement().elementsByTagName("b:NumberOffractions").at(0).toElement().text());
+    QString camera_name=camera.toElement().elementsByTagName("b:NumberOffractions").at(0).toElement().text();
+    result->insert("camera",camera_name);
+    if(QString("BM-Falcon")==camera_name){
+        result->insert("num_frames",camera.toElement().elementsByTagName("b:DoseFractions").at(0).toElement().text());
+    }else if (QString("EF-CCD")==camera_name){
+        result->insert("num_frames",QString("%1").arg(camera.toElement().elementsByTagName("b:NumberOffractions").at(0).childNodes().size()));
+    }
     result->insert("exposure_time",camera.toElement().elementsByTagName("ExposureTime").at(0).toElement().text());
 
     QDomNode pixel_size=dom_document.elementsByTagName("pixelSize").at(0);
@@ -237,10 +243,14 @@ void ImageProcessor::createTask_(const QString &path)
     data->insert("destination_path",destination_path_);
     data->insert("stack_source_path",stack_source_path_);
     QStringList stack_frames;
-    for(int i=1;i<=data->value("num_frames").toInt();++i){
-        stack_frames.append(QString("%1/%2/Data/%3-*-%4.???").arg(stack_source_path_).arg(data->value("grid_name")).arg(data->value("name")).arg(i,4,10,QChar('0')));
+    if(QString("BM-Falcon")==data->value("camera")){
+        data->insert("stack_frames",QString("%1/%2/Data/%3_frames.mrc").arg(stack_source_path_).arg(data->value("grid_name")).arg(data->value("name")));
+    }else if(QString("EF-CCD")==data->value("camera")){
+        for(int i=1;i<=data->value("num_frames").toInt();++i){
+            stack_frames.append(QString("%1/%2/Data/%3-*-%4.???").arg(stack_source_path_).arg(data->value("grid_name")).arg(data->value("name")).arg(i,4,10,QChar('0')));
+        }
+        data->insert("stack_frames",stack_frames.join(" "));
     }
-    data->insert("stack_frames",stack_frames.join(" "));
     emit newImage(data);
     TaskPtr root_task=root_task_->clone();
     root_task->setData(data);
