@@ -14,15 +14,34 @@ int ImageTableModel::rowCount(const QModelIndex &parent) const
 
 int ImageTableModel::columnCount(const QModelIndex &parent) const
 {
-    return columns_.first.size();
+    return columns_.first.size()+1;
 }
 
 QVariant ImageTableModel::data(const QModelIndex &index, int role) const
 {
-    if(role!=Qt::DisplayRole){
-        return QVariant();
+    if(role==Qt::DisplayRole){
+        if(0==index.column()){
+            //check box
+            return data_.at(index.row())->value("export");
+        }else{
+            return data_.at(index.row())->value(columns_.second[index.column()-1]);
+        }
+    }else if(role==Qt::CheckStateRole){
+        if(0==index.column()){
+            QString value=data_.at(index.row())->value("export","true");
+            if (value.compare("true", Qt::CaseInsensitive) == 0 || value==QString("1"))
+            {
+                return Qt::Checked;
+            }else{
+                return Qt::Unchecked;
+            }
+
+        }else{
+            return QVariant();
+
+        }
     }else{
-        return data_.at(index.row())->value(columns_.second[index.column()]);
+        return QVariant();
     }
 }
 
@@ -30,17 +49,29 @@ QVariant ImageTableModel::headerData(int section, Qt::Orientation orientation, i
 {
     if(role==Qt::DisplayRole){
         if(orientation==Qt::Horizontal){
-            if(columns_.second.size()>section){
-                return QString("%1").arg(columns_.first[section]);
+            if(section==0){
+                return "Export";
             }else{
-               return "invalid";
+                if(columns_.second.size()>section-1){
+                    return QString("%1").arg(columns_.first[section-1]);
+                }else{
+                   return "invalid";
+                }
             }
-
         }else{
             return section;
         }
     }else{
         return QAbstractTableModel::headerData(section,orientation,role);
+    }
+}
+
+Qt::ItemFlags ImageTableModel::flags(const QModelIndex &index) const
+{
+    if(0==index.row()){
+        return QAbstractTableModel::flags(index) | Qt::ItemIsUserCheckable;
+    }else{
+        return QAbstractTableModel::flags(index);
     }
 }
 
@@ -78,6 +109,6 @@ void ImageTableModel::onDataChanged(const DataPtr &data)
 {
     int idx=data_.indexOf(data);
     if(idx>=0){
-        dataChanged(index(idx,0),index(idx,columns_.first.size()-1));
+        dataChanged(index(idx,0),index(idx,columns_.first.size()));
     }
 }

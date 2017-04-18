@@ -34,6 +34,7 @@ public slots:
     void updateDetailsfromView(const QModelIndex & topLeft, const QModelIndex & bottomRight);
     void onSettings();
     void inputDataChanged();
+    void onExport();
 signals:
     void avgSourceDirChanged(QString);
     void stackSourceDirChanged(QString);

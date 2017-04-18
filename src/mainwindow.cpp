@@ -254,9 +254,29 @@ void MainWindow::inputDataChanged()
     }
 }
 
+void MainWindow::onExport()
+{
+    QString export_path = QFileDialog::getExistingDirectory(0, "Export folder","",  QFileDialog::ShowDirsOnly| QFileDialog::DontResolveSymlinks);
+    if(! export_path.isEmpty()){
+        QSettings settings;
+        QDir destination_dir(settings.value("destination_dir").toString());
+
+        for(int i=0;i<model_->rowCount();++i){
+            DataPtr data=model_->image(i);
+            QString export_val=data->value("export","true");
+            if (export_val.compare("true", Qt::CaseInsensitive) == 0 || export_val==QString("1")){
+                QStringList files=destination_dir.entryList(QStringList(data->value("name")+"*"));
+                foreach(QString filename,files){
+                    QFile(destination_dir.filePath(filename)).copy(QDir(export_path).filePath(filename));
+                }
+            }
+        }
+    }
+
+}
+
 void MainWindow::updateDetails_(int row)
 {
-    qDebug() << row;
     DataPtr data=model_->image(row);
     for(int i=0;i< ui->image_data->count();++i){
         QWidget *widget_ptr=ui->image_data->widget(i);
@@ -265,18 +285,14 @@ void MainWindow::updateDetails_(int row)
                 foreach( QObject* inner_child, child->children()){
                     QVariant label= inner_child->property("label");
                     if(label.isValid()){
-                        qDebug() << label.toString();
                         if(data->contains(label.toString())){
                             QVariant type=inner_child->property("type");
                             if(type.isValid()){
-                                qDebug() << type.toInt();
                                 if(static_cast<VariableType>(type.toInt())==Image){
                                     QString path=data->value(label.toString());
-                                    qDebug() << path;
                                     if(QFileInfo(path).exists()){
                                         QLabel *qlabel=qobject_cast<QLabel*>(inner_child);
                                         if(qlabel){
-                                            qDebug() << "setting pixmap";
                                             qlabel->setPixmap(QPixmap(path));
                                         }
                                     }
