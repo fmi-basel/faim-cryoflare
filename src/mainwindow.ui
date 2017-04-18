@@ -415,6 +415,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>export_2</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>onExport()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1209</x>
+     <y>58</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>456</x>
+     <y>40</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <signal>avgSourceDirChanged()</signal>
@@ -426,5 +442,6 @@
   <slot>onStackSourceDirTextChanged(QString)</slot>
   <slot>onDestinationDirTextChanged(QString)</slot>
   <slot>onSettings()</slot>
+  <slot>onExport()</slot>
  </slots>
 </ui>
