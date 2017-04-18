@@ -45,6 +45,21 @@ QVariant ImageTableModel::data(const QModelIndex &index, int role) const
     }
 }
 
+bool ImageTableModel::setData(const QModelIndex &index, const QVariant &value, int role)
+{
+    if(role==Qt::CheckStateRole && index.column()==0){
+        if(value == Qt::Checked){
+            data_.at(index.row())->insert("export","true");
+        }else{
+            data_.at(index.row())->insert("export","false");
+        }
+        emit dataChanged(index,index);
+        return true;
+    }else{
+        return false;
+    }
+}
+
 QVariant ImageTableModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
     if(role==Qt::DisplayRole){
