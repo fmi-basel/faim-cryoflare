@@ -40,12 +40,12 @@ DataPtr parse_xml_data(const QString& xml_path){
     }
 
     QDomNode camera=dom_document.elementsByTagName("camera").at(0);
-    QString camera_name=camera.toElement().elementsByTagName("b:NumberOffractions").at(0).toElement().text();
+    QString camera_name=camera.toElement().elementsByTagName("Name").at(0).toElement().text();
     result->insert("camera",camera_name);
     if(QString("BM-Falcon")==camera_name){
-        result->insert("num_frames",camera.toElement().elementsByTagName("b:DoseFractions").at(0).toElement().text());
+        result->insert("num_frames",QString("%1").arg(camera.toElement().elementsByTagName("b:DoseFractions").at(0).childNodes().size()));
     }else if (QString("EF-CCD")==camera_name){
-        result->insert("num_frames",QString("%1").arg(camera.toElement().elementsByTagName("b:NumberOffractions").at(0).childNodes().size()));
+        result->insert("num_frames",camera.toElement().elementsByTagName("b:NumberOffractions").at(0).toElement().text());
     }
     result->insert("exposure_time",camera.toElement().elementsByTagName("ExposureTime").at(0).toElement().text());
 

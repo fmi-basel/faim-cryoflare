@@ -51,8 +51,8 @@ Settings::Settings(QWidget *parent) :
         ui->input_variable_table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     #else
         ui->task_tree->header()->setResizeMode(1, QHeaderView::Stretch);
-        ui->output_variable_table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-        ui->input_variable_table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+        ui->output_variable_table->horizontalHeader()->setResizeMode(QHeaderView::Stretch);
+        ui->input_variable_table->horizontalHeader()->setResizeMode(QHeaderView::Stretch);
     #endif
     loadSettings();
 }

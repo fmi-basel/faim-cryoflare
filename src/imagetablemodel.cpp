@@ -22,7 +22,7 @@ QVariant ImageTableModel::data(const QModelIndex &index, int role) const
     if(role!=Qt::DisplayRole){
         return QVariant();
     }else{
-        return data_.at(index.row())->value(columns_.first[index.column()]);
+        return data_.at(index.row())->value(columns_.second[index.column()]);
     }
 }
 

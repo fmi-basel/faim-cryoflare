@@ -95,6 +95,12 @@ void MainWindow::updateTaskWidgets()
     }
     model_->clearColumns();
     QSettings *settings=new QSettings;
+    model_->addColumn(QPair<QString,QString>("Name","name"));
+    model_->addColumn(QPair<QString,QString>("Timestamp","timestamp"));
+    model_->addColumn(QPair<QString,QString>("Nominal Defocus","defocus"));
+    model_->addColumn(QPair<QString,QString>("Exposure time","exposure_time"));
+    model_->addColumn(QPair<QString,QString>("Pixel size","apix_x"));
+    model_->addColumn(QPair<QString,QString>("Number of Frames","num_frames"));
     settings->beginGroup("Tasks");
     updateTaskWidget_(settings);
     settings->endGroup();
@@ -103,6 +109,7 @@ void MainWindow::updateTaskWidgets()
 
 void MainWindow::updateTaskWidget_(QSettings *settings)
 {
+
     foreach(QString child_name, settings->childGroups()){
         settings->beginGroup(child_name);
         QWidget* widget=new QWidget();
@@ -123,11 +130,13 @@ void MainWindow::updateTaskWidget_(QSettings *settings)
                 connect(widget,SIGNAL(textChanged(QString)),this,SLOT(inputDataChanged()));
             }else if(iov.type==Int){
                 QSpinBox *sp_widget=new QSpinBox();
+		sp_widget->setMaximum(9999999);
                 widget=sp_widget;
                 sp_widget->setValue(script_input_settings.value("ScriptInput/"+child_name+"/"+iov.label).toInt());
                 connect(widget,SIGNAL(valueChanged(int)),this,SLOT(inputDataChanged()));
             }else if(iov.type==Float){
                 QDoubleSpinBox *sp_widget=new QDoubleSpinBox();
+		sp_widget->setMaximum(9999999);
                 widget=sp_widget;
                 sp_widget->setValue(script_input_settings.value("ScriptInput/"+child_name+"/"+iov.label).toFloat());
                 connect(widget,SIGNAL(valueChanged(int)),this,SLOT(inputDataChanged()));
@@ -150,7 +159,7 @@ void MainWindow::updateTaskWidget_(QSettings *settings)
             }else{
                 QLabel *label=new QLabel();
                 label->setProperty("type",iov.type);
-                label->setProperty("key",iov.key);
+                label->setProperty("label",iov.label);
                 switch(iov.type){
                     case String:
                     case Int:
@@ -252,21 +261,25 @@ void MainWindow::updateDetails_(int row)
     for(int i=0;i< ui->image_data->count();++i){
         QWidget *widget_ptr=ui->image_data->widget(i);
         foreach( QObject* child, widget_ptr->children()){
-            QVariant label= child->property("label");
-            if(label.isValid()){
-                qDebug() << label.toString();
-                if(data->contains(label.toString())){
-                    QVariant type=child->property("type");
-                    if(type.isValid()){
-                        qDebug() << type.toString();
-                        if(type.toString()=="image"){
-                            QString path=data->value(label.toString());
-                            qDebug() << path;
-                            if(QFileInfo(path).exists()){
-                                QLabel *qlabel=qobject_cast<QLabel*>(child);
-                                if(qlabel){
-                                    qDebug() << "setting pixmap";
-                                    qlabel->setPixmap(QPixmap(path));
+            if(child->metaObject()->className()==QString("QGroupBox")){
+                foreach( QObject* inner_child, child->children()){
+                    QVariant label= inner_child->property("label");
+                    if(label.isValid()){
+                        qDebug() << label.toString();
+                        if(data->contains(label.toString())){
+                            QVariant type=inner_child->property("type");
+                            if(type.isValid()){
+                                qDebug() << type.toInt();
+                                if(static_cast<VariableType>(type.toInt())==Image){
+                                    QString path=data->value(label.toString());
+                                    qDebug() << path;
+                                    if(QFileInfo(path).exists()){
+                                        QLabel *qlabel=qobject_cast<QLabel*>(inner_child);
+                                        if(qlabel){
+                                            qDebug() << "setting pixmap";
+                                            qlabel->setPixmap(QPixmap(path));
+                                        }
+                                    }
                                 }
                             }
                         }
