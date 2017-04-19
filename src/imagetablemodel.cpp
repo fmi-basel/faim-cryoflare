@@ -22,7 +22,7 @@ QVariant ImageTableModel::data(const QModelIndex &index, int role) const
     if(role==Qt::DisplayRole){
         if(0==index.column()){
             //check box
-            return data_.at(index.row())->value("export");
+            return "";
         }else{
             return data_.at(index.row())->value(columns_.second[index.column()-1]);
         }

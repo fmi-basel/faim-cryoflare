@@ -24,7 +24,8 @@ SOURCES += \
     imagetablemodel.cpp \
     settings.cpp \
     tasktreewidgetitem.cpp \
-    pathedit.cpp
+    pathedit.cpp \
+    imagetableview.cpp
 
 
 
@@ -40,7 +41,8 @@ HEADERS  += \
     settings.h \
     pathedit.h \
     variabletypes.h \
-    inputoutputvariable.h
+    inputoutputvariable.h \
+    imagetableview.h
 
 
 FORMS    += mainwindow.ui \
