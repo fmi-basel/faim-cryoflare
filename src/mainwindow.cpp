@@ -44,7 +44,7 @@ void MainWindow::init()
 
 void MainWindow::onAvgSourceDirBrowse()
 {
-    QString dir_name = QFileDialog::getExistingDirectory(this, tr("Open Directory"),"",QFileDialog::ShowDirsOnly| QFileDialog::DontResolveSymlinks);
+    QString dir_name = QFileDialog::getExistingDirectory(this, tr("Open Directory"),ui->avg_source_dir->text(),QFileDialog::ShowDirsOnly| QFileDialog::DontResolveSymlinks);
     if(!dir_name.isEmpty()){
         ui->avg_source_dir->setText(dir_name);
     }
@@ -52,7 +52,7 @@ void MainWindow::onAvgSourceDirBrowse()
 
 void MainWindow::onStackSourceDirBrowse()
 {
-    QString dir_name = QFileDialog::getExistingDirectory(this, tr("Open Directory"),"",QFileDialog::ShowDirsOnly| QFileDialog::DontResolveSymlinks);
+    QString dir_name = QFileDialog::getExistingDirectory(this, tr("Open Directory"),ui->stack_source_dir->text(),QFileDialog::ShowDirsOnly| QFileDialog::DontResolveSymlinks);
     if(!dir_name.isEmpty()){
         ui->stack_source_dir->setText(dir_name);
     }
@@ -60,7 +60,7 @@ void MainWindow::onStackSourceDirBrowse()
 
 void MainWindow::onDestinationDirBrowse()
 {
-    QString dir_name = QFileDialog::getExistingDirectory(this, tr("Open Directory"),"",QFileDialog::ShowDirsOnly| QFileDialog::DontResolveSymlinks);
+    QString dir_name = QFileDialog::getExistingDirectory(this, tr("Open Directory"),ui->destination_dir->text(),QFileDialog::ShowDirsOnly| QFileDialog::DontResolveSymlinks);
     if(!dir_name.isEmpty()){
         ui->destination_dir->setText(dir_name);
     }

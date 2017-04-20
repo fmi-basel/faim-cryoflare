@@ -242,6 +242,7 @@ void ImageProcessor::createTask_(const QString &path)
     DataPtr data=parse_xml_data(path);
     data->insert("destination_path",destination_path_);
     data->insert("stack_source_path",stack_source_path_);
+    data->insert("avg_source_path",QString("%1/%2/Data").arg(avg_source_path_).arg(data->value("grid_name")));
     QStringList stack_frames;
     if(QString("BM-Falcon")==data->value("camera")){
         data->insert("stack_frames",QString("%1/%2/Data/%3_frames.mrc").arg(stack_source_path_).arg(data->value("grid_name")).arg(data->value("name")));

@@ -28,7 +28,6 @@ ImageTableView::ImageTableView(QWidget *parent) :
     connect(select_below_,SIGNAL(triggered()),this,SLOT(selectBelow()));
     connect(unselect_below_,SIGNAL(triggered()),this,SLOT(unselectBelow()));
     connect(invert_selection_,SIGNAL(triggered()),this,SLOT(invertSelection()));
-    qDebug() << "connected";
 }
 
 void ImageTableView::selectEverything()
@@ -49,9 +48,8 @@ void ImageTableView::unselectEverything()
 
 void ImageTableView::selectAbove()
 {
-    QPoint p=mapFromGlobal(QCursor::pos());
-    int row=rowAt(p.y());
     QAbstractItemModel *m=model();
+    int row=currentIndex().row();
     for(int i=0;i<=row;++i){
         m->setData(m->index(i,0),Qt::Checked,Qt::CheckStateRole);
     }
@@ -59,9 +57,8 @@ void ImageTableView::selectAbove()
 
 void ImageTableView::unselectAbove()
 {
-    QPoint p=mapFromGlobal(QCursor::pos());
-    int row=rowAt(p.y());
     QAbstractItemModel *m=model();
+    int row=currentIndex().row();
     for(int i=0;i<=row;++i){
         m->setData(m->index(i,0),Qt::Unchecked,Qt::CheckStateRole);
     }
@@ -69,9 +66,8 @@ void ImageTableView::unselectAbove()
 
 void ImageTableView::selectBelow()
 {
-    QPoint p=mapFromGlobal(QCursor::pos());
-    int row=rowAt(p.y());
     QAbstractItemModel *m=model();
+    int row=currentIndex().row();
     for(int i=row;i<m->rowCount();++i){
         m->setData(m->index(i,0),Qt::Checked,Qt::CheckStateRole);
     }
@@ -79,9 +75,8 @@ void ImageTableView::selectBelow()
 
 void ImageTableView::unselectBelow()
 {
-    QPoint p=mapFromGlobal(QCursor::pos());
-    int row=rowAt(p.y());
     QAbstractItemModel *m=model();
+    int row=currentIndex().row();
     for(int i=row;i<m->rowCount();++i){
         m->setData(m->index(i,0),Qt::Unchecked,Qt::CheckStateRole);
     }

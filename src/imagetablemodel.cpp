@@ -83,7 +83,7 @@ QVariant ImageTableModel::headerData(int section, Qt::Orientation orientation, i
 
 Qt::ItemFlags ImageTableModel::flags(const QModelIndex &index) const
 {
-    if(0==index.row()){
+    if(0==index.column()){
         return QAbstractTableModel::flags(index) | Qt::ItemIsUserCheckable;
     }else{
         return QAbstractTableModel::flags(index);
