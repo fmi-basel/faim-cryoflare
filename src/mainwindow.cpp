@@ -139,7 +139,7 @@ void MainWindow::updateTaskWidget_(QSettings *settings)
 		sp_widget->setMaximum(9999999);
                 widget=sp_widget;
                 sp_widget->setValue(script_input_settings.value("ScriptInput/"+child_name+"/"+iov.label).toFloat());
-                connect(widget,SIGNAL(valueChanged(int)),this,SLOT(inputDataChanged()));
+                connect(widget,SIGNAL(valueChanged(double)),this,SLOT(inputDataChanged()));
             }
             input_layout->addRow(iov.key,widget);
             widget->setProperty("type",iov.type);
