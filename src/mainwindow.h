@@ -36,9 +36,6 @@ public slots:
     void inputDataChanged();
     void onExport();
 signals:
-    void avgSourceDirChanged(QString);
-    void stackSourceDirChanged(QString);
-    void destinationDirChanged(QString);
     void startStop(bool start);
     void settingsChanged();
 

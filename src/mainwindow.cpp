@@ -186,21 +186,18 @@ void MainWindow::onAvgSourceDirTextChanged(const QString &dir)
 {
     QSettings settings;
     settings.setValue("avg_source_dir",ui->avg_source_dir->text());
-    emit avgSourceDirChanged(dir);
 }
 
 void MainWindow::onStackSourceDirTextChanged(const QString &dir)
 {
     QSettings settings;
     settings.setValue("stack_source_dir",ui->stack_source_dir->text());
-    emit stackSourceDirChanged(dir);
 }
 
 void MainWindow::onDestinationDirTextChanged(const QString &dir)
 {
     QSettings settings;
     settings.setValue("destination_dir",ui->destination_dir->text());
-    emit destinationDirChanged(dir);
 }
 
 void MainWindow::updateDetailsfromModel(const QModelIndex &topLeft, const QModelIndex &bottomRight)

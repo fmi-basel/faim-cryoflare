@@ -4,6 +4,7 @@
 #include <QHash>
 #include <QTimer>
 #include <QDebug>
+#include <QSettings>
 
 
 QCoreApplication* createApplication(int &argc, char *argv[])
@@ -24,9 +25,6 @@ int main(int argc, char* argv[])
     if (qobject_cast<QApplication *>(app.data())) {
          // start GUI version...
         MainWindow w;
-        QObject::connect(&w, SIGNAL(avgSourceDirChanged(QString)), &processor, SLOT(setAvgSourcePath(const QString&)));
-        QObject::connect(&w, SIGNAL(stackSourceDirChanged(QString)), &processor, SLOT(setStackSourcePath(const QString&)));
-        QObject::connect(&w, SIGNAL(destinationDirChanged(QString)), &processor, SLOT(setDestinationPath(const QString&)));
         QObject::connect(&w, SIGNAL(startStop(bool)), &processor, SLOT(startStop(bool)));
         QObject::connect(&processor, SIGNAL(newImage(DataPtr)), &w, SLOT(addImage(DataPtr)));
         QObject::connect(&processor, SIGNAL(dataChanged(DataPtr)), &w, SLOT(onDataChanged(DataPtr)));
@@ -39,19 +37,20 @@ int main(int argc, char* argv[])
      } else {
          // start non-GUI version...
         int path_count=0;
+        QSettings settings;
         for (int i = 1; i < app->arguments().size(); ++i){
             if (qstrcmp(argv[i], "-no-gui")){
                 switch(path_count){
                 case 0:
-                    processor.setAvgSourcePath(app->arguments()[i]);
+                    settings.setValue("avg_source_dir",app->arguments()[i]);
                     path_count=1;
                     break;
                 case 1:
-                    processor.setStackSourcePath(app->arguments()[i]);
+                    settings.setValue("stack_source_dir",app->arguments()[i]);
                     path_count=2;
                     break;
                 case 2:
-                    processor.setDestinationPath(app->arguments()[i]);
+                    settings.setValue("destination_dir",app->arguments()[i]);
                     path_count=3;
                     break;
                 }

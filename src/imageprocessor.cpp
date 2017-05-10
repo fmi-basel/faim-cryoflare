@@ -35,7 +35,15 @@ DataPtr parse_xml_data(const QString& xml_path){
         if(node.firstChild().toElement().text()=="AppliedDefocus"){
             result->insert("defocus",node.lastChild().toElement().text());
             break;
+        }   else if(node.firstChild().toElement().text()=="PhasePlateUsed"){
+            result->insert("phase_plate",node.lastChild().toElement().text());
+            break;
+        }    else if(node.firstChild().toElement().text()=="Dose"){
+            result->insert("dose",node.lastChild().toElement().text());
+            break;
         }
+
+
         node = node.nextSibling();
     }
 
@@ -102,6 +110,10 @@ ImageProcessor::ImageProcessor():
 void ImageProcessor::startStop(bool start)
 {
     if(start){
+        QSettings settings;
+        avg_source_path_=settings.value("avg_source_dir").toString();
+        stack_source_path_=settings.value("stack_source_dir").toString();
+        destination_path_=settings.value("destination_dir").toString();
         watcher_->addPath(avg_source_path_);
         watcher_->addPath(stack_source_path_);
         onDirChange(avg_source_path_);
@@ -112,20 +124,6 @@ void ImageProcessor::startStop(bool start)
 }
 
 
-void ImageProcessor::setAvgSourcePath(const QString &path)
-{
-    avg_source_path_=QDir(path).absoluteFilePath("Images-Disc1");
-}
-
-void ImageProcessor::setStackSourcePath(const QString& path)
-{
-    stack_source_path_=QDir(path).absoluteFilePath("Images-Disc1");
-}
-
-void ImageProcessor::setDestinationPath(const QString &path)
-{
-    destination_path_=path;
-}
 
 void ImageProcessor::onFileChange(const QString &path)
 {

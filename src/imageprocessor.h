@@ -19,9 +19,6 @@ public:
     ImageProcessor();
 public slots:
     void startStop(bool start=true);
-    void setAvgSourcePath(const QString& path);
-    void setStackSourcePath(const QString& path);
-    void setDestinationPath(const QString& path);
     void onFileChange(const QString & path);
     void onDirChange(const QString & path);
     void onCPUTaskFinished(const TaskPtr& task);
