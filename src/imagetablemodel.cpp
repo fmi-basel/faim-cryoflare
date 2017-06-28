@@ -14,7 +14,7 @@ int ImageTableModel::rowCount(const QModelIndex &parent) const
 
 int ImageTableModel::columnCount(const QModelIndex &parent) const
 {
-    return columns_.first.size()+1;
+    return columns_.size()+1;
 }
 
 QVariant ImageTableModel::data(const QModelIndex &index, int role) const
@@ -24,7 +24,21 @@ QVariant ImageTableModel::data(const QModelIndex &index, int role) const
             //check box
             return "";
         }else{
-            return data_.at(index.row())->value(columns_.second[index.column()-1]);
+            switch(columns_[index.column()-1].type){
+            case String:
+                return data_.at(index.row())->value(columns_[index.column()-1].label);
+                break;
+            case Float:
+                return data_.at(index.row())->value(columns_[index.column()-1].label).toFloat();
+                break;
+            case Int:
+                return data_.at(index.row())->value(columns_[index.column()-1].label).toInt();
+                break;
+            case Image:
+            default:
+                return "-";
+                break;
+            }
         }
     }else if(role==Qt::CheckStateRole){
         if(0==index.column()){
@@ -67,8 +81,8 @@ QVariant ImageTableModel::headerData(int section, Qt::Orientation orientation, i
             if(section==0){
                 return "Export";
             }else{
-                if(columns_.second.size()>section-1){
-                    return QString("%1").arg(columns_.first[section-1]);
+                if(columns_.size()>section-1){
+                    return QString("%1").arg(columns_[section-1].key);
                 }else{
                    return "invalid";
                 }
@@ -102,20 +116,18 @@ void ImageTableModel::addImage(const DataPtr &data)
     endInsertRows();
 }
 
-void ImageTableModel::addColumn(const QPair<QString, QString> &column)
+void ImageTableModel::addColumn(const InputOutputVariable &column)
 {
     beginResetModel();
-    columns_.first.append(column.first);
-    columns_.second.append(column.second);
+    columns_.append(column);
     endResetModel();
 }
 
 void ImageTableModel::clearColumns()
 {
-    if(! columns_.first.empty()){
+    if(! columns_.empty()){
         beginResetModel();
-        columns_.first.clear();
-        columns_.second.clear();
+        columns_.clear();
         endResetModel();
     }
 }
@@ -124,6 +136,6 @@ void ImageTableModel::onDataChanged(const DataPtr &data)
 {
     int idx=data_.indexOf(data);
     if(idx>=0){
-        dataChanged(index(idx,0),index(idx,columns_.first.size()));
+        dataChanged(index(idx,0),index(idx,columns_.size()));
     }
 }

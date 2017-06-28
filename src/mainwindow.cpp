@@ -95,12 +95,12 @@ void MainWindow::updateTaskWidgets()
     }
     model_->clearColumns();
     QSettings *settings=new QSettings;
-    model_->addColumn(QPair<QString,QString>("Name","name"));
-    model_->addColumn(QPair<QString,QString>("Timestamp","timestamp"));
-    model_->addColumn(QPair<QString,QString>("Nominal Defocus","defocus"));
-    model_->addColumn(QPair<QString,QString>("Exposure time","exposure_time"));
-    model_->addColumn(QPair<QString,QString>("Pixel size","apix_x"));
-    model_->addColumn(QPair<QString,QString>("Number of Frames","num_frames"));
+    model_->addColumn(InputOutputVariable("Name","name",String));
+    model_->addColumn(InputOutputVariable("Timestamp","timestamp",String));
+    model_->addColumn(InputOutputVariable("Nominal Defocus","defocus",Float));
+    model_->addColumn(InputOutputVariable("Exposure time","exposure_time",Float));
+    model_->addColumn(InputOutputVariable("Pixel size","apix_x",Float));
+    model_->addColumn(InputOutputVariable("Number of Frames","num_frames",Int));
     settings->beginGroup("Tasks");
     updateTaskWidget_(settings);
     settings->endGroup();
@@ -130,13 +130,13 @@ void MainWindow::updateTaskWidget_(QSettings *settings)
                 connect(widget,SIGNAL(textChanged(QString)),this,SLOT(inputDataChanged()));
             }else if(iov.type==Int){
                 QSpinBox *sp_widget=new QSpinBox();
-		sp_widget->setMaximum(9999999);
+                sp_widget->setMaximum(9999999);
                 widget=sp_widget;
                 sp_widget->setValue(script_input_settings.value("ScriptInput/"+child_name+"/"+iov.label).toInt());
                 connect(widget,SIGNAL(valueChanged(int)),this,SLOT(inputDataChanged()));
             }else if(iov.type==Float){
                 QDoubleSpinBox *sp_widget=new QDoubleSpinBox();
-		sp_widget->setMaximum(9999999);
+                sp_widget->setMaximum(9999999);
                 widget=sp_widget;
                 sp_widget->setValue(script_input_settings.value("ScriptInput/"+child_name+"/"+iov.label).toFloat());
                 connect(widget,SIGNAL(valueChanged(double)),this,SLOT(inputDataChanged()));
@@ -155,7 +155,7 @@ void MainWindow::updateTaskWidget_(QSettings *settings)
         foreach(QVariant v,variant_list){
             InputOutputVariable iov(v);
             if(iov.in_column){
-                model_->addColumn(QPair<QString,QString>(iov.key,iov.label));
+                model_->addColumn(iov);
             }else{
                 QLabel *label=new QLabel();
                 label->setProperty("type",iov.type);

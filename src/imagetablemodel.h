@@ -7,6 +7,7 @@
 #include <QStringList>
 #include <QPair>
 #include <dataptr.h>
+#include <inputoutputvariable.h>
 
 class ImageTableModel : public QAbstractTableModel
 {
@@ -20,12 +21,12 @@ public:
     virtual Qt::ItemFlags flags(const QModelIndex &index) const;
     DataPtr image(int row);
     void addImage(const DataPtr & data);
-    void addColumn(const QPair<QString,QString>  &column);
+    void addColumn(const InputOutputVariable  &column);
     void clearColumns();
     void onDataChanged(const DataPtr &data);
 private:
     QList<DataPtr> data_;
-    QPair<QStringList,QStringList>  columns_;
+    QList<InputOutputVariable>  columns_;
 
 };
 
