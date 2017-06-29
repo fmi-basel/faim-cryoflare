@@ -9,12 +9,14 @@
 #include <settings.h>
 #include <QSpinBox>
 #include <QDoubleSpinBox>
+#include <QLabel>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
     model_(new ImageTableModel(this)),
-    sort_proxy_(new QSortFilterProxyModel(this))
+    sort_proxy_(new QSortFilterProxyModel(this)),
+    statusbar_queue_count_(new QLabel("CPU queue: 0 / GPU queue: 0"))
 {
     ui->setupUi(this);
     sort_proxy_->setSourceModel(model_);
@@ -27,6 +29,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->start_stop, SIGNAL(toggled(bool)), this, SLOT(onStartStop(bool)));
     connect(model_,SIGNAL(dataChanged(QModelIndex,QModelIndex)),this,SLOT(updateDetailsfromModel(QModelIndex,QModelIndex)));
     connect(ui->image_list->selectionModel(),SIGNAL(currentChanged(QModelIndex,QModelIndex)),this,SLOT(updateDetailsfromView(QModelIndex,QModelIndex)));
+    statusBar()->addPermanentWidget(statusbar_queue_count_);
 }
 
 MainWindow::~MainWindow()
@@ -271,6 +274,11 @@ void MainWindow::onExport()
         }
     }
 
+}
+
+void MainWindow::updateQueueCounts(int cpu_queue, int gpu_queue)
+{
+    statusbar_queue_count_->setText(QString("CPU queue: %1 / GPU queue: %2").arg(cpu_queue).arg(gpu_queue));
 }
 
 void MainWindow::updateDetails_(int row)

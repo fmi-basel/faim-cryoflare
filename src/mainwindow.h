@@ -11,6 +11,9 @@ namespace Ui {
 class MainWindow;
 }
 
+//fw decl
+class QLabel;
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
@@ -35,6 +38,7 @@ public slots:
     void onSettings();
     void inputDataChanged();
     void onExport();
+    void updateQueueCounts(int cpu_queue, int gpu_queue);
 signals:
     void startStop(bool start);
     void settingsChanged();
@@ -45,6 +49,7 @@ private:
     Ui::MainWindow *ui;
     ImageTableModel *model_;
     QSortFilterProxyModel *sort_proxy_;
+    QLabel *statusbar_queue_count_;
 };
 
 #endif // MAINWINDOW_H

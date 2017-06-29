@@ -259,17 +259,21 @@ void ImageProcessor::pushTask_(const TaskPtr &task)
 {
     if(task->gpu){
         gpu_task_stack_.append(task);
+        emit queueCountChanged(cpu_task_stack_.size(),gpu_task_stack_.size());
         foreach (ProcessWrapper* proc, gpu_processes_) {
            if(! (proc->running() || gpu_task_stack_.empty())){
                proc->start(gpu_task_stack_.pop());
+               emit queueCountChanged(cpu_task_stack_.size(),gpu_task_stack_.size());
                break;
            }
         }
     }else{
         cpu_task_stack_.append(task);
+        emit queueCountChanged(cpu_task_stack_.size(),gpu_task_stack_.size());
         foreach (ProcessWrapper* proc, cpu_processes_) {
            if(! (proc->running()|| cpu_task_stack_.empty())){
                proc->start(cpu_task_stack_.pop());
+               emit queueCountChanged(cpu_task_stack_.size(),gpu_task_stack_.size());
                break;
            }
         }

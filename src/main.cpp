@@ -29,6 +29,7 @@ int main(int argc, char* argv[])
         QObject::connect(&processor, SIGNAL(newImage(DataPtr)), &w, SLOT(addImage(DataPtr)));
         QObject::connect(&processor, SIGNAL(dataChanged(DataPtr)), &w, SLOT(onDataChanged(DataPtr)));
         QObject::connect(&w,SIGNAL(settingsChanged()),&processor,SLOT(loadSettings()));
+        QObject::connect(&processor,SIGNAL(queueCountChanged(int,int)),&w,SLOT(updateQueueCounts(int,int)));
         processor.init();
         w.init();
         w.show();

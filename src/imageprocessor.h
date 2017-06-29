@@ -29,6 +29,7 @@ signals:
     void newImage(DataPtr data);
     void dataChanged(DataPtr data);
     void imageUpdated(const QString& image);
+    void queueCountChanged(int,int);
 
 private:
     void updateGridSquare_(const QString& grid_square);
