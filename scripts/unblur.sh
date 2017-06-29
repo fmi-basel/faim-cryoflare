@@ -1,5 +1,5 @@
 #!/bin/bash
-. ./data_connector.sh
+. /usr/prog/sb/em/sw/stack_gui/scripts/data_connector.sh
 
 clamped_stack=$destination_path/${name}_clamped.mrcs
 clamped_stack_mrc=$destination_path/${name}_clamped.mrc
@@ -34,7 +34,7 @@ if [ ! -e ${aligned_avg} ]; then
 
   rm  -fr $clamped_stack_mrc $clamped_stack
   
-  e2proc2d.py --process math.realtofft --clip 512,512 --process mask.sharp:inner_radius=3 $aligned_avg $aligned_avg_fft_thumbnail
+  e2proc2d.py --process math.realtofft  --fouriershrink 7.49609375  --process mask.sharp:inner_radius=1 $aligned_avg $aligned_avg_fft_thumbnail
 fi
 if [ ! -e ${aligned_avg_png} ]; then 
   e2proc2d.py --fouriershrink 7.49609375 ${aligned_avg} ${aligned_avg_png} 

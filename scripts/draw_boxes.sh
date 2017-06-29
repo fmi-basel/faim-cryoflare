@@ -13,4 +13,4 @@ boxes=$(while read line; do
   y2=`echo "$y+$dy"|bc -l`
   echo rectangle $x,$y $x2,$y2
 done <$boxfile)
-convert -flip  -brightness-contrast 0x100 -strokewidth 10 -draw "fill none stroke lightgreen $boxes"  -resize 12.5%  $image $out_image
+convert -flip  -brightness-contrast 0x100 -strokewidth 10 -draw "fill none stroke lightgreen $boxes"  -resize 12.5%  -flip $image $out_image

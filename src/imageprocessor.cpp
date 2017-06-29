@@ -33,14 +33,11 @@ DataPtr parse_xml_data(const QString& xml_path){
     QDomNode node = custom_data.firstChild();
     while(!node.isNull()) {
         if(node.firstChild().toElement().text()=="AppliedDefocus"){
-            result->insert("defocus",node.lastChild().toElement().text());
-            break;
+            result->insert("defocus",QString("%1").arg(node.lastChild().toElement().text().toDouble()*1.0e10));
         }   else if(node.firstChild().toElement().text()=="PhasePlateUsed"){
             result->insert("phase_plate",node.lastChild().toElement().text());
-            break;
         }    else if(node.firstChild().toElement().text()=="Dose"){
             result->insert("dose",node.lastChild().toElement().text());
-            break;
         }
 
 
@@ -111,8 +108,8 @@ void ImageProcessor::startStop(bool start)
 {
     if(start){
         QSettings settings;
-        avg_source_path_=settings.value("avg_source_dir").toString();
-        stack_source_path_=settings.value("stack_source_dir").toString();
+        avg_source_path_=settings.value("avg_source_dir").toString()+"/Images-Disc1";
+        stack_source_path_=settings.value("stack_source_dir").toString()+"/Images-Disc1";
         destination_path_=settings.value("destination_dir").toString();
         watcher_->addPath(avg_source_path_);
         watcher_->addPath(stack_source_path_);

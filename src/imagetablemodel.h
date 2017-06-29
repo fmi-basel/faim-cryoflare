@@ -12,6 +12,9 @@
 class ImageTableModel : public QAbstractTableModel
 {
 public:
+    enum Role {
+        SortRole=Qt::UserRole
+    };
     ImageTableModel(QObject * parent = 0);
     virtual int rowCount(const QModelIndex &parent=QModelIndex()) const;
     virtual int columnCount(const QModelIndex &parent) const;

@@ -19,44 +19,40 @@ int ImageTableModel::columnCount(const QModelIndex &parent) const
 
 QVariant ImageTableModel::data(const QModelIndex &index, int role) const
 {
-    if(role==Qt::DisplayRole){
-        if(0==index.column()){
-            //check box
-            return "";
-        }else{
-            switch(columns_[index.column()-1].type){
-            case String:
-                return data_.at(index.row())->value(columns_[index.column()-1].label);
-                break;
-            case Float:
-                return data_.at(index.row())->value(columns_[index.column()-1].label).toFloat();
-                break;
-            case Int:
-                return data_.at(index.row())->value(columns_[index.column()-1].label).toInt();
-                break;
-            case Image:
-            default:
-                return "-";
-                break;
-            }
-        }
-    }else if(role==Qt::CheckStateRole){
-        if(0==index.column()){
-            QString value=data_.at(index.row())->value("export","true");
-            if (value.compare("true", Qt::CaseInsensitive) == 0 || value==QString("1"))
-            {
-                return Qt::Checked;
-            }else{
-                return Qt::Unchecked;
-            }
-
-        }else{
+    // handle export check box
+    if(0==index.column()){
+        if(role!=Qt::CheckStateRole){
             return QVariant();
-
         }
-    }else{
-        return QVariant();
+        QString value=data_.at(index.row())->value("export","true");
+        if (value.compare("true", Qt::CaseInsensitive) == 0 || value==QString("1"))
+        {
+            return Qt::Checked;
+        }else{
+            return Qt::Unchecked;
+        }
     }
+    // handle other columns
+    if(role==SortRole){
+        switch(columns_[index.column()-1].type){
+        case String:
+            return data_.at(index.row())->value(columns_[index.column()-1].label);
+            break;
+        case Float:
+            return data_.at(index.row())->value(columns_[index.column()-1].label).toDouble();
+            break;
+        case Int:
+            return data_.at(index.row())->value(columns_[index.column()-1].label).toInt();
+            break;
+        case Image:
+        default:
+            return "-";
+            break;
+        }
+    }else if(role==Qt::DisplayRole){
+        return data_.at(index.row())->value(columns_[index.column()-1].label);
+    }
+    return QVariant();
 }
 
 bool ImageTableModel::setData(const QModelIndex &index, const QVariant &value, int role)

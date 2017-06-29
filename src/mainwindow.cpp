@@ -18,11 +18,12 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
     sort_proxy_->setSourceModel(model_);
+    sort_proxy_->setSortRole(ImageTableModel::SortRole);
     ui->image_list->setModel(sort_proxy_);
     //ui->image_list->horizontalHeader()->setSectionResizeMode(0,QHeaderView::ResizeToContents);
-    connect(ui->avg_source_dir, SIGNAL(textChanged(QString)), this, SIGNAL(avgSourceDirChanged(QString)));
-    connect(ui->stack_source_dir, SIGNAL(textChanged(QString)), this, SIGNAL(stackSourceDirChanged(QString)));
-    connect(ui->destination_dir, SIGNAL(textChanged(QString)), this, SIGNAL(destinationDirChanged(QString)));
+    connect(ui->avg_source_dir, SIGNAL(textChanged(QString)), this, SLOT(onAvgSourceDirTextChanged(QString)));
+    connect(ui->stack_source_dir, SIGNAL(textChanged(QString)), this, SLOT(onStackSourceDirTextChanged(QString)));
+    connect(ui->destination_dir, SIGNAL(textChanged(QString)), this, SLOT(onDestinationDirTextChanged(QString)));
     connect(ui->start_stop, SIGNAL(toggled(bool)), this, SLOT(onStartStop(bool)));
     connect(model_,SIGNAL(dataChanged(QModelIndex,QModelIndex)),this,SLOT(updateDetailsfromModel(QModelIndex,QModelIndex)));
     connect(ui->image_list->selectionModel(),SIGNAL(currentChanged(QModelIndex,QModelIndex)),this,SLOT(updateDetailsfromView(QModelIndex,QModelIndex)));
@@ -278,28 +279,43 @@ void MainWindow::updateDetails_(int row)
     for(int i=0;i< ui->image_data->count();++i){
         QWidget *widget_ptr=ui->image_data->widget(i);
         foreach( QObject* child, widget_ptr->children()){
-            if(child->metaObject()->className()==QString("QGroupBox")){
-                foreach( QObject* inner_child, child->children()){
-                    QVariant label= inner_child->property("label");
-                    if(label.isValid()){
-                        if(data->contains(label.toString())){
-                            QVariant type=inner_child->property("type");
-                            if(type.isValid()){
-                                if(static_cast<VariableType>(type.toInt())==Image){
-                                    QString path=data->value(label.toString());
-                                    if(QFileInfo(path).exists()){
-                                        QLabel *qlabel=qobject_cast<QLabel*>(inner_child);
-                                        if(qlabel){
-                                            qlabel->setPixmap(QPixmap(path));
-                                        }
-                                    }
-                                }
-                            }
+            QString classname=child->metaObject()->className();	
+            if(classname!=QString("QGroupBox")){
+                continue;
+            }
+            foreach( QObject* inner_child, child->children()){
+                QVariant label= inner_child->property("label");
+                if(!label.isValid()){
+                    continue;
+                }
+                qDebug() << "label valid";
+                if(!data->contains(label.toString())){
+                    continue;
+                }
+                QVariant type=inner_child->property("type");
+                if(!type.isValid()){
+                    continue;
+                }
+                qDebug() << "type valid";
+                if(static_cast<VariableType>(type.toInt())==Image){
+                    QString path=data->value(label.toString());
+                    qDebug() << "checking image";
+                    if(QFileInfo(path).exists()){
+                       QLabel *qlabel=qobject_cast<QLabel*>(inner_child);
+                       if(qlabel){
+                            qlabel->setPixmap(QPixmap(path));
+                        }
+                    } else {
+                        qDebug() << "clearing image";
+                        QLabel *qlabel=qobject_cast<QLabel*>(inner_child);
+                        if(qlabel){
+                            QPixmap p(512,512);
+                            p.fill();
+                            qlabel->setPixmap(p);
                         }
                     }
                 }
             }
         }
     }
-
 }
