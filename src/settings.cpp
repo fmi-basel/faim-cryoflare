@@ -65,6 +65,9 @@ void Settings::saveSettings(const QString &path)
         delete settings;
         settings=new QSettings(path,QSettings::IniFormat);
     }
+    settings->setValue("num_cpu", ui->num_cpu->value());
+    settings->setValue("num_gpu", ui->num_gpu->value());
+    settings->setValue("gpu_ids", ui->gpu_ids->text());
     settings->beginGroup("Tasks");
     settings->remove("");
     saveTask_(settings,ui->task_tree->invisibleRootItem());
@@ -79,6 +82,9 @@ void Settings::loadSettings(const QString &path)
         delete settings;
         settings=new QSettings (path,QSettings::IniFormat);
     }
+    ui->num_cpu->setValue(settings->value("num_cpu").toInt());
+    ui->num_gpu->setValue(settings->value("num_gpu").toInt());
+    ui->gpu_ids->setText(settings->value("gpu_ids").toString());
     settings->beginGroup("Tasks");
     ui->task_tree->clear();
     loadTask_(settings,ui->task_tree->invisibleRootItem());

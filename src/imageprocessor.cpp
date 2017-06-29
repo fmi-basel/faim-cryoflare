@@ -91,6 +91,12 @@ ImageProcessor::ImageProcessor():
     QSettings settings;
     int num_cpu=settings.value("num_cpu",10).toInt();
     int num_gpu=settings.value("num_gpu",2).toInt();
+    QStringList gpu_ids=settings.value("gpu_ids").toString().split(",", QString::SkipEmptyParts);
+    if(gpu_ids.empty()){
+        for(int i=0;i<num_gpu;++i) {
+            gpu_ids << QString("%1").arg(i);
+        }
+    }
     for(int i=0;i<num_cpu;++i) {
         ProcessWrapper* wrapper=new ProcessWrapper(this,-1);
         connect(wrapper,SIGNAL(finished(TaskPtr)),this,SLOT(onCPUTaskFinished(TaskPtr)));
@@ -98,7 +104,7 @@ ImageProcessor::ImageProcessor():
 
     }
     for(int i=0;i<num_gpu;++i) {
-        ProcessWrapper* wrapper=new ProcessWrapper(this,i);
+        ProcessWrapper* wrapper=new ProcessWrapper(this,gpu_ids.at(i%gpu_ids.size()).toInt());
         connect(wrapper,SIGNAL(finished(TaskPtr)),this,SLOT(onGPUTaskFinished(TaskPtr)));
         gpu_processes_.append(wrapper);
     }
