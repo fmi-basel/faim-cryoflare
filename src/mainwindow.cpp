@@ -99,7 +99,7 @@ void MainWindow::updateTaskWidgets()
     }
     model_->clearColumns();
     QSettings *settings=new QSettings;
-    model_->addColumn(InputOutputVariable("Name","name",String));
+    model_->addColumn(InputOutputVariable("Name","short_name",String));
     model_->addColumn(InputOutputVariable("Timestamp","timestamp",String));
     model_->addColumn(InputOutputVariable("Nominal Defocus","defocus",Float));
     model_->addColumn(InputOutputVariable("Exposure time","exposure_time",Float));

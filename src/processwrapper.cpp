@@ -1,4 +1,6 @@
 #include <QtDebug>
+#include <QProcessEnvironment>
+#include <QCoreApplication>
 #include <QTextStream>
 #include <QSettings>
 #include "processwrapper.h"
@@ -11,6 +13,9 @@ ProcessWrapper::ProcessWrapper(QObject *parent, int gpu_id) :
     running_(false)
 {
     connect(process_,SIGNAL(finished(int)),this,SLOT(onFinished(int)));
+    QProcessEnvironment env=QProcessEnvironment::systemEnvironment();
+    env.insert("STACK_GUI_SCRIPTS",QCoreApplication::applicationDirPath()+"/scripts");
+    process_->setProcessEnvironment(env);
 }
 
 bool ProcessWrapper::running() const
@@ -47,12 +52,17 @@ void ProcessWrapper::onFinished(int exitcode)
 {
     QTextStream output_stream(process_->readAllStandardOutput(),QIODevice::ReadOnly);
     QString result_token("RESULT_EXPORT:");
+    QString result_file_token("RESULT_FILE_EXPORT:");
     QString output;
     QString line;
     do {
         line = output_stream.readLine();
         if(line.startsWith(result_token)){
             line.remove(0,result_token.size());
+            QStringList splitted=line.split("=");
+            task_->data->insert(splitted[0].trimmed(),splitted[1].trimmed());
+        }else if(line.startsWith(result_file_token)){
+            line.remove(0,result_file_token.size());
             QStringList splitted=line.split("=");
             task_->data->insert(splitted[0].trimmed(),splitted[1].trimmed());
         }else{

@@ -1,20 +1,31 @@
-#!/bin/bash
-. /usr/prog/sb/em/sw/stack_gui/scripts/data_connector.sh
+#!/bin/sh --noprofile
+. $STACK_GUI_SCRIPTS/data_connector.sh
 
+module purge
 module load gautomatch
 module switch gautomatch/0.53_cuda7
+module load eman2
 
 pixel_size=`calculate "1e10*$apix_x"`
-gautomatch_log=$destination_path/${name}_gautomatch.log
+gautomatch_log=${aligned_avg/.mrc/_gautomatch.log}
+aligned_avg_boxes_png=${aligned_avg/.mrc/_boxes.png}
+gautomatch_box_file=${aligned_avg/.mrc/_automatch.box}
+gautomatch_star_file=${aligned_avg/.mrc/_automatch.star}
 
+gautomach_params=" --gid $gpu_id"
+gautomach_params+=" --apixM $pixel_size"
+gautomach_params+=" --lsigma_cutoff $sigma_cutoff"
+gautomach_params+=" --lsigma_D $sigma_d"
+gautomach_params+=" --speed $speed"
+gautomach_params+="  --diameter $box_size"
 
-if [ ! -e $destination_path/${name}_aligned_automatch.box  ]; then
-  echo /usr/prog/sb/em/sw/gautomatch/0.53/bin/Gautomatch-v0.53_sm_20_cu7.0_x86_64 --gid $gpu_id  --apixM $pixel_size --lsigma_cutoff $sigma_cutoff --lsigma_D $sigma_d --speed $speed --diameter $box_size $aligned_avg > $gautomatch_log 
-  /usr/prog/sb/em/sw/gautomatch/0.53/bin/Gautomatch-v0.53_sm_20_cu7.0_x86_64 --gid $gpu_id  --apixM $pixel_size --lsigma_cutoff $sigma_cutoff --lsigma_D $sigma_d --speed $speed --diameter $box_size $aligned_avg >> $gautomatch_log 
-  e2proc2d.py $aligned_avg ${aligned_avg/.mrc/_full.png}
-  /usr/prog/sb/em/sw/stack_gui/scripts/draw_boxes.sh  ${aligned_avg/.mrc/_full.png} $destination_path/${name}_aligned_automatch.box  ${aligned_avg/.mrc/_boxes.png}
-  rm ${aligned_avg/.mrc/_full.png}
+if [ ! -e $gautomatch_box_file ]; then
+  full_png=$scratch/${short_name}_gautomatch_full.png
+  gautomatch $gautomach_params $aligned_avg >> $gautomatch_log 
+  e2proc2d.py $aligned_avg $full_png
+  $STACK_GUI_SCRIPTS/draw_boxes.sh  $full_png $gautomatch_box_file  $aligned_avg_boxes_png
 fi
-RESULTS[num_particles]=`cat $destination_path/${name}_aligned_automatch.box|wc -l`
-RESULTS[aligned_avg_boxes_png]=${aligned_avg/.mrc/_boxes.png}
-
+RESULT[num_particles]=`cat $gautomatch_box_file|wc -l`
+RESULT_FILE[aligned_avg_boxes_png]=$aligned_avg_boxes_png
+RESULT_FILE[gautomatch_box_file]=$gautomatch_box_file
+RESULT_FILE[gautomatch_star_file]=$gautomatch_star_file

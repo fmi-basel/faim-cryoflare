@@ -1,4 +1,5 @@
 #include <QDir>
+#include <QDateTime>
 #include <QSettings>
 #include <QtDebug>
 #include <filesystemwatcher.h>
@@ -64,8 +65,13 @@ DataPtr parse_xml_data(const QString& xml_path){
     result->insert("y",stage.toElement().elementsByTagName("Y").at(0).toElement().text());
     result->insert("z",stage.toElement().elementsByTagName("Z").at(0).toElement().text());
     
+    QDomNode nominal_magnification=dom_document.elementsByTagName("NominalMagnification").at(0);
+    result->insert("nominal_magnification",nominal_magnification.toElement().text());
     QDomNode datetime=dom_document.elementsByTagName("acquisitionDateTime").at(0);
-    result->insert("timestamp",datetime.toElement().text());
+    QString timestamp=datetime.toElement().text();
+    result->insert("timestamp",timestamp);
+    QDateTime time=QDateTime::fromString(timestamp,Qt::ISODate);
+    result->insert("short_name",time.toString("yyyyMMdd_hhmmss"));
     return result;
 }
 
@@ -91,19 +97,21 @@ ImageProcessor::ImageProcessor():
     QSettings settings;
     int num_cpu=settings.value("num_cpu",10).toInt();
     int num_gpu=settings.value("num_gpu",2).toInt();
-    QStringList gpu_ids=settings.value("gpu_ids").toString().split(",", QString::SkipEmptyParts);
+    QStringList gpu_ids=settings.value("gpu_ids","0").toString().split(",", QString::SkipEmptyParts);
     if(gpu_ids.empty()){
         for(int i=0;i<num_gpu;++i) {
             gpu_ids << QString("%1").arg(i);
         }
     }
     for(int i=0;i<num_cpu;++i) {
+        qDebug() << "creating cpu process: " << i ;
         ProcessWrapper* wrapper=new ProcessWrapper(this,-1);
         connect(wrapper,SIGNAL(finished(TaskPtr)),this,SLOT(onCPUTaskFinished(TaskPtr)));
         cpu_processes_.append(wrapper);
 
     }
     for(int i=0;i<num_gpu;++i) {
+        qDebug() << "creating gpu process: " << i  << " with gpu id: " << gpu_ids.at(i%gpu_ids.size()).toInt();
         ProcessWrapper* wrapper=new ProcessWrapper(this,gpu_ids.at(i%gpu_ids.size()).toInt());
         connect(wrapper,SIGNAL(finished(TaskPtr)),this,SLOT(onGPUTaskFinished(TaskPtr)));
         gpu_processes_.append(wrapper);
