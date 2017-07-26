@@ -5,6 +5,7 @@
 #include <QPair>
 #include <QStringList>
 #include <QString>
+#include <QSet>
 
 //fw decl
 class Task;
@@ -38,6 +39,8 @@ public:
     bool gpu;
     QString output;
     QString error;
+    QSet<QString> output_files;
+    QSet<QString> shared_output_files;
     int state;
     QList<TaskPtr > children;
     QPair<QStringList,QStringList> display_keys;

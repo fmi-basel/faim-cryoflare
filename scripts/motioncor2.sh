@@ -22,15 +22,15 @@ fi
 [ -e ${aligned_avg_mc2_dw_png} ] || e2proc2d.py --fouriershrink 7.49609375 ${aligned_avg_mc2_dw} ${aligned_avg_mc2_dw_png}  >> $motioncorr2_log 2>&1
 
 
-RESULT_FILE["motioncorr2_log"]=${motioncorr2_log}
-RESULT_FILE["aligned_avg_mc2_dw"]=${aligned_avg_mc2_dw}
-RESULT_FILE["aligned_avg_mc2_dw_png"]=${aligned_avg_mc2_dw_png}
-RESULT_FILE["aligned_avg_mc2_dw_fft_thumbnail"]=${aligned_avg_mc2_dw_fft_thumbnail}
 
 
 relion_jobid=4
 HEADER="\ndata_\n\nloop_\n_rlnMicrographName #1"
 mkdir -p $destination_path/Import/job00$relion_jobid
-[ -e $destination_path/Import/micrographs_mc2_dw ] || ln -s ../Import/job00$relion_jobid $destination_path/Import/micrographs_mc2_dw
+relion_alias Import $relion_jobid micrographs_mc2_d
+
 write_to_star $destination_path/Import/job00$relion_jobid/micrographs.star "$HEADER" micrographs_mc2_dw/${short_name}.mrc 
 add_to_pipeline  $destination_path/default_pipeline.star Import $relion_jobid micrographs_mc2_dw  "" "Import/job00$relion_jobid/micrographs.star:1"
+
+RESULTS aligned_avg_mc2_dw_png aligned_avg_mc2_dw_fft_thumbnail
+FILES motioncorr2_log aligned_avg_mc2_dw aligned_avg_mc2_dw_png aligned_avg_mc2_dw_fft_thumbnail

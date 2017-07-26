@@ -4,23 +4,18 @@ cleanup(){
   rm -fr $scratch
 }
 
-export_results() {
-  for i in ${!RESULT[@]}; do echo RESULT_EXPORT:$i=${RESULT[$i]}; done
-  for i in ${!RESULT_FILE[@]}; do echo RESULT_FILE_EXPORT:$i=${RESULT_FILE[$i]}; done
-  cleanup 
-}
 
 calculate() {
 echo $1 | sed 's/[Ee]+\?/*10^/g' | bc -l
 }
 
-#write_to_star() {
-#  (
-#     flock -n 9 || exit 1
-#     [[  -s $1 ]] || echo -e "$2" >> $1
-#     [ $# -gt 2 ] && echo  "${@:3}" >> $1
-#  ) 9>> $1
-#}
+relion_alias(){
+  local local_job_id
+  printf -v local_job_id "%03d" $2
+  [ -e $destination_path/$1/$3 ] || ln -s ../$1/job00$local_job_id $destination_path/$1/$3
+  SHARED_FILES $destination_path/$1/$3
+}
+
 write_to_star() {
   (
      flock -n 9 || exit 1
@@ -33,6 +28,7 @@ write_to_star() {
      awk_string=' ! /'${3##*/}'/ {print} 
                   END {print "'${@:3}'"}'
      [ $# -gt 2 ] && awk "$awk_string" < $tmpfile > $1
+     SHARED_FILES  $1
   ) 9>> $1
 }
 
@@ -41,7 +37,37 @@ add_to_pipeline() {
     flock -n 9 || exit 1
     touch $destination_path/.gui_projectdir
     $STACK_GUI_SCRIPTS/add_to_pipeline.py "$@"
+    SHARED_FILES "$destination_path/default_pipeline.star" "$destination_path/.gui_projectdir"
   ) 9>> $1
+}
+
+RESULTS (){
+  for var in "$@"
+  do
+    echo RESULT_EXPORT:$var=${!var}
+  done
+}
+
+FILES() {
+  for var in "$@"
+  do
+    if [ -z ${!var+x} ];then
+      echo FILE_EXPORT:$var
+    else
+    echo FILE_EXPORT:${!var}
+    fi
+  done
+}
+
+SHARED_FILES() {
+  for var in "$@"
+  do
+    if [ -z ${!var+x} ];then
+      echo SHARED_FILE_EXPORT:$var
+    else
+    echo SHARED_FILE_EXPORT:${!var}
+    fi
+  done
 }
 
 script_name=${0##*/}
@@ -49,10 +75,7 @@ script_name=${0##*/}
 scratch=$(mktemp -d /data/Gatan_X/scratch/${script_name%%.sh}.XXXXXX)
 
 
-trap cleanup INT TERM HUP
-trap export_results EXIT
+trap cleanup INT TERM HUP EXIT
 
-declare -A RESULT
-declare -A RESULT_FILE
 while IFS='=' read k v; do declare $k="$v"; done
 

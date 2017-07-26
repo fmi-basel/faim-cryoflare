@@ -53,6 +53,7 @@ void ProcessWrapper::onFinished(int exitcode)
     QTextStream output_stream(process_->readAllStandardOutput(),QIODevice::ReadOnly);
     QString result_token("RESULT_EXPORT:");
     QString result_file_token("RESULT_FILE_EXPORT:");
+    QString shared_result_file_token("SHARED_RESULT_FILE_EXPORT:");
     QString output;
     QString line;
     do {
@@ -63,8 +64,10 @@ void ProcessWrapper::onFinished(int exitcode)
             task_->data->insert(splitted[0].trimmed(),splitted[1].trimmed());
         }else if(line.startsWith(result_file_token)){
             line.remove(0,result_file_token.size());
-            QStringList splitted=line.split("=");
-            task_->data->insert(splitted[0].trimmed(),splitted[1].trimmed());
+            task_->output_files.insert(line.trimmed());
+        }else if(line.startsWith(shared_result_file_token)){
+            line.remove(0,shared_result_file_token.size());
+            task_->shared_output_files.insert(line.trimmed());
         }else{
             output.append(line+"\n");
         }
@@ -75,5 +78,5 @@ void ProcessWrapper::onFinished(int exitcode)
     TaskPtr task=task_;
     task_.clear();
     running_=false;
-    emit finished(task);
+    emit finished(task,-1!=gpu_id_);
 }

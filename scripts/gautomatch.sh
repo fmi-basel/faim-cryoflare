@@ -25,7 +25,8 @@ if [ ! -e $gautomatch_box_file ]; then
   e2proc2d.py $aligned_avg $full_png
   $STACK_GUI_SCRIPTS/draw_boxes.sh  $full_png $gautomatch_box_file  $aligned_avg_boxes_png
 fi
-RESULT[num_particles]=`cat $gautomatch_box_file|wc -l`
-RESULT_FILE[aligned_avg_boxes_png]=$aligned_avg_boxes_png
-RESULT_FILE[gautomatch_box_file]=$gautomatch_box_file
-RESULT_FILE[gautomatch_star_file]=$gautomatch_star_file
+
+num_particles=`cat $gautomatch_box_file|wc -l`
+
+RESULTS num_particles aligned_avg_boxes
+FILES aligned_avg_boxes_png gautomatch_box_file gautomatch_star_file

@@ -14,7 +14,7 @@ public:
     bool running() const;
 
 signals:
-    void finished(const TaskPtr &task);
+    void finished(const TaskPtr &task, bool gpu=false);
 
 public slots:
     void start(const TaskPtr &task);

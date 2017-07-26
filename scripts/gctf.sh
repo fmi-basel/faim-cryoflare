@@ -9,7 +9,7 @@ module load eman2
 relion_jobid=6
 relion_job_micrographs_dir=$destination_path/CtfFind/job00$relion_jobid/micrographs_unblur
 mkdir -p $relion_job_micrographs_dir
-[ -e $destination_path/CtfFind/gctf ] || ln -s ../CtfFind/job00$relion_jobid $destination_path/CtfFind/gctf
+relion_alias CtfFind $relion_jobid gctf
 
 epa_cc_cutoff=0.75
 pixel_size=`calculate "1e10*$apix_x"`
@@ -99,29 +99,25 @@ done
 
 rm $destination_path/micrographs_all_gctf.star >& /dev/null
 
-RESULT[epa_limit]=$epa_limit
-RESULT[epa_cc]=$epa_cc
-RESULT[defocus_gctf]=`calculate \($defocus_u+$defocus_v\)/2.0`
-RESULT[astigmatism_gctf]=`calculate \($defocus_u-$defocus_v\)/2.0`
-RESULT[defocus_gctf_angle]=`echo $measured_defocus|cut -f3 -d" "`
-
-if [ $phase_plate == "true" ] ; then
-  RESULT[phase_shift_gctf]=`echo $measured_defocus|cut -f4 -d" "`
-else
-  RESULT[phase_shift_gctf]=0
-fi
-
 if [ ! -e $gctf_diag_file_png ]; then
   ln -s $gctf_diag_file $gctf_diag_file_mrc
   e2proc2d.py  --meanshrink 2  $gctf_diag_file_mrc  $gctf_diag_file_png
-fi 
-RESULT_FILE[gctf_diag_file_png]=$gctf_diag_file_png
-RESULT_FILE[gctf_diag_file_png]=$gctf_diag_file_png
-RESULT_FILE[gctf_log]=$gctf_log
-RESULT_FILE[gctf_aligned_log]=$gctf_aligned_log
-RESULT_FILE[gctf_epa_log]=$gctf_epa_log
+fi
 
+defocus_gctf=`calculate \($defocus_u+$defocus_v\)/2.0`
+astigmatism_gctf=`calculate \($defocus_u-$defocus_v\)/2.0`
+defocus_gctf_angle=`echo $measured_defocus|cut -f3 -d" "`
 
-HEADER="\ndata_\n\nloop_\n_rlnMicrographName #1\n_rlnCtfImage #2\n_rlnDefocusU #3\n_rlnDefocusV #4\n_rlnDefocusAngle #5\n_rlnVoltage #6\n_rlnSphericalAberration #7\n_rlnAmplitudeContrast #8\n_rlnMagnification #9\n_rlnDetectorPixelSize #10\n_rlnCtfFigureOfMerit #11\n_rlnCtfMaxResolution #12"
-write_to_star $destination_path/CtfFind/job00$relion_jobid/micrographs_ctf.star "$HEADER" micrographs_unblur/${short_name}.mrc CtfFind/job00$relion_jobid/micrographs_unblur/${short_name}.ctf:mrc $defocus_u $defocus_v ${RESULT[defocus_gctf_angle]} 300 0.001 0.07 $nominal_magnification $detector_pixel_size $epa_cc $epa_limit
+if [ $phase_plate == "true" ] ; then
+  phase_shift_gctf`echo $measured_defocus|cut -f4 -d" "`
+  HEADER="\ndata_\n\nloop_\n_rlnMicrographName #1\n_rlnCtfImage #2\n_rlnDefocusU #3\n_rlnDefocusV #4\n_rlnDefocusAngle #5\n_rlnVoltage #6\n_rlnSphericalAberration #7\n_rlnAmplitudeContrast #8\n_rlnMagnification #9\n_rlnDetectorPixelSize #10\n_rlnCtfFigureOfMerit #11\n_rlnCtfMaxResolution #12\n_rlnPhaseShift #13"
+  write_to_star $destination_path/CtfFind/job00$relion_jobid/micrographs_ctf.star "$HEADER" micrographs_unblur/${short_name}.mrc CtfFind/job00$relion_jobid/micrographs_unblur/${short_name}.ctf:mrc $defocus_u $defocus_v $defocus_gctf_angle 300 0.001 0.07 $nominal_magnification $detector_pixel_size $epa_cc $epa_limit $phase_shift_gctf
+else
+  phase_shift_gctf=0
+  HEADER="\ndata_\n\nloop_\n_rlnMicrographName #1\n_rlnCtfImage #2\n_rlnDefocusU #3\n_rlnDefocusV #4\n_rlnDefocusAngle #5\n_rlnVoltage #6\n_rlnSphericalAberration #7\n_rlnAmplitudeContrast #8\n_rlnMagnification #9\n_rlnDetectorPixelSize #10\n_rlnCtfFigureOfMerit #11\n_rlnCtfMaxResolution #12"
+  write_to_star $destination_path/CtfFind/job00$relion_jobid/micrographs_ctf.star "$HEADER" micrographs_unblur/${short_name}.mrc CtfFind/job00$relion_jobid/micrographs_unblur/${short_name}.ctf:mrc $defocus_u $defocus_v $defocus_gctf_angle 300 0.001 0.07 $nominal_magnification $detector_pixel_size $epa_cc $epa_limit
+fi
 add_to_pipeline  $destination_path/default_pipeline.star CtfFind $relion_jobid gctf "Import/job001/micrographs.star" "CtfFind/job00$relion_jobid/micrographs_ctf.star:1"
+
+RESULTS epa_limit epa_cc defocus_gctf astigmatism_gctf defocus_gctf_angle gctf_diag_file_png
+FILES gctf_diag_file_png gctf_log gctf_aligned_log gctf_epa_log

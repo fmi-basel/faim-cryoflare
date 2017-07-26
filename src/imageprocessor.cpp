@@ -89,7 +89,10 @@ ImageProcessor::ImageProcessor():
     gpu_task_stack_(),
     cpu_processes_(),
     gpu_processes_(),
-    root_task_(new Task("General","dummy",DataPtr(new Data)))
+    root_task_(new Task("General","dummy",DataPtr(new Data))),
+    output_files_(),
+    shared_output_files_()
+
 {
     loadSettings();
     connect(watcher_, SIGNAL(fileChanged(const QString &)), this, SLOT(onFileChange(const QString &)));
@@ -106,14 +109,14 @@ ImageProcessor::ImageProcessor():
     for(int i=0;i<num_cpu;++i) {
         qDebug() << "creating cpu process: " << i ;
         ProcessWrapper* wrapper=new ProcessWrapper(this,-1);
-        connect(wrapper,SIGNAL(finished(TaskPtr)),this,SLOT(onCPUTaskFinished(TaskPtr)));
+        connect(wrapper,SIGNAL(finished(TaskPtr,bool)),this,SLOT(onTaskFinished(TaskPtr,bool)));
         cpu_processes_.append(wrapper);
 
     }
     for(int i=0;i<num_gpu;++i) {
         qDebug() << "creating gpu process: " << i  << " with gpu id: " << gpu_ids.at(i%gpu_ids.size()).toInt();
         ProcessWrapper* wrapper=new ProcessWrapper(this,gpu_ids.at(i%gpu_ids.size()).toInt());
-        connect(wrapper,SIGNAL(finished(TaskPtr)),this,SLOT(onGPUTaskFinished(TaskPtr)));
+        connect(wrapper,SIGNAL(finished(TaskPtr,bool)),this,SLOT(onTaskFinished(TaskPtr,bool)));
         gpu_processes_.append(wrapper);
     }
 }
@@ -157,15 +160,18 @@ void ImageProcessor::onDirChange(const QString &path)
     }
 }
 
-void ImageProcessor::onCPUTaskFinished(const TaskPtr &task)
+void ImageProcessor::onTaskFinished(const TaskPtr &task, bool gpu)
 {
+    QStack<TaskPtr>& stack=gpu?gpu_task_stack_:cpu_task_stack_;
+    output_files_[task->data->value("short_name")]=task->output_files;
+    shared_output_files_+=task->shared_output_files;
     foreach(TaskPtr child,task->children){
         pushTask_(child);
     }
-    if(!cpu_task_stack_.empty()){
+    if(!stack.empty()){
         ProcessWrapper* wrapper = qobject_cast<ProcessWrapper*>(sender());
         if( wrapper != NULL && (! wrapper->running()) ) {
-              wrapper->start(cpu_task_stack_.pop());
+              wrapper->start(stack.pop());
         }
     }
     QFile f(destination_path_+"/"+task->name+"_out.log");
@@ -181,29 +187,6 @@ void ImageProcessor::onCPUTaskFinished(const TaskPtr &task)
     emit dataChanged(task->data);
 }
 
-void ImageProcessor::onGPUTaskFinished(const TaskPtr &task)
-{
-    foreach(TaskPtr child,task->children){
-        pushTask_(child);
-    }
-    if(!gpu_task_stack_.empty()){
-        ProcessWrapper* wrapper = qobject_cast<ProcessWrapper*>(sender());
-        if( wrapper != NULL && (! wrapper->running())) {
-              wrapper->start(gpu_task_stack_.pop());
-        }
-    }
-    QFile f(destination_path_+"/"+task->name+"_out.log");
-    if (f.open(QIODevice::WriteOnly | QIODevice::Append)) {
-        QTextStream stream( &f );
-        stream << task->output << endl;
-    }
-    QFile ferr(destination_path_+"/"+task->name+"_error.log");
-    if (ferr.open(QIODevice::WriteOnly | QIODevice::Append)) {
-        QTextStream stream( &f );
-        stream << task->error << endl;
-    }
-    emit dataChanged(task->data);
-}
 
 void ImageProcessor::loadSettings()
 {

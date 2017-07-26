@@ -21,8 +21,7 @@ public slots:
     void startStop(bool start=true);
     void onFileChange(const QString & path);
     void onDirChange(const QString & path);
-    void onCPUTaskFinished(const TaskPtr& task);
-    void onGPUTaskFinished(const TaskPtr& task);
+    void onTaskFinished(const TaskPtr& task, bool gpu);
     void loadSettings();
     void init();
 signals:
@@ -49,6 +48,8 @@ private:
     QList<ProcessWrapper*> cpu_processes_;
     QList<ProcessWrapper*> gpu_processes_;
     TaskPtr root_task_;
+    QHash<QString,QSet<QString> > output_files_;
+    QSet<QString> shared_output_files_;
 
 
 };

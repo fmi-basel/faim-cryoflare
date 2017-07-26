@@ -75,39 +75,30 @@ fi
 [ -e ${aligned_avg_fft_thumbnail_dw} ] ||  e2proc2d.py --process math.realtofft  --fouriershrink 7.49609375  --process mask.sharp:inner_radius=1 $aligned_avg_dw $aligned_avg_fft_thumbnail_dw
 [ -e ${aligned_avg_png_dw}           ] ||  e2proc2d.py --fouriershrink 7.49609375 ${aligned_avg_dw} ${aligned_avg_png_dw} 
 
-RESULT_FILE["aligned_stack"]=${aligned_stack}s
-RESULT_FILE["unblur_log"]=${unblur_log}
-RESULT_FILE["shift_txt"]=${shift_txt}
-RESULT_FILE["frc_txt"]=${frc_txt}
+unblur_score=`fgrep "Final Score" $unblur_log|cut -f2 -d:|xargs`
 
-RESULT_FILE["aligned_avg"]=${aligned_avg}
-RESULT_FILE["aligned_avg_png"]=${aligned_avg_png}
-RESULT_FILE["aligned_avg_fft_thumbnail"]=${aligned_avg_fft_thumbnail}
-
-RESULT_FILE["aligned_avg_dw"]=${aligned_avg_dw}
-RESULT_FILE["aligned_avg_png_dw"]=${aligned_avg_png_dw}
-RESULT_FILE["aligned_avg_fft_thumbnail_dw"]=${aligned_avg_fft_thumbnail_dw}
-
-RESULT["unblur_score"]=`fgrep "Final Score" $unblur_log|cut -f2 -d:|xargs`
 
 relion_jobid=1
 HEADER="\ndata_\n\nloop_\n_rlnMicrographName #1"
 mkdir -p $destination_path/Import/job00$relion_jobid
-[ -e $destination_path/Import/micrographs_unblur ] || ln -s ../Import/job00$relion_jobid $destination_path/Import/micrographs_unblur
+relion_alias Import $relion_jobid micrographs_unblur
 write_to_star $destination_path/Import/job00$relion_jobid/micrographs.star "$HEADER" micrographs_unblur/${short_name}.mrc 
 add_to_pipeline  $destination_path/default_pipeline.star Import $relion_jobid micrographs_unblur  "" "Import/job00$relion_jobid/micrographs.star:1"
 
 relion_jobid=2
 HEADER="\ndata_\n\nloop_\n_rlnMicrographName #1"
 mkdir -p $destination_path/Import/job00$relion_jobid
-[ -e $destination_path/Import/micrographs_unblur_dw ] || ln -s ../Import/job00$relion_jobid $destination_path/Import/micrographs_unblur_dw
+relion_alias Import $relion_jobid micrographs_unblur_dw
 write_to_star $destination_path/Import/job00$relion_jobid/micrographs.star "$HEADER" micrographs_unblur_dw/${short_name}.mrc 
 add_to_pipeline  $destination_path/default_pipeline.star Import $relion_jobid micrographs_unblur_dw  "" "Import/job00$relion_jobid/micrographs.star:1"
 
 relion_jobid=3
 HEADER="\ndata_\nloop_\n_rlnMicrographMovieName"
 mkdir -p $destination_path/Import/job00$relion_jobid
-[ -e $destination_path/Import/movies_unblur ] || ln -s ../Import/job00$relion_jobid $destination_path/Import/movies_unblur
+relion_alias Import $relion_jobid movies_unblur
 write_to_star $destination_path/Import/job00$relion_jobid/movies.star "$HEADER" movies_unblur/${short_name}.mrcs 
 add_to_pipeline  $destination_path/default_pipeline.star Import $relion_jobid movies_unblur  "" "Import/job00$relion_jobid/movies.star:0"
+
+RESULTS aligned_avg_png aligned_avg_fft_thumbnail aligned_avg_png_dw aligned_avg_fft_thumbnail_dw unblur_score
+FILES aligned_stack unblur_log shift_txt frc_txt aligned_avg aligned_avg_png aligned_avg_fft_thumbnail aligned_avg_dw aligned_avg_png_dw aligned_avg_fft_thumbnail_dw
 

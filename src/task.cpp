@@ -9,6 +9,8 @@ Task::Task(const QString &name_, const QString &script_, DataPtr data_, bool gpu
     gpu(gpu_),
     output(),
     error(),
+    output_files(),
+    shared_output_files(),
     state(-1),
     children(),
     display_keys(),
