@@ -95,6 +95,6 @@ relion_alias Import $relion_jobid movies_unblur
 write_to_star $destination_path/Import/job00$relion_jobid/movies.star "$HEADER" movies_unblur/${short_name}.mrcs 
 add_to_pipeline  $destination_path/default_pipeline.star Import $relion_jobid movies_unblur  "" "Import/job00$relion_jobid/movies.star:0"
 
-RESULTS aligned_avg_png aligned_avg_fft_thumbnail aligned_avg_png_dw aligned_avg_fft_thumbnail_dw unblur_score
+RESULTS aligned_avg aligned_avg_png aligned_avg_fft_thumbnail aligned_avg_png_dw aligned_avg_fft_thumbnail_dw unblur_score
 FILES aligned_stack unblur_log shift_txt frc_txt aligned_avg aligned_avg_png aligned_avg_fft_thumbnail aligned_avg_dw aligned_avg_png_dw aligned_avg_fft_thumbnail_dw
 

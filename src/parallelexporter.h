@@ -14,7 +14,7 @@ class Worker : public QObject
 {
     Q_OBJECT
 public:
-    Worker(const QString &source, const QString &destination, QQueue<QSet<QString> > *queue, QMutex *mutex, const QString &mode, const QString &script);
+    Worker(const QString &source, const QString &destination, QQueue<QSet<QString> > *queue, QMutex *mutex, const QString &mode, const QString &script, QObject *parent = 0);
     ~Worker();
 
 public slots:
@@ -36,8 +36,8 @@ class ParallelExporter : public QObject
 {
     Q_OBJECT
 public:
-    explicit ParallelExporter(const QString &source, const QString &destination, QQueue<QSet<QString> > &image_list, int num_processes=1, const QString& mode=QString("copy"), const QString& script=QString(""), QObject *parent = 0);
-    ~ParallelExporter();
+    explicit ParallelExporter(QObject *parent = 0);
+    void exportImages(const QString &source, const QString &destination, QQueue<QSet<QString> > &image_list, int num_processes=1, const QString& mode=QString("copy"), const QString& script=QString(""));
 signals:
 
 public slots:

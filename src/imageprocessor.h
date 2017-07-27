@@ -10,6 +10,7 @@
 //fw decl
 class FileSystemWatcher;
 class ProcessWrapper;
+class ParallelExporter;
 class QSettings;
 
 class ImageProcessor: public QObject
@@ -50,6 +51,7 @@ private:
     TaskPtr root_task_;
     QHash<QString,QSet<QString> > output_files_;
     QSet<QString> shared_output_files_;
+    ParallelExporter* exporter_;
 
 
 };

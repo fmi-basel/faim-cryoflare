@@ -1,5 +1,6 @@
 #include <iostream>
 #include <QDir>
+#include <QDebug>
 #include <QApplication>
 #include <QProgressDialog>
 #include <QProcess>
@@ -8,8 +9,8 @@
 #include <QMutexLocker>
 #include "parallelexporter.h"
 
-Worker::Worker(const QString &source, const QString &destination, QQueue<QSet<QString> > *queue, QMutex *mutex, const QString &mode, const QString &script):
-    QObject(),
+Worker::Worker(const QString &source, const QString &destination, QQueue<QSet<QString> > *queue, QMutex *mutex, const QString &mode, const QString &script,QObject *parent):
+    QObject(parent),
     source_(source),
     destination_(destination),
     queue_(queue),
@@ -53,16 +54,26 @@ void Worker::process() {
 }
 
 
-ParallelExporter::ParallelExporter(const QString &source, const QString &destination, QQueue<QSet<QString> > &image_list, int num_processes, const QString &mode, const QString &script,   QObject *parent) :
+ParallelExporter::ParallelExporter(QObject *parent):
     QObject(parent),
-    queue_(image_list),
-    num_images_(queue_.size()),
+    queue_(),
+    num_images_(0),
     num_images_done_(0),
     dialog_(NULL),
     mutex_()
 {
+
+}
+
+void ParallelExporter::exportImages(const QString &source, const QString &destination, QQueue<QSet<QString> > &image_list, int num_processes, const QString &mode, const QString &script)
+{
+    if(!queue_.empty()){
+        return;
+    }
+    queue_=image_list;
+    num_images_=image_list.size();
     for(int i=0;i<num_processes && i< num_images_;++i){
-        QThread* thread = new QThread;
+        QThread* thread = new QThread(this);
         Worker* worker = new Worker(source,destination,&queue_,&mutex_,mode,script);
         worker->moveToThread(thread);
         connect(worker, SIGNAL (nextImage()), this, SLOT (updateProgress()));
@@ -82,14 +93,6 @@ ParallelExporter::ParallelExporter(const QString &source, const QString &destina
     }
 }
 
-ParallelExporter::~ParallelExporter()
-{
-    if(dialog_){
-        dialog_->setValue(num_images_);
-    }else{
-        std::cerr << "[" << std::string(78,'#') << "]\n";
-    }
-}
 
 void ParallelExporter::updateProgress()
 {
@@ -97,8 +100,12 @@ void ParallelExporter::updateProgress()
     if(dialog_){
         dialog_->setValue(num_images_done_);
     }else{
-        int progressed=num_images_done_*78/num_images_;
-        std::cerr << "[" << std::string(progressed,'#') << std::string(78-progressed,'-') << "]\r";
+        if(num_images_done_==num_images_){
+            std::cerr << "[" << std::string(78,'#') << "]\n";
+        }else{
+            int progressed=num_images_done_*78/num_images_;
+            std::cerr << "[" << std::string(progressed,'#') << std::string(78-progressed,'-') << "]\r";
+        }
     }
 
 }

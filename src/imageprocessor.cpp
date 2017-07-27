@@ -95,7 +95,8 @@ ImageProcessor::ImageProcessor():
     gpu_processes_(),
     root_task_(new Task("General","dummy",DataPtr(new Data))),
     output_files_(),
-    shared_output_files_()
+    shared_output_files_(),
+    exporter_(new ParallelExporter(this))
 
 {
     loadSettings();
@@ -220,7 +221,7 @@ void ImageProcessor::exportImages(const QString &export_path, const QStringList 
     QString export_mode=settings.value("export").toString();
     QString script=settings.value("export_custom_script").toString();
     int num_processes=settings.value("export_num_processes",1).toInt();
-    ParallelExporter(destination_path_ , export_path, files_to_export, num_processes, export_mode, script);
+    exporter_->exportImages(destination_path_ , export_path, files_to_export, num_processes, export_mode, script);
 }
 
 void ImageProcessor::updateGridSquare_(const QString &grid_square)
