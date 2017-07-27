@@ -5,6 +5,23 @@
 #include "pathedit.h"
 
 
+PathEdit::PathEdit(QWidget *parent):
+    QWidget(parent),
+    path_type_(OpenFileName),
+    caption_(),
+    path_(),
+    filter_(),
+    path_widget_(new QLineEdit(this)),
+    browse_(new QPushButton("Browse...",this))
+{
+    QHBoxLayout *layout=new QHBoxLayout();
+    layout->addWidget(path_widget_);
+    layout->addWidget(browse_);
+    this->setLayout(layout);
+    connect(browse_,SIGNAL(clicked()),this,SLOT(onBrowse()));
+    connect(path_widget_,SIGNAL(textChanged(QString)),this,SIGNAL(pathChanged(QString)));
+}
+
 PathEdit::PathEdit(PathEdit::PathType t, QString caption, QString path, QString filter, QWidget *parent):
     QWidget(parent),
     path_type_(t),

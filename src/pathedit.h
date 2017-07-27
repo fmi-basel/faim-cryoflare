@@ -16,6 +16,7 @@ public:
         OpenFileName,
         SaveFileName
     };
+    PathEdit( QWidget *parent = 0);
     explicit PathEdit(PathType t=OpenFileName, QString caption=QString(), QString path=QString(), QString filter=QString(), QWidget *parent = 0);
     QString path() const;
     void setPath(const QString &path);

@@ -254,11 +254,22 @@
         </widget>
        </item>
        <item>
-        <widget class="QLineEdit" name="export_custom_script">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-        </widget>
+        <layout class="QHBoxLayout" name="horizontalLayout_5">
+         <item>
+          <widget class="QLabel" name="label_5">
+           <property name="text">
+            <string>Script:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="PathEdit" name="export_custom_script" native="true">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </item>
       </layout>
      </widget>
@@ -297,6 +308,14 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>PathEdit</class>
+   <extends>QWidget</extends>
+   <header>pathedit.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections>
   <connection>
@@ -370,12 +389,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>52</x>
-     <y>258</y>
+     <x>77</x>
+     <y>242</y>
     </hint>
     <hint type="destinationlabel">
-     <x>56</x>
-     <y>332</y>
+     <x>529</x>
+     <y>320</y>
     </hint>
    </hints>
   </connection>
