@@ -1,10 +1,14 @@
+#include <iostream>
+#include <QApplication>
 #include <QDir>
 #include <QDateTime>
 #include <QSettings>
 #include <QtDebug>
 #include <filesystemwatcher.h>
 #include <QDomDocument>
+#include <QProgressDialog>
 #include <processwrapper.h>
+#include <parallelexporter.h>
 #include "imageprocessor.h"
 
 namespace  {
@@ -163,8 +167,14 @@ void ImageProcessor::onDirChange(const QString &path)
 void ImageProcessor::onTaskFinished(const TaskPtr &task, bool gpu)
 {
     QStack<TaskPtr>& stack=gpu?gpu_task_stack_:cpu_task_stack_;
-    output_files_[task->data->value("short_name")]=task->output_files;
-    shared_output_files_+=task->shared_output_files;
+    output_files_[task->data->value("short_name")]=QSet<QString>();
+    QDir destination_dir(destination_path_);
+    foreach(QString file, task->output_files){
+        output_files_[task->data->value("short_name")].insert(destination_dir.relativeFilePath(file));
+    }
+    foreach(QString file, task->shared_output_files){
+        shared_output_files_.insert(destination_dir.relativeFilePath(file));
+    }
     foreach(TaskPtr child,task->children){
         pushTask_(child);
     }
@@ -199,8 +209,18 @@ void ImageProcessor::loadSettings()
 
 }
 
-void ImageProcessor::init()
+void ImageProcessor::exportImages(QString &export_path, QStringList &image_list)
 {
+    QQueue<QSet<QString> >files_to_export;
+    files_to_export.enqueue(shared_output_files_);
+    foreach(QString image,image_list){
+        files_to_export.enqueue(output_files_[image]);
+    }
+    QSettings settings;
+    QString export_mode=settings.value("export").toString();
+    QString script=settings.value("export_custom_script").toString();
+    int num_processes=settings.value("export_num_processes",1).toInt();
+    ParallelExporter(destination_path_ , export_path, files_to_export, num_processes, export_mode, script);
 }
 
 void ImageProcessor::updateGridSquare_(const QString &grid_square)

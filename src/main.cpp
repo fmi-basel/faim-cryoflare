@@ -26,11 +26,11 @@ int main(int argc, char* argv[])
          // start GUI version...
         MainWindow w;
         QObject::connect(&w, SIGNAL(startStop(bool)), &processor, SLOT(startStop(bool)));
+        QObject::connect(&w,SIGNAL(exportImages(QString,QStringList&)),&processor,SLOT(exportImages(QString&,QStringList&)));
         QObject::connect(&processor, SIGNAL(newImage(DataPtr)), &w, SLOT(addImage(DataPtr)));
         QObject::connect(&processor, SIGNAL(dataChanged(DataPtr)), &w, SLOT(onDataChanged(DataPtr)));
         QObject::connect(&w,SIGNAL(settingsChanged()),&processor,SLOT(loadSettings()));
         QObject::connect(&processor,SIGNAL(queueCountChanged(int,int)),&w,SLOT(updateQueueCounts(int,int)));
-        processor.init();
         w.init();
         w.show();
         //next line within if to avoid MainWindow going out of scope
@@ -57,7 +57,6 @@ int main(int argc, char* argv[])
                 }
             }
         }
-        processor.init();
         QTimer::singleShot(0, &processor, SLOT(startStop()));
         return app->exec();
      }

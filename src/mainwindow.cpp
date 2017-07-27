@@ -259,21 +259,16 @@ void MainWindow::onExport()
 {
     QString export_path = QFileDialog::getExistingDirectory(0, "Export folder","",  QFileDialog::ShowDirsOnly| QFileDialog::DontResolveSymlinks);
     if(! export_path.isEmpty()){
-        QSettings settings;
-        QDir destination_dir(settings.value("destination_dir").toString());
-
+        QStringList images;
         for(int i=0;i<model_->rowCount();++i){
             DataPtr data=model_->image(i);
             QString export_val=data->value("export","true");
             if (export_val.compare("true", Qt::CaseInsensitive) == 0 || export_val==QString("1")){
-                QStringList files=destination_dir.entryList(QStringList(data->value("name")+"*"));
-                foreach(QString filename,files){
-                    QFile(destination_dir.filePath(filename)).copy(QDir(export_path).filePath(filename));
-                }
+                images<<data->value("short_name");
             }
         }
+        emit exportImages(export_path,images);
     }
-
 }
 
 void MainWindow::updateQueueCounts(int cpu_queue, int gpu_queue)

@@ -25,7 +25,8 @@ SOURCES += \
     settings.cpp \
     tasktreewidgetitem.cpp \
     pathedit.cpp \
-    imagetableview.cpp
+    imagetableview.cpp \
+    parallelexporter.cpp
 
 
 
@@ -42,11 +43,13 @@ HEADERS  += \
     pathedit.h \
     variabletypes.h \
     inputoutputvariable.h \
-    imagetableview.h
+    imagetableview.h \
+    parallelexporter.h
 
 
-FORMS    += mainwindow.ui \
-    settings.ui
+FORMS    += \
+    mainwindow.ui \
+    settings.ui \
 
 #CONFIG += static
 #static {

@@ -209,6 +209,59 @@
        </item>
       </layout>
      </widget>
+     <widget class="QWidget" name="tab_3">
+      <attribute name="title">
+       <string>Export</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_4">
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_4">
+         <item>
+          <widget class="QLabel" name="label_4">
+           <property name="text">
+            <string>Number of processes:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QSpinBox" name="export_num_processes">
+           <property name="value">
+            <number>1</number>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <widget class="QRadioButton" name="export_copy">
+         <property name="text">
+          <string>Copy data</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QRadioButton" name="export_move">
+         <property name="text">
+          <string>Move data</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QRadioButton" name="export_custom">
+         <property name="text">
+          <string>Use custom script</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLineEdit" name="export_custom_script">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
     </widget>
    </item>
    <item>
@@ -253,8 +306,8 @@
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>227</x>
-     <y>401</y>
+     <x>409</x>
+     <y>435</y>
     </hint>
     <hint type="destinationlabel">
      <x>157</x>
@@ -269,8 +322,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>295</x>
-     <y>407</y>
+     <x>477</x>
+     <y>435</y>
     </hint>
     <hint type="destinationlabel">
      <x>286</x>
@@ -285,8 +338,8 @@
    <slot>loadFromFile()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>43</x>
-     <y>396</y>
+     <x>53</x>
+     <y>435</y>
     </hint>
     <hint type="destinationlabel">
      <x>4</x>
@@ -301,12 +354,28 @@
    <slot>saveToFile()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>140</x>
-     <y>400</y>
+     <x>175</x>
+     <y>435</y>
     </hint>
     <hint type="destinationlabel">
      <x>117</x>
      <y>385</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>export_custom</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>export_custom_script</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>52</x>
+     <y>258</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>56</x>
+     <y>332</y>
     </hint>
    </hints>
   </connection>
