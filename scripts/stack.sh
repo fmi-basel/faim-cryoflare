@@ -22,6 +22,6 @@ if [ ! -e $raw_average_thumbnail ]; then
   e2proc2d.py  --fouriershrink 7.49609375  $raw_average $raw_average_thumbnail>> $stack_log
 fi
 
-RESULTS raw_average_thumbnail
+RESULTS raw_average_thumbnail raw_stack
 FILES raw_stack stack_log raw_average raw_average_thumbnail xml
 
