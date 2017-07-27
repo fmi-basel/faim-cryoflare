@@ -52,8 +52,8 @@ void ProcessWrapper::onFinished(int exitcode)
 {
     QTextStream output_stream(process_->readAllStandardOutput(),QIODevice::ReadOnly);
     QString result_token("RESULT_EXPORT:");
-    QString result_file_token("RESULT_FILE_EXPORT:");
-    QString shared_result_file_token("SHARED_RESULT_FILE_EXPORT:");
+    QString result_file_token("FILE_EXPORT:");
+    QString shared_result_file_token("SHARED_FILE_EXPORT:");
     QString output;
     QString line;
     do {
