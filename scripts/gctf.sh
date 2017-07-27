@@ -1,10 +1,6 @@
 #!/bin/sh --noprofile
 . $STACK_GUI_SCRIPTS/data_connector.sh
 
-module purge
-module load gctf
-module switch gctf/1.06_cuda7
-module load eman2
 
 relion_jobid=6
 relion_job_micrographs_dir=$destination_path/CtfFind/job00$relion_jobid/micrographs_unblur
@@ -23,41 +19,46 @@ gctf_aligned_log=$relion_job_micrographs_dir/${short_name}_gctf.log
 gctf_epa_log=$relion_job_micrographs_dir/${short_name}_EPA.log
 
 
-gctf_params=" --gid $gpu_id"
-gctf_params+=" --apix $pixel_size"
-gctf_params+=" --kV 300"
-gctf_params+=" --cs 0.001"
-gctf_params+=" --ac 0.0"
-gctf_params+=" --dstep $pixel_size"
-gctf_params+=" --astm 1000"
-gctf_params+=" --bfac 100"
-gctf_params+=" --resL 20.0"
-gctf_params+=" --resH 3.7"
-gctf_params+=" --boxsize 1024"
-gctf_params+=" --do_EPA 1"
-gctf_params+=" --refine_after_EPA 0"
-gctf_params+=" --convsize 30"
-gctf_params+=" --do_Hres_ref 1"
-gctf_params+=" --Href_resL 15.0"
-gctf_params+=" --Href_resH 3.0"
-gctf_params+=" --Href_bfac 50"
-gctf_params+=" --estimate_B 1"
-gctf_params+=" --B_resL 10.0"
-gctf_params+=" --B_resH 3.5"
-gctf_params+=" --do_validation 1"
-gctf_params+=" --do_local_refine 1"
-gctf_params+="  --boxsuffix _automatch.star"
-
-gctf_phase_plate_params=" --phase_shift_L 10"
-gctf_phase_plate_params+=" --phase_shift_H 150"
-gctf_phase_plate_params+=" --phase_shift_S 10"
-gctf_phase_plate_params+=" --phase_shift_T 1"
-
-gctf_defocus_params=" --defL `calculate -0.5*$defocus`"
-gctf_defocus_params+=" --defH `calculate -2.0*$defocus`"
-gctf_defocus_params+=" --defS 500"
-
 if [ ! -e $gctf_aligned_log ]; then
+  module purge
+  module load gctf
+  module switch gctf/1.06_cuda7
+  module load eman2
+
+  gctf_params=" --gid $gpu_id"
+  gctf_params+=" --apix $pixel_size"
+  gctf_params+=" --kV 300"
+  gctf_params+=" --cs 0.001"
+  gctf_params+=" --ac 0.0"
+  gctf_params+=" --dstep $pixel_size"
+  gctf_params+=" --astm 1000"
+  gctf_params+=" --bfac 100"
+  gctf_params+=" --resL 20.0"
+  gctf_params+=" --resH 3.7"
+  gctf_params+=" --boxsize 1024"
+  gctf_params+=" --do_EPA 1"
+  gctf_params+=" --refine_after_EPA 0"
+  gctf_params+=" --convsize 30"
+  gctf_params+=" --do_Hres_ref 1"
+  gctf_params+=" --Href_resL 15.0"
+  gctf_params+=" --Href_resH 3.0"
+  gctf_params+=" --Href_bfac 50"
+  gctf_params+=" --estimate_B 1"
+  gctf_params+=" --B_resL 10.0"
+  gctf_params+=" --B_resH 3.5"
+  gctf_params+=" --do_validation 1"
+  gctf_params+=" --do_local_refine 1"
+  gctf_params+="  --boxsuffix _automatch.star"
+
+  gctf_phase_plate_params=" --phase_shift_L 10"
+  gctf_phase_plate_params+=" --phase_shift_H 150"
+  gctf_phase_plate_params+=" --phase_shift_S 10"
+  gctf_phase_plate_params+=" --phase_shift_T 1"
+
+  gctf_defocus_params=" --defL `calculate -0.5*$defocus`"
+  gctf_defocus_params+=" --defH `calculate -2.0*$defocus`"
+  gctf_defocus_params+=" --defS 500"
+
   ln -s $gautomatch_star_file $relion_job_micrographs_dir
   ln -s ../../../micrographs_unblur/${aligned_avg##*/} $relion_job_micrographs_dir
   aligned_avg_link=$relion_job_micrographs_dir/${aligned_avg##*/}
@@ -80,29 +81,29 @@ if [ ! -e $gctf_aligned_log ]; then
     gctf $gctf_params $gctf_defocus_params  $aligned_avg_link  &>> $gctf_log
   fi
 
+  ln -s $gctf_diag_file $gctf_diag_file_mrc
+  e2proc2d.py  --meanshrink 2  $gctf_diag_file_mrc  $gctf_diag_file_png
 fi
 measured_defocus=`fgrep -A 1 "Defocus_U" $gctf_aligned_log|head -n 2 |tail -n 1|xargs`
 defocus_u=`echo $measured_defocus|cut -f1 -d" "`
 defocus_v=`echo $measured_defocus|cut -f2 -d" "`
 
-epa_limit=100
-epa_cc=1.0
-{
-read
-while IFS='' read -r line || [[ -n "$line" ]]
-do 
-  (( $(echo "`echo $line|cut -f5 -d' '` < $epa_cc_cutoff" |bc -l) )) && break
-  epa_limit=`echo $line|cut -f1 -d' '`
-  epa_cc=`echo $line|cut -f5 -d' '`
-done
-}< $gctf_epa_log
+epa_limit_cc=`python - $gctf_epa_log << EOT
+import sys
+with open(sys.argv[1]) as f:
+    for line in f.readlines()[1:]:
+        sp=line.split()
+        if float(sp[4])<0.75:
+            break
+        res=sp[0]
+        cc=sp[4]
+    print res,cc
+EOT`
+epa_limit=`echo $epa_limit_cc|cut -f1 -d' '`
+epa_cc=`echo $epa_limit_cc|cut -f2 -d' '`
 
 rm $destination_path/micrographs_all_gctf.star >& /dev/null
 
-if [ ! -e $gctf_diag_file_png ]; then
-  ln -s $gctf_diag_file $gctf_diag_file_mrc
-  e2proc2d.py  --meanshrink 2  $gctf_diag_file_mrc  $gctf_diag_file_png
-fi
 
 defocus_gctf=`calculate \($defocus_u+$defocus_v\)/2.0`
 astigmatism_gctf=`calculate \($defocus_u-$defocus_v\)/2.0`

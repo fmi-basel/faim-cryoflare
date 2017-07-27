@@ -1,10 +1,6 @@
 #!/bin/sh --noprofile
 . $STACK_GUI_SCRIPTS/data_connector.sh
 
-module purge
-module load unblur
-module load eman2
-
 mkdir -p $destination_path/movies_unblur $destination_path/micrographs_unblur $destination_path/micrographs_unblur_dw
 
 unblur_log=$destination_path/movies_unblur/${short_name}_unblur.log
@@ -24,7 +20,11 @@ pixel_size=`calculate "1e10*$apix_x"`
 dose_per_frame=`calculate "1e-20*$dose/$pixel_size/$pixel_size/$num_frames"`
 
 
-if [ ! -e ${aligned_avg} ]; then
+if [ ! -e ${aligned_avg_dw} ]; then
+  module purge
+  module load unblur
+  module load eman2
+
   clamped_stack=$scratch/${short_name}_clamped.mrcs
   clamped_stack_mrc=$scratch/${short_name}_clamped.mrc
   e2proc2d.py $raw_stack $clamped_stack --process threshold.clampminmax.nsigma:nsigma=4:tomean=1 > $unblur_log
@@ -46,12 +46,8 @@ if [ ! -e ${aligned_avg} ]; then
   unblur  $unblur_param  >> $unblur_log
   mv $aligned_stack ${aligned_stack}s
   
-fi
-
-[ -e ${aligned_avg_fft_thumbnail} ] ||  e2proc2d.py --process math.realtofft  --fouriershrink 7.49609375  --process mask.sharp:inner_radius=1 $aligned_avg $aligned_avg_fft_thumbnail
-[ -e ${aligned_avg_png}           ] ||  e2proc2d.py --fouriershrink 7.49609375 ${aligned_avg} ${aligned_avg_png} 
-
-if [ ! -e ${aligned_avg_dw} ]; then
+  e2proc2d.py --process math.realtofft  --fouriershrink 7.49609375  --process mask.sharp:inner_radius=1 $aligned_avg $aligned_avg_fft_thumbnail
+  e2proc2d.py --fouriershrink 7.49609375 ${aligned_avg} ${aligned_avg_png}
 
   ln -s ${aligned_stack}s $aligned_stack
   summovie_param=$scratch/${short_name}_summovie.param
@@ -71,9 +67,9 @@ if [ ! -e ${aligned_avg_dw} ]; then
 
   export OMP_NUM_THREADS=4
   summovie  $summovie_param  >> $unblur_log
+  e2proc2d.py --process math.realtofft  --fouriershrink 7.49609375  --process mask.sharp:inner_radius=1 $aligned_avg_dw $aligned_avg_fft_thumbnail_dw
+  e2proc2d.py --fouriershrink 7.49609375 ${aligned_avg_dw} ${aligned_avg_png_dw}
 fi
-[ -e ${aligned_avg_fft_thumbnail_dw} ] ||  e2proc2d.py --process math.realtofft  --fouriershrink 7.49609375  --process mask.sharp:inner_radius=1 $aligned_avg_dw $aligned_avg_fft_thumbnail_dw
-[ -e ${aligned_avg_png_dw}           ] ||  e2proc2d.py --fouriershrink 7.49609375 ${aligned_avg_dw} ${aligned_avg_png_dw} 
 
 unblur_score=`fgrep "Final Score" $unblur_log|cut -f2 -d:|xargs`
 

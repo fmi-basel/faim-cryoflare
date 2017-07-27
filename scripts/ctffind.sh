@@ -1,8 +1,6 @@
 #!/bin/sh --noprofile
 . $STACK_GUI_SCRIPTS/data_connector.sh
 
-module purge
-module load eman2 ctffind
 
 relion_jobid=5
 relion_job_micrographs_dir=$destination_path/CtfFind/job00$relion_jobid/micrographs_unblur
@@ -23,6 +21,8 @@ ctffind_diag_file_png=${ctffind_aligned_avg_link/mrc/ctf.png}
 
 ln -s ../../../micrographs_unblur/${aligned_avg##*/} $ctffind_aligned_avg_link
 if [ ! -e $ctffind_diag_file ]; then
+  module purge
+  module load eman2 ctffind
   ctffind_param=$scratch/${short_name}_ctffind4.param
   echo "$ctffind_aligned_avg_link" > $ctffind_param
   echo "$ctffind_diag_file" >> $ctffind_param
@@ -53,8 +53,8 @@ if [ ! -e $ctffind_diag_file ]; then
   echo PhasePlate: $phase_plate >> $ctffind_log
 
   ctffind   < $ctffind_param >> $ctffind_log
+  e2proc2d.py  --fouriershrink 2 $ctffind_diag_file $ctffind_diag_file_png
 fi
-[ -e $ctffind_diag_file_png ] || e2proc2d.py  --fouriershrink 2 $ctffind_diag_file $ctffind_diag_file_png
 
 defocus_u=`tail -n 1 $ctffind_out_txt|cut -f2 -d" "`
 defocus_v=`tail -n 1 $ctffind_out_txt|cut -f3 -d" "`
