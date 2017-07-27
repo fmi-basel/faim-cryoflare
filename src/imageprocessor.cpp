@@ -209,7 +209,7 @@ void ImageProcessor::loadSettings()
 
 }
 
-void ImageProcessor::exportImages(QString &export_path, QStringList &image_list)
+void ImageProcessor::exportImages(const QString &export_path, const QStringList &image_list)
 {
     QQueue<QSet<QString> >files_to_export;
     files_to_export.enqueue(shared_output_files_);

@@ -26,7 +26,7 @@ int main(int argc, char* argv[])
          // start GUI version...
         MainWindow w;
         QObject::connect(&w, SIGNAL(startStop(bool)), &processor, SLOT(startStop(bool)));
-        QObject::connect(&w,SIGNAL(exportImages(QString,QStringList&)),&processor,SLOT(exportImages(QString&,QStringList&)));
+        QObject::connect(&w,SIGNAL(exportImages(QString,QStringList)),&processor,SLOT(exportImages(QString,QStringList)));
         QObject::connect(&processor, SIGNAL(newImage(DataPtr)), &w, SLOT(addImage(DataPtr)));
         QObject::connect(&processor, SIGNAL(dataChanged(DataPtr)), &w, SLOT(onDataChanged(DataPtr)));
         QObject::connect(&w,SIGNAL(settingsChanged()),&processor,SLOT(loadSettings()));

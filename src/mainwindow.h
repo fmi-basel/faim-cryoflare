@@ -42,7 +42,7 @@ public slots:
 signals:
     void startStop(bool start);
     void settingsChanged();
-    void exportImages(const QString& path, QStringList& images);
+    void exportImages(const QString& path,const QStringList& images);
 
 private:
     void updateDetails_(int row);

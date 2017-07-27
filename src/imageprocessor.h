@@ -23,7 +23,7 @@ public slots:
     void onDirChange(const QString & path);
     void onTaskFinished(const TaskPtr& task, bool gpu);
     void loadSettings();
-    void exportImages(QString& export_path,QStringList& image_list);
+    void exportImages(const QString& export_path,const QStringList& image_list);
 signals:
     void newImage(DataPtr data);
     void dataChanged(DataPtr data);
