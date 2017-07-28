@@ -9,16 +9,13 @@ raw_average_thumbnail=$destination_path/micrographs_raw/${short_name}.png
 raw_average=$destination_path/micrographs_raw/${short_name}.mrc
 xml=$destination_path/xml/${short_name}.xml
 
-if [ ! -e $raw_stack  ]; then
+if [ ! -e $raw_stack ] || [ ! -e $raw_average_thumbnail ]; then
   module purge
   module load eman2
 
   cp $xml_file $xml
   e2proc2d.py  $stack_frames  $raw_stack >> $stack_log
   e2proc2d.py  --average $raw_stack $raw_average>> $stack_log
-fi
-
-if [ ! -e $raw_average_thumbnail ]; then
   e2proc2d.py  --fouriershrink 7.49609375  $raw_average $raw_average_thumbnail>> $stack_log
 fi
 
