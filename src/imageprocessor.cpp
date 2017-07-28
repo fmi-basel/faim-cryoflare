@@ -168,7 +168,9 @@ void ImageProcessor::onDirChange(const QString &path)
 void ImageProcessor::onTaskFinished(const TaskPtr &task, bool gpu)
 {
     QStack<TaskPtr>& stack=gpu?gpu_task_stack_:cpu_task_stack_;
-    output_files_[task->data->value("short_name")]=QSet<QString>();
+    if(! output_files_.contains(task->data->value("short_name"))){
+        output_files_[task->data->value("short_name")]=QSet<QString>();
+    }
     QDir destination_dir(destination_path_);
     foreach(QString file, task->output_files){
         output_files_[task->data->value("short_name")].insert(destination_dir.relativeFilePath(file));
