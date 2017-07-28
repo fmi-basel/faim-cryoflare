@@ -96,8 +96,8 @@ void ParallelExporter::exportImages(const QString &source, const QString &destin
         QProcess process;
         process.start(pre_script,pre_post_arguments);
         process.waitForFinished();
-        updateProgress();
     }
+    updateProgress();
     num_threads_=0;
     for(int i=0;i<num_processes && i< image_list.size();++i){
         ++num_threads_;
@@ -119,6 +119,7 @@ void ParallelExporter::exportImages(const QString &source, const QString &destin
 void ParallelExporter::updateProgress()
 {
     ++num_tasks_done_;
+    qDebug() << "num tasks done: " << num_tasks_done_ <<"/" << num_tasks_;
     if(dialog_){
         dialog_->setValue(num_tasks_done_);
     }else{
@@ -140,8 +141,10 @@ void ParallelExporter::cancel()
 
 void ParallelExporter::runPost()
 {
+    qDebug() << "checking run post" ;
     --num_threads_;
     if(!num_threads_){
+        qDebug() << "run post" ;
         if(post_script_.size()){
             QProcess process;
             process.start(post_script_,post_arguments_);
