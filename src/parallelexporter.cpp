@@ -57,53 +57,75 @@ void Worker::process() {
 ParallelExporter::ParallelExporter(QObject *parent):
     QObject(parent),
     queue_(),
-    num_images_(0),
-    num_images_done_(0),
+    num_tasks_(0),
+    num_tasks_done_(0),
     dialog_(NULL),
-    mutex_()
+    mutex_(),
+    num_threads_(),
+    post_script_(),
+    post_arguments_()
+
 {
 
 }
 
-void ParallelExporter::exportImages(const QString &source, const QString &destination, QQueue<QSet<QString> > &image_list, int num_processes, const QString &mode, const QString &script)
+void ParallelExporter::exportImages(const QString &source, const QString &destination, QQueue<QSet<QString> > &image_list, int num_processes, const QString &mode, const QString &custom_script, const QString &pre_script, const QString &post_script,const QStringList& image_names)
 {
     if(!queue_.empty()){
         return;
     }
+    post_script_=post_script;
     queue_=image_list;
-    num_images_=image_list.size();
-    for(int i=0;i<num_processes && i< num_images_;++i){
+    num_tasks_=image_list.size()+2;
+
+    if (qobject_cast<QApplication*>(QCoreApplication::instance())) {
+        //GUI
+        dialog_=new QProgressDialog("Exporting images...", "Abort Export", 0, num_tasks_);
+        dialog_->setWindowModality(Qt::ApplicationModal);
+        dialog_->setMinimumDuration(0);
+        connect(dialog_, SIGNAL(canceled()), this, SLOT(cancel()));
+    }else{
+        std::cerr << "[" << std::string(78,'-') << "]\r";
+    }
+
+    QStringList pre_post_arguments;
+    pre_post_arguments << source << destination;
+    pre_post_arguments+=image_names;
+    post_arguments_=pre_post_arguments;
+    if(pre_script.size()){
+        QProcess process;
+        process.start(pre_script,pre_post_arguments);
+        process.waitForFinished();
+        updateProgress();
+    }
+    num_threads_=0;
+    for(int i=0;i<num_processes && i< image_list.size();++i){
+        ++num_threads_;
         QThread* thread = new QThread(this);
-        Worker* worker = new Worker(source,destination,&queue_,&mutex_,mode,script);
+        Worker* worker = new Worker(source,destination,&queue_,&mutex_,mode,custom_script);
         worker->moveToThread(thread);
         connect(worker, SIGNAL (nextImage()), this, SLOT (updateProgress()));
         connect(thread, SIGNAL (started()), worker, SLOT (process()));
+        connect(worker, SIGNAL (finished()), this, SLOT (runPost()));
         connect(worker, SIGNAL (finished()), thread, SLOT (quit()));
         connect(worker, SIGNAL (finished()), worker, SLOT (deleteLater()));
         connect(thread, SIGNAL (finished()), thread, SLOT (deleteLater()));
         thread->start();
     }
-    if (qobject_cast<QApplication*>(QCoreApplication::instance())) {
-        //GUI
-        dialog_=new QProgressDialog("Exporting images...", "Abort Export", 0, num_images_);
-        dialog_->setWindowModality(Qt::ApplicationModal);
-        connect(dialog_, SIGNAL(canceled()), this, SLOT(cancel()));
-    }else{
-        std::cerr << "[" << std::string(78,'-') << "]\r";
-    }
 }
+
 
 
 void ParallelExporter::updateProgress()
 {
-    ++num_images_done_;
+    ++num_tasks_done_;
     if(dialog_){
-        dialog_->setValue(num_images_done_);
+        dialog_->setValue(num_tasks_done_);
     }else{
-        if(num_images_done_==num_images_){
+        if(num_tasks_done_==num_tasks_){
             std::cerr << "[" << std::string(78,'#') << "]\n";
         }else{
-            int progressed=num_images_done_*78/num_images_;
+            int progressed=num_tasks_done_*78/num_tasks_;
             std::cerr << "[" << std::string(progressed,'#') << std::string(78-progressed,'-') << "]\r";
         }
     }
@@ -114,4 +136,17 @@ void ParallelExporter::cancel()
 {
     QMutexLocker locker(&mutex_);
     queue_.clear();
+}
+
+void ParallelExporter::runPost()
+{
+    --num_threads_;
+    if(!num_threads_){
+        if(post_script_.size()){
+            QProcess process;
+            process.start(post_script_,post_arguments_);
+            process.waitForFinished();
+        }
+        updateProgress();
+    }
 }

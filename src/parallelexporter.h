@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QString>
+#include <QStringList>
 #include <QQueue>
 #include <QMutex>
 #include <QSet>
@@ -37,18 +38,22 @@ class ParallelExporter : public QObject
     Q_OBJECT
 public:
     explicit ParallelExporter(QObject *parent = 0);
-    void exportImages(const QString &source, const QString &destination, QQueue<QSet<QString> > &image_list, int num_processes=1, const QString& mode=QString("copy"), const QString& script=QString(""));
+    void exportImages(const QString &source, const QString &destination, QQueue<QSet<QString> > &image_list, int num_processes=1, const QString& mode=QString("copy"), const QString& custom_script=QString(""), const QString& pre_script=QString(""), const QString& post_script=QString(""),const QStringList& image_names=QStringList());
 signals:
 
 public slots:
     void updateProgress();
     void cancel();
+    void runPost();
 protected:
     QQueue<QSet<QString> > queue_;
-    int num_images_;
-    int num_images_done_;
+    int num_tasks_;
+    int num_tasks_done_;
     QProgressDialog* dialog_;
     QMutex mutex_;
+    int num_threads_;
+    QString post_script_;
+    QStringList post_arguments_;
 };
 
 #endif // PARALLELEXPORTER_H
