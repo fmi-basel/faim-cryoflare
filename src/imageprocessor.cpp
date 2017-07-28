@@ -6,7 +6,7 @@
 #include <QtDebug>
 #include <filesystemwatcher.h>
 #include <QDomDocument>
-#include <QProgressDialog>
+#include <QProcess>
 #include <processwrapper.h>
 #include <parallelexporter.h>
 #include "imageprocessor.h"
@@ -223,7 +223,22 @@ void ImageProcessor::exportImages(const QString &export_path, const QStringList 
     QString export_mode=settings.value("export").toString();
     QString script=settings.value("export_custom_script").toString();
     int num_processes=settings.value("export_num_processes",1).toInt();
+    QString pre_script=settings.value("export_pre_script").toString();
+    QString post_script=settings.value("export_post_script").toString();
+    QStringList pre_post_arguments;
+    pre_post_arguments << destination_path_ << export_path;
+    pre_post_arguments+=image_list;
+    if(pre_script.size()){
+        QProcess process;
+        process.start(pre_script,pre_post_arguments);
+        process.waitForFinished();
+    }
     exporter_->exportImages(destination_path_ , export_path, files_to_export, num_processes, export_mode, script);
+    if(post_script.size()){
+        QProcess process;
+        process.start(post_script,pre_post_arguments);
+        process.waitForFinished();
+    }
 }
 
 void ImageProcessor::updateGridSquare_(const QString &grid_square)

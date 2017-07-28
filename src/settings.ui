@@ -213,8 +213,38 @@
       <attribute name="title">
        <string>Export</string>
       </attribute>
-      <layout class="QVBoxLayout" name="verticalLayout_4">
-       <item>
+      <layout class="QGridLayout" name="gridLayout">
+       <item row="1" column="1">
+        <widget class="QGroupBox" name="groupBox_4">
+         <property name="title">
+          <string>Export type</string>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_4">
+          <item>
+           <widget class="QRadioButton" name="export_copy">
+            <property name="text">
+             <string>Copy data</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QRadioButton" name="export_move">
+            <property name="text">
+             <string>Move data</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QRadioButton" name="export_custom">
+            <property name="text">
+             <string>Use custom script</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="1" column="0">
         <layout class="QHBoxLayout" name="horizontalLayout_4">
          <item>
           <widget class="QLabel" name="label_4">
@@ -232,44 +262,60 @@
          </item>
         </layout>
        </item>
-       <item>
-        <widget class="QRadioButton" name="export_copy">
-         <property name="text">
-          <string>Copy data</string>
+       <item row="2" column="0" colspan="2">
+        <widget class="QGroupBox" name="groupBox_5">
+         <property name="title">
+          <string>Scripts</string>
          </property>
+         <layout class="QGridLayout" name="gridLayout_2">
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_5">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>Custom export script:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="PathEdit" name="export_custom_script" native="true">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>1</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="label_6">
+            <property name="text">
+             <string>Pre export script:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="label_7">
+            <property name="text">
+             <string>Post export script:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="PathEdit" name="export_pre_script" native="true"/>
+          </item>
+          <item row="2" column="1">
+           <widget class="PathEdit" name="export_post_script" native="true"/>
+          </item>
+         </layout>
         </widget>
-       </item>
-       <item>
-        <widget class="QRadioButton" name="export_move">
-         <property name="text">
-          <string>Move data</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QRadioButton" name="export_custom">
-         <property name="text">
-          <string>Use custom script</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_5">
-         <item>
-          <widget class="QLabel" name="label_5">
-           <property name="text">
-            <string>Script:</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="PathEdit" name="export_custom_script" native="true">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-          </widget>
-         </item>
-        </layout>
        </item>
       </layout>
      </widget>
@@ -389,12 +435,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>77</x>
-     <y>242</y>
+     <x>413</x>
+     <y>188</y>
     </hint>
     <hint type="destinationlabel">
-     <x>529</x>
-     <y>320</y>
+     <x>626</x>
+     <y>291</y>
     </hint>
    </hints>
   </connection>
