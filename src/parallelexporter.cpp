@@ -39,7 +39,7 @@ void Worker::process() {
             arguments << source_ << destination_;
             arguments+=file_list.values();
             process.start(script_,arguments);
-            process.waitForFinished();
+            process.waitForFinished(-1);
         }else if(mode_=="move"){
             foreach(QString relative_file,file_list){
                 QFile(QDir(source_).absoluteFilePath(relative_file)).rename(QDir(destination_).absoluteFilePath(relative_file));
@@ -80,7 +80,7 @@ void ParallelExporter::exportImages(const QString &source, const QString &destin
 
     if (qobject_cast<QApplication*>(QCoreApplication::instance())) {
         //GUI
-        dialog_=new QProgressDialog("Exporting images...", "Abort Export", 0, num_tasks_);
+        dialog_=new QProgressDialog("Exporting images...", "Abort Export", 0, num_tasks_,QApplication::topLevelWidgets()[0]);
         dialog_->setWindowModality(Qt::ApplicationModal);
         dialog_->setMinimumDuration(0);
         connect(dialog_, SIGNAL(canceled()), this, SLOT(cancel()));
@@ -95,7 +95,7 @@ void ParallelExporter::exportImages(const QString &source, const QString &destin
     if(pre_script.size()){
         QProcess process;
         process.start(pre_script,pre_post_arguments);
-        process.waitForFinished();
+        process.waitForFinished(-1);
     }
     updateProgress();
     num_threads_=0;
@@ -148,7 +148,7 @@ void ParallelExporter::runPost()
         if(post_script_.size()){
             QProcess process;
             process.start(post_script_,post_arguments_);
-            process.waitForFinished();
+            process.waitForFinished(-1);
         }
         updateProgress();
     }

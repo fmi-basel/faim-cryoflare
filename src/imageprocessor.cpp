@@ -225,7 +225,7 @@ void ImageProcessor::exportImages(const QString &export_path, const QStringList 
     int num_processes=settings.value("export_num_processes",1).toInt();
     QString pre_script=settings.value("export_pre_script").toString();
     QString post_script=settings.value("export_post_script").toString();
-    exporter_->exportImages(destination_path_ , export_path, files_to_export, num_processes, export_mode, custom_script,pre_script,post_script,image_list);
+    exporter_->exportImages(destination_path_ , export_path, files_to_export, num_processes, export_mode, custom_script,pre_script,post_script);
 }
 
 void ImageProcessor::updateGridSquare_(const QString &grid_square)
