@@ -119,7 +119,7 @@ void ParallelExporter::exportImages(const QString &source, const QString &destin
         worker->moveToThread(thread);
         connect(worker, SIGNAL (nextImage()), this, SLOT (updateProgress()));
         connect(thread, SIGNAL (started()), worker, SLOT (process()));
-        connect(worker, SIGNAL (finished(QByteArray,QByteArray)), this, SLOT (runPost()));
+        connect(worker, SIGNAL (finished(QByteArray,QByteArray)), this, SLOT (runPost(QByteArray,QByteArray)));
         connect(worker, SIGNAL (finished(QByteArray,QByteArray)), thread, SLOT (quit()));
         connect(worker, SIGNAL (finished(QByteArray,QByteArray)), worker, SLOT (deleteLater()));
         connect(thread, SIGNAL (finished()), thread, SLOT (deleteLater()));
@@ -182,13 +182,12 @@ void ParallelExporter::runPost(const QByteArray &output, const QByteArray &error
             file_error.close();
         }
         updateProgress();
+        num_tasks_done_=0;
+        dialog_=NULL;
+        num_threads_=0;
+        post_script_=QString();
+        post_arguments_=QStringList();
+        output_=QByteArray();
+        error_=QByteArray();
     }
-    num_tasks_done_=0;
-    dialog_=NULL;
-    num_threads_=0;
-    post_script_=QString();
-    post_arguments_=QStringList();
-    output_=QByteArray();
-    error_=QByteArray();
-
 }
