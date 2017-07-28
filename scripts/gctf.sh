@@ -19,7 +19,7 @@ gctf_aligned_log=$relion_job_micrographs_dir/${short_name}_gctf.log
 gctf_epa_log=$relion_job_micrographs_dir/${short_name}_EPA.log
 
 
-if [ ! -e $gctf_aligned_log ]; then
+if [ ! -e $gctf_aligned_log ] || [ ! -e $gctf_epa_log ] || [ ! -e $gctf_diag_file_png ] ; then
   module purge
   module load gctf
   module switch gctf/1.06_cuda7

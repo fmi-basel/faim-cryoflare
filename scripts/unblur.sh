@@ -6,6 +6,7 @@ mkdir -p $destination_path/movies_unblur $destination_path/micrographs_unblur $d
 unblur_log=$destination_path/movies_unblur/${short_name}_unblur.log
 aligned_stack=$destination_path/movies_unblur/${short_name}.mrc
 shift_txt=$destination_path/movies_unblur/${short_name}_shift.txt
+shift_plot=$destination_path/movies_unblur/${short_name}_shift.png
 frc_txt=$destination_path/movies_unblur/${short_name}_frc.txt
 
 aligned_avg=$destination_path/micrographs_unblur/${short_name}.mrc
@@ -20,7 +21,7 @@ pixel_size=`calculate "1e10*$apix_x"`
 dose_per_frame=`calculate "1e-20*$dose/$pixel_size/$pixel_size/$num_frames"`
 
 
-if [ ! -e ${aligned_avg_dw} ]; then
+if [ ! -e ${aligned_stack} ] || [ ! -e ${shift_plot} ] || [ ! -e ${aligned_avg} ] || [ ! -e ${aligned_avg_dw} ] || [ ! -e ${aligned_avg_dw} ]; then
   module purge
   module load unblur
   module load eman2
@@ -69,6 +70,21 @@ if [ ! -e ${aligned_avg_dw} ]; then
   summovie  $summovie_param  >> $unblur_log
   e2proc2d.py --process math.realtofft  --fouriershrink 7.49609375  --process mask.sharp:inner_radius=1 $aligned_avg_dw $aligned_avg_fft_thumbnail_dw
   e2proc2d.py --fouriershrink 7.49609375 ${aligned_avg_dw} ${aligned_avg_png_dw}
+  python <<EOT
+import matplotlib.pyplot as plt
+with open("$shift_txt") as f:
+    lines=f.readlines()[-2:]
+    x=lines[0].split()
+    y=lines[1].split()
+plt.figure(figsize=(5,5))
+plt.plot(x,y, 'bo-')
+plt.plot(x[:1],y[:1], 'ro')
+plt.xlabel('shift x (A)')
+plt.ylabel('shift y (A)')
+plt.tight_layout()
+plt.savefig("$shift_plot",dpi=100)
+EOT
+
 fi
 
 unblur_score=`fgrep "Final Score" $unblur_log|cut -f2 -d:|xargs`
@@ -95,6 +111,6 @@ relion_alias Import $relion_jobid movies_unblur
 write_to_star $destination_path/Import/job00$relion_jobid/movies.star "$HEADER" movies_unblur/${short_name}.mrcs 
 add_to_pipeline  $destination_path/default_pipeline.star Import $relion_jobid movies_unblur  "" "Import/job00$relion_jobid/movies.star:0"
 
-RESULTS aligned_avg aligned_avg_png aligned_avg_fft_thumbnail aligned_avg_png_dw aligned_avg_fft_thumbnail_dw unblur_score
-FILES aligned_stack unblur_log shift_txt frc_txt aligned_avg aligned_avg_png aligned_avg_fft_thumbnail aligned_avg_dw aligned_avg_png_dw aligned_avg_fft_thumbnail_dw
+RESULTS aligned_avg aligned_avg_png aligned_avg_fft_thumbnail aligned_avg_png_dw aligned_avg_fft_thumbnail_dw unblur_score shift_plot
+FILES aligned_stack unblur_log shift_txt frc_txt aligned_avg aligned_avg_png aligned_avg_fft_thumbnail aligned_avg_dw aligned_avg_png_dw aligned_avg_fft_thumbnail_dw shift_plot
 
