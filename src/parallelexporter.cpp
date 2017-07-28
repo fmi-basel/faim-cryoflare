@@ -16,7 +16,9 @@ Worker::Worker(const QString &source, const QString &destination, QQueue<QSet<QS
     queue_(queue),
     mutex_(mutex),
     mode_(mode),
-    script_(script)
+    script_(script),
+    output_(),
+    error_()
 {
 }
 
@@ -28,7 +30,7 @@ void Worker::process() {
         {
             QMutexLocker locker(mutex_);
             if(queue_->empty()){
-                emit finished();
+                emit finished(output_,error_);
                 return;
             }
             file_list=queue_->dequeue();
@@ -40,6 +42,8 @@ void Worker::process() {
             arguments+=file_list.values();
             process.start(script_,arguments);
             process.waitForFinished(-1);
+            output_.append(process.readAllStandardOutput());
+            error_.append(process.readAllStandardError());
         }else if(mode_=="move"){
             foreach(QString relative_file,file_list){
                 QFile(QDir(source_).absoluteFilePath(relative_file)).rename(QDir(destination_).absoluteFilePath(relative_file));
@@ -63,8 +67,9 @@ ParallelExporter::ParallelExporter(QObject *parent):
     mutex_(),
     num_threads_(),
     post_script_(),
-    post_arguments_()
-
+    post_arguments_(),
+    output_(),
+    error_()
 {
 
 }
@@ -96,6 +101,14 @@ void ParallelExporter::exportImages(const QString &source, const QString &destin
         QProcess process;
         process.start(pre_script,pre_post_arguments);
         process.waitForFinished(-1);
+        QFile file(QDir(destination).absoluteFilePath("pre_export_out.log"));
+        file.open(QIODevice::WriteOnly);
+        file.write(process.readAllStandardOutput());
+        file.close();
+        QFile file_error(QDir(destination).absoluteFilePath("pre_export_error.log"));
+        file_error.open(QIODevice::WriteOnly);
+        file_error.write(process.readAllStandardError());
+        file_error.close();
     }
     updateProgress();
     num_threads_=0;
@@ -106,9 +119,9 @@ void ParallelExporter::exportImages(const QString &source, const QString &destin
         worker->moveToThread(thread);
         connect(worker, SIGNAL (nextImage()), this, SLOT (updateProgress()));
         connect(thread, SIGNAL (started()), worker, SLOT (process()));
-        connect(worker, SIGNAL (finished()), this, SLOT (runPost()));
-        connect(worker, SIGNAL (finished()), thread, SLOT (quit()));
-        connect(worker, SIGNAL (finished()), worker, SLOT (deleteLater()));
+        connect(worker, SIGNAL (finished(QByteArray,QByteArray)), this, SLOT (runPost()));
+        connect(worker, SIGNAL (finished(QByteArray,QByteArray)), thread, SLOT (quit()));
+        connect(worker, SIGNAL (finished(QByteArray,QByteArray)), worker, SLOT (deleteLater()));
         connect(thread, SIGNAL (finished()), thread, SLOT (deleteLater()));
         thread->start();
     }
@@ -139,17 +152,43 @@ void ParallelExporter::cancel()
     queue_.clear();
 }
 
-void ParallelExporter::runPost()
+void ParallelExporter::runPost(const QByteArray &output, const QByteArray &error)
 {
     qDebug() << "checking run post" ;
+    output_.append(output);
+    error_.append(error);
     --num_threads_;
     if(!num_threads_){
+        QFile log_file(QDir(post_arguments_[1]).absoluteFilePath("export_out.log"));
+        log_file.open(QIODevice::WriteOnly);
+        log_file.write(output_);
+        log_file.close();
+        QFile log_file_error(QDir(post_arguments_[1]).absoluteFilePath("export_error.log"));
+        log_file_error.open(QIODevice::WriteOnly);
+        log_file_error.write(error_);
+        log_file_error.close();
         qDebug() << "run post" ;
         if(post_script_.size()){
             QProcess process;
             process.start(post_script_,post_arguments_);
             process.waitForFinished(-1);
+            QFile file(QDir(post_arguments_[1]).absoluteFilePath("post_export_out.log"));
+            file.open(QIODevice::WriteOnly);
+            file.write(process.readAllStandardOutput());
+            file.close();
+            QFile file_error(QDir(post_arguments_[1]).absoluteFilePath("post_export_error.log"));
+            file_error.open(QIODevice::WriteOnly);
+            file_error.write(process.readAllStandardError());
+            file_error.close();
         }
         updateProgress();
     }
+    num_tasks_done_=0;
+    dialog_=NULL;
+    num_threads_=0;
+    post_script_=QString();
+    post_arguments_=QStringList();
+    output_=QByteArray();
+    error_=QByteArray();
+
 }

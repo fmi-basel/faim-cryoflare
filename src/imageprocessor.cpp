@@ -185,6 +185,7 @@ void ImageProcessor::onTaskFinished(const TaskPtr &task, bool gpu)
         ProcessWrapper* wrapper = qobject_cast<ProcessWrapper*>(sender());
         if( wrapper != NULL && (! wrapper->running()) ) {
               wrapper->start(stack.pop());
+              emit queueCountChanged(cpu_task_stack_.size(),gpu_task_stack_.size());
         }
     }
     QFile f(destination_path_+"/"+task->name+"_out.log");

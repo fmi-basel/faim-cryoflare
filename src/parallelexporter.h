@@ -7,6 +7,7 @@
 #include <QQueue>
 #include <QMutex>
 #include <QSet>
+#include <QByteArray>
 
 //fw decl
 class QProgressDialog;
@@ -23,7 +24,7 @@ public slots:
 
 signals:
     void nextImage();
-    void finished();
+    void finished(const QByteArray& output, const QByteArray& error);
 protected:
     QString source_;
     QString destination_;
@@ -31,6 +32,8 @@ protected:
     QMutex *mutex_;
     QString mode_;
     QString script_;
+    QByteArray output_;
+    QByteArray error_;
 };
 
 class ParallelExporter : public QObject
@@ -44,7 +47,7 @@ signals:
 public slots:
     void updateProgress();
     void cancel();
-    void runPost();
+    void runPost(const QByteArray& output, const QByteArray& error);
 protected:
     QQueue<QSet<QString> > queue_;
     int num_tasks_;
@@ -54,6 +57,8 @@ protected:
     int num_threads_;
     QString post_script_;
     QStringList post_arguments_;
+    QByteArray output_;
+    QByteArray error_;
 };
 
 #endif // PARALLELEXPORTER_H
