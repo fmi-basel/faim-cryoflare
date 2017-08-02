@@ -12,7 +12,7 @@ mc2_shift_plot=$destination_path/mmicrographs_mc2_dw/${short_name}_shift.png
 pixel_size=`calculate "1e10*$apix_x"`
 dose_per_frame=`calculate "1e-20*$dose/$pixel_size/$pixel_size"`
 
-if [ ! -e ${aligned_avg_mc2_dw} ] || [ ! -e $mc2_shift_plot ]; then
+if [ ! -e ${aligned_avg_mc2_dw} ] || [ ! -e $mc2_shift_plot ] || [ -e $aligned_avg_mc2_dw_png ]; then
   module purge
   module load motioncor2/20161019
   module load eman2
@@ -28,8 +28,8 @@ with open("$motioncorr2_log") as f:
     for line in f.readlines():
         if line.startswith("...... Frame"):
             sp=line.split()
-            x.append(float(sp[4]))
-            y.append(float(sp[5]))
+            x.append(float(sp[5]))
+            y.append(float(sp[6]))
 plt.figure(figsize=(5,5))
 plt.plot(x,y, 'bo-')
 plt.plot(x[:1],y[:1], 'ro')
@@ -39,8 +39,8 @@ plt.tight_layout()
 plt.savefig("$mc2_shift_plot",dpi=100)
 EOT
 
+e2proc2d.py --fouriershrink 7.49609375 ${aligned_avg_mc2_dw} ${aligned_avg_mc2_dw_png}  >> $motioncorr2_log 2>&1
 fi
-[ -e ${aligned_avg_mc2_dw_png} ] || e2proc2d.py --fouriershrink 7.49609375 ${aligned_avg_mc2_dw} ${aligned_avg_mc2_dw_png}  >> $motioncorr2_log 2>&1
 
 
 
@@ -48,7 +48,7 @@ fi
 relion_jobid=4
 HEADER="\ndata_\n\nloop_\n_rlnMicrographName #1"
 mkdir -p $destination_path/Import/job00$relion_jobid
-relion_alias Import $relion_jobid micrographs_mc2_d
+relion_alias Import $relion_jobid micrographs_mc2_dw
 
 write_to_star $destination_path/Import/job00$relion_jobid/micrographs.star "$HEADER" micrographs_mc2_dw/${short_name}.mrc 
 add_to_pipeline  $destination_path/default_pipeline.star Import $relion_jobid micrographs_mc2_dw  "" "Import/job00$relion_jobid/micrographs.star:1"
