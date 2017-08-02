@@ -7,7 +7,7 @@ motioncorr2_log=$destination_path/micrographs_mc2_dw/${short_name}_motioncor2.lo
 aligned_avg_mc2_dw=$destination_path/micrographs_mc2_dw/${short_name}.mrc
 aligned_avg_mc2_dw_png=$destination_path/micrographs_mc2_dw/${short_name}.png
 aligned_avg_mc2_dw_fft_thumbnail=$destination_path/micrographs_mc2_dw/${short_name}_fft.png
-mc2_shift_plot=$destination_path/mmicrographs_mc2_dw/${short_name}_shift.png
+mc2_shift_plot=$destination_path/micrographs_mc2_dw/${short_name}_shift.png
 
 pixel_size=`calculate "1e10*$apix_x"`
 dose_per_frame=`calculate "1e-20*$dose/$pixel_size/$pixel_size"`
