@@ -44,6 +44,34 @@ plt.tight_layout()
 plt.savefig("$mc2_shift_plot",dpi=100)
 EOT
 
+python <<EOT
+import matplotlib.pyplot as plt
+from matplotlib.collections import LineCollection
+from matplotlib import cm
+import numpy as np
+x=[]
+y=[]
+
+with open("$motioncorr2_log") as f:
+    for line in f.readlines():
+        if line.startswith("...... Frame"):
+            sp=line.split()
+            x.append(float(sp[5]))
+            y.append(float(sp[6]))
+x=np.array(x)
+y=np.array(y)
+x-=x[len(x)/2]
+y-=y[len(y)/2]
+plt.figure(figsize=(5,5))
+plt.plot(x,y,'k-')
+plt.scatter(x,y, marker='o',c=range(len(x)),cmap=cm.jet,s=30, zorder=9)
+plt.scatter(x[:1],y[:1], marker='D',c=range(1),cmap=cm.jet,s=40, zorder=10)
+plt.xlabel('shift x (A)')
+plt.ylabel('shift y (A)')
+plt.tight_layout()
+plt.savefig("$mc2_shift_plot",dpi=100)
+EOT
+
 e2proc2d.py --fouriershrink 7.49609375 ${aligned_avg_mc2_dw} ${aligned_avg_mc2_dw_png}  >> $motioncorr2_log 2>&1
 fi
 

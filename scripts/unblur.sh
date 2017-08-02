@@ -76,9 +76,14 @@ with open("$shift_txt") as f:
     lines=f.readlines()[-2:]
     x=lines[0].split()
     y=lines[1].split()
+x=np.array(x)
+y=np.array(y)
+x-=x[len(x)/2]
+y-=y[len(y)/2]
 plt.figure(figsize=(5,5))
-plt.plot(x,y, 'bo-')
-plt.plot(x[:1],y[:1], 'ro')
+plt.plot(x,y,'k-')
+plt.scatter(x,y, marker='o',c=range(len(x)),cmap=cm.jet,s=30, zorder=9)
+plt.scatter(x[:1],y[:1], marker='D',c=range(1),cmap=cm.jet,s=40, zorder=10)
 plt.xlabel('shift x (A)')
 plt.ylabel('shift y (A)')
 plt.tight_layout()
