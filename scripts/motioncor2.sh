@@ -55,8 +55,8 @@ with open("$motioncorr2_log") as f:
     for line in f.readlines():
         if line.startswith("...... Frame"):
             sp=line.split()
-            x.append(float(sp[5]))
-            y.append(float(sp[6]))
+            x.append(float(sp[5])*$pixel_size)
+            y.append(float(sp[6])*$pixel_size)
 x=np.array(x)
 y=np.array(y)
 x-=x[len(x)/2]
