@@ -77,12 +77,10 @@ from matplotlib import cm
 import numpy as np
 with open("$shift_txt") as f:
     lines=f.readlines()[-2:]
-    x=lines[0].split()
-    y=lines[1].split()
+    x=[float(v) for v in lines[0].split()]
+    y=[float(v) for v in lines[1].split()]
 x=np.array(x)
 y=np.array(y)
-x-=x[len(x)/2]
-y-=y[len(y)/2]
 plt.figure(figsize=(5,5))
 plt.plot(x,y,'k-')
 plt.scatter(x,y, marker='o',c=range(len(x)),cmap=cm.jet,s=30, zorder=9)
