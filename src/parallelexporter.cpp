@@ -88,6 +88,7 @@ void ParallelExporter::exportImages(const QString &source, const QString &destin
         dialog_=new QProgressDialog("Exporting images...", "Abort Export", 0, num_tasks_,QApplication::topLevelWidgets()[0]);
         dialog_->setWindowModality(Qt::ApplicationModal);
         dialog_->setMinimumDuration(0);
+        dialog_->show();
         connect(dialog_, SIGNAL(canceled()), this, SLOT(cancel()));
     }else{
         std::cerr << "[" << std::string(78,'-') << "]\r";

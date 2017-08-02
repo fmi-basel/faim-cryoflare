@@ -10,6 +10,7 @@
 #include <QSpinBox>
 #include <QDoubleSpinBox>
 #include <QLabel>
+#include <QScrollArea>
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -117,6 +118,7 @@ void MainWindow::updateTaskWidget_(QSettings *settings)
     foreach(QString child_name, settings->childGroups()){
         settings->beginGroup(child_name);
         QWidget* widget=new QWidget();
+        QScrollArea* scroll_area=new QScrollArea();
         QVBoxLayout *layout = new QVBoxLayout;
         QGroupBox *input_group=new QGroupBox("Input");
         layout->addWidget(input_group);
@@ -126,29 +128,29 @@ void MainWindow::updateTaskWidget_(QSettings *settings)
         QSettings script_input_settings;
         foreach(QVariant v,variant_list){
             InputOutputVariable iov(v);
-            QWidget *widget;
+            QWidget* local_widget;
             if(iov.type==Image || iov.type==String){
                 QLineEdit *le_widget=new QLineEdit();
                 le_widget->setText(script_input_settings.value("ScriptInput/"+child_name+"/"+iov.label).toString());
-                widget=le_widget;
-                connect(widget,SIGNAL(textChanged(QString)),this,SLOT(inputDataChanged()));
+                local_widget=le_widget;
+                connect(local_widget,SIGNAL(textChanged(QString)),this,SLOT(inputDataChanged()));
             }else if(iov.type==Int){
                 QSpinBox *sp_widget=new QSpinBox();
                 sp_widget->setMaximum(9999999);
-                widget=sp_widget;
+                local_widget=sp_widget;
                 sp_widget->setValue(script_input_settings.value("ScriptInput/"+child_name+"/"+iov.label).toInt());
-                connect(widget,SIGNAL(valueChanged(int)),this,SLOT(inputDataChanged()));
+                connect(local_widget,SIGNAL(valueChanged(int)),this,SLOT(inputDataChanged()));
             }else if(iov.type==Float){
                 QDoubleSpinBox *sp_widget=new QDoubleSpinBox();
                 sp_widget->setMaximum(9999999);
-                widget=sp_widget;
+                local_widget=sp_widget;
                 sp_widget->setValue(script_input_settings.value("ScriptInput/"+child_name+"/"+iov.label).toFloat());
-                connect(widget,SIGNAL(valueChanged(double)),this,SLOT(inputDataChanged()));
+                connect(local_widget,SIGNAL(valueChanged(double)),this,SLOT(inputDataChanged()));
             }
-            input_layout->addRow(iov.key,widget);
-            widget->setProperty("type",iov.type);
-            widget->setProperty("label",iov.label);
-            widget->setProperty("task",child_name);
+            input_layout->addRow(iov.key,local_widget);
+            local_widget->setProperty("type",iov.type);
+            local_widget->setProperty("label",iov.label);
+            local_widget->setProperty("task",child_name);
 
         }
         QGroupBox *output_group=new QGroupBox("Output");
@@ -180,7 +182,8 @@ void MainWindow::updateTaskWidget_(QSettings *settings)
         }
         layout->addStretch(1);
         widget->setLayout(layout);
-        ui->image_data->addTab(widget,child_name);
+        scroll_area->setWidget(widget);
+        ui->image_data->addTab(scroll_area,child_name);
         updateTaskWidget_(settings);
         settings->endGroup();
     }
@@ -291,7 +294,6 @@ void MainWindow::updateDetails_(int row)
                 if(!label.isValid()){
                     continue;
                 }
-                qDebug() << "label valid";
                 if(!data->contains(label.toString())){
                     continue;
                 }
@@ -299,17 +301,14 @@ void MainWindow::updateDetails_(int row)
                 if(!type.isValid()){
                     continue;
                 }
-                qDebug() << "type valid";
                 if(static_cast<VariableType>(type.toInt())==Image){
                     QString path=data->value(label.toString());
-                    qDebug() << "checking image";
                     if(QFileInfo(path).exists()){
                        QLabel *qlabel=qobject_cast<QLabel*>(inner_child);
                        if(qlabel){
                             qlabel->setPixmap(QPixmap(path));
                         }
                     } else {
-                        qDebug() << "clearing image";
                         QLabel *qlabel=qobject_cast<QLabel*>(inner_child);
                         if(qlabel){
                             QPixmap p(512,512);
