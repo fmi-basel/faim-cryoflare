@@ -292,7 +292,6 @@ void MainWindow::updateDetails_(int row)
         foreach( QObject* child, widget_ptr->children()){
             QString classname=child->metaObject()->className();	
             if(classname!=QString("QGroupBox")){
-                qDebug() << "non QGroupBox child at tab: " << i;
                 continue;
             }
             foreach( QObject* inner_child, child->children()){
