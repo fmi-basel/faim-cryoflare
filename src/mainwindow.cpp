@@ -283,38 +283,33 @@ void MainWindow::updateDetails_(int row)
 {
     DataPtr data=model_->image(row);
     for(int i=0;i< ui->image_data->count();++i){
-        QWidget *widget_ptr=ui->image_data->widget(i);
+        QScrollArea *scroll_area=qobject_cast<QScrollArea*>(ui->image_data->widget(i));
+        if(!scroll_area){
+            qDebug() << "found no scroll area at tab: " << i;
+            continue;
+        }
+        QWidget * widget_ptr=scroll_area->widget();
         foreach( QObject* child, widget_ptr->children()){
             QString classname=child->metaObject()->className();	
             if(classname!=QString("QGroupBox")){
+                qDebug() << "non QGroupBox child at tab: " << i;
                 continue;
             }
             foreach( QObject* inner_child, child->children()){
+                QLabel *qlabel=qobject_cast<QLabel*>(inner_child);
                 QVariant label= inner_child->property("label");
-                if(!label.isValid()){
-                    continue;
-                }
-                if(!data->contains(label.toString())){
-                    continue;
-                }
                 QVariant type=inner_child->property("type");
-                if(!type.isValid()){
+                if(!label.isValid() || ! type.isValid() || !qlabel){
                     continue;
                 }
                 if(static_cast<VariableType>(type.toInt())==Image){
                     QString path=data->value(label.toString());
                     if(QFileInfo(path).exists()){
-                       QLabel *qlabel=qobject_cast<QLabel*>(inner_child);
-                       if(qlabel){
-                            qlabel->setPixmap(QPixmap(path));
-                        }
+                        qlabel->setPixmap(QPixmap(path));
                     } else {
-                        QLabel *qlabel=qobject_cast<QLabel*>(inner_child);
-                        if(qlabel){
-                            QPixmap p(512,512);
-                            p.fill();
-                            qlabel->setPixmap(p);
-                        }
+                        QPixmap p(512,512);
+                        p.fill();
+                        qlabel->setPixmap(p);
                     }
                 }
             }

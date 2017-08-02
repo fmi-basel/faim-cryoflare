@@ -112,14 +112,12 @@ ImageProcessor::ImageProcessor():
         }
     }
     for(int i=0;i<num_cpu;++i) {
-        qDebug() << "creating cpu process: " << i ;
         ProcessWrapper* wrapper=new ProcessWrapper(this,-1);
         connect(wrapper,SIGNAL(finished(TaskPtr,bool)),this,SLOT(onTaskFinished(TaskPtr,bool)));
         cpu_processes_.append(wrapper);
 
     }
     for(int i=0;i<num_gpu;++i) {
-        qDebug() << "creating gpu process: " << i  << " with gpu id: " << gpu_ids.at(i%gpu_ids.size()).toInt();
         ProcessWrapper* wrapper=new ProcessWrapper(this,gpu_ids.at(i%gpu_ids.size()).toInt());
         connect(wrapper,SIGNAL(finished(TaskPtr,bool)),this,SLOT(onTaskFinished(TaskPtr,bool)));
         gpu_processes_.append(wrapper);
