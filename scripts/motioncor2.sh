@@ -17,11 +17,12 @@ if [ ! -e ${aligned_avg_mc2_dw} ] || [ ! -e $mc2_shift_plot ] || [ -e $aligned_a
   module load motioncor2/20161019
   module load eman2
 
-  MotionCor2 -InMrc $raw_stack -Patch $patch -bft $bft -OutMrc $aligned_avg_mc2_dw -LogFile $motioncorr2_log -FmDose $dose_per_frame -PixSize $pixel_size -kV 300 -Align 1 -Gpu $gpu_id  >> $motioncorr2_log  2>&1
+  MotionCor2 -InMrc $raw_stack -Patch $patch -bft $bft -OutMrc $aligned_avg_mc2_dw -LogFile $motioncorr2_log -FmDose $dose_per_frame -PixSize $pixel_size -kV 300 -Align 1 -Gpu $gpu_id  > $motioncorr2_log  2>&1
   e2proc2d.py --process math.realtofft  --fouriershrink 7.49609375  --process mask.sharp:inner_radius=1 $aligned_avg_mc2_dw $aligned_avg_mc2_dw_fft_thumbnail  >> $motioncorr2_log   2>&1
 
   python <<EOT
 import matplotlib.pyplot as plt
+import numpy as np
 x=[]
 y=[]
 with open("$motioncorr2_log") as f:
@@ -30,6 +31,10 @@ with open("$motioncorr2_log") as f:
             sp=line.split()
             x.append(float(sp[5]))
             y.append(float(sp[6]))
+x=np.array(x)
+y=np.array(y)
+x-=x[len(x)/2]
+y-=y[len(y)/2]
 plt.figure(figsize=(5,5))
 plt.plot(x,y, 'bo-')
 plt.plot(x[:1],y[:1], 'ro')
