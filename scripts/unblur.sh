@@ -45,12 +45,13 @@ if [ ! -e ${aligned_stack} ] || [ ! -e ${shift_plot} ] || [ ! -e ${aligned_avg} 
 
   export OMP_NUM_THREADS=4
   unblur  $unblur_param  >> $unblur_log
+  rm -f ${aligned_stack}s
   mv $aligned_stack ${aligned_stack}s
-  
+  ln -s ${aligned_stack}s $aligned_stack
+
   e2proc2d.py --process math.realtofft  --fouriershrink 7.49609375  --process mask.sharp:inner_radius=1 $aligned_avg $aligned_avg_fft_thumbnail
   e2proc2d.py --fouriershrink 7.49609375 ${aligned_avg} ${aligned_avg_png}
 
-  ln -s ${aligned_stack}s $aligned_stack
   summovie_param=$scratch/${short_name}_summovie.param
   echo INPUT_FILENAME $aligned_stack > $summovie_param
   echo number_of_frames_per_movie $num_frames >> $summovie_param
@@ -72,6 +73,8 @@ if [ ! -e ${aligned_stack} ] || [ ! -e ${shift_plot} ] || [ ! -e ${aligned_avg} 
   e2proc2d.py --fouriershrink 7.49609375 ${aligned_avg_dw} ${aligned_avg_png_dw}
   python <<EOT
 import matplotlib.pyplot as plt
+from matplotlib import cm
+import numpy as np
 with open("$shift_txt") as f:
     lines=f.readlines()[-2:]
     x=lines[0].split()
