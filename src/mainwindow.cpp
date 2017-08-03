@@ -209,7 +209,7 @@ void MainWindow::onDestinationDirTextChanged(const QString &dir)
 
 void MainWindow::updateDetailsfromModel(const QModelIndex &topLeft, const QModelIndex &bottomRight)
 {
-    int current_row=ui->image_list->currentIndex().row();
+    int current_row=sort_proxy_->mapToSource(ui->image_list->currentIndex()).row();
     if(topLeft.row()<=current_row && bottomRight.row()>=current_row){
         updateDetails_(current_row);
     }
@@ -217,7 +217,7 @@ void MainWindow::updateDetailsfromModel(const QModelIndex &topLeft, const QModel
 
 void MainWindow::updateDetailsfromView(const QModelIndex &topLeft, const QModelIndex &bottomRight)
 {
-    int current_row=ui->image_list->currentIndex().row();
+    int current_row=sort_proxy_->mapToSource(ui->image_list->currentIndex()).row();
     updateDetails_(current_row);
 }
 
