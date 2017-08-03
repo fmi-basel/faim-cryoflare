@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>Settings</class>
- <widget class="QDialog" name="Settings">
+ <class>SettingsDialog</class>
+ <widget class="QDialog" name="SettingsDialog">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
     <width>659</width>
-    <height>446</height>
+    <height>478</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -230,7 +230,7 @@
           <item>
            <widget class="QRadioButton" name="export_move">
             <property name="text">
-             <string>Move data</string>
+             <string>&amp;Move data</string>
             </property>
            </widget>
           </item>
@@ -367,7 +367,7 @@
   <connection>
    <sender>buttonBox</sender>
    <signal>accepted()</signal>
-   <receiver>Settings</receiver>
+   <receiver>SettingsDialog</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -383,7 +383,7 @@
   <connection>
    <sender>buttonBox</sender>
    <signal>rejected()</signal>
-   <receiver>Settings</receiver>
+   <receiver>SettingsDialog</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -399,7 +399,7 @@
   <connection>
    <sender>load</sender>
    <signal>clicked()</signal>
-   <receiver>Settings</receiver>
+   <receiver>SettingsDialog</receiver>
    <slot>loadFromFile()</slot>
    <hints>
     <hint type="sourcelabel">
@@ -415,7 +415,7 @@
   <connection>
    <sender>save</sender>
    <signal>clicked()</signal>
-   <receiver>Settings</receiver>
+   <receiver>SettingsDialog</receiver>
    <slot>saveToFile()</slot>
    <hints>
     <hint type="sourcelabel">

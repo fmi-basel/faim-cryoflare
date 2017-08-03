@@ -1,304 +1,78 @@
-#include <QtDebug>
-#include <QSettings>
-#include <QFileDialog>
-#include <QtDebug>
-#include <QStringList>
-#include <QMenu>
-#include <QComboBox>
-#include <tasktreewidgetitem.h>
-#include <variabletypes.h>
 #include "settings.h"
-#include "ui_settings.h"
 
-Settings::Settings(QWidget *parent) :
-    QDialog(parent),
-    ui(new Ui::Settings),
-    task_tree_menu_(new QMenu(this)),
-    task_tree_new_(new QAction("New",this)),
-    task_tree_delete_(new QAction("Delete",this)),
-    output_variable_new_(new QAction("New",this)),
-    output_variable_delete_(new QAction("Delete",this)),
-    input_variable_new_(new QAction("New",this)),
-    input_variable_delete_(new QAction("Delete",this))
+#include <QFile>
+
+Settings::Settings(QObject *parent):
+    QObject(parent),
+    groups_()
 {
-    ui->setupUi(this);
-    ui->task_tree->setHeaderHidden(false);
-    ui->task_tree->expandAll();
-    ui->task_tree->resizeColumnToContents(0);
-    ui->task_tree->resizeColumnToContents(2);
-    connect(task_tree_new_, SIGNAL(triggered()), this, SLOT(newTask()));
-    connect(task_tree_delete_, SIGNAL(triggered()), this, SLOT(deleteTask()));
-    connect(ui->task_tree,SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)),this,SLOT(updateVariables(QTreeWidgetItem*,QTreeWidgetItem*)));
-    ui->task_tree->addAction(task_tree_new_);
-    ui->task_tree->addAction(task_tree_delete_);
-    ui->task_tree->setContextMenuPolicy(Qt::ActionsContextMenu);
 
-    connect(output_variable_new_, SIGNAL(triggered()), this, SLOT(newOutputVariable()));
-    connect(output_variable_delete_, SIGNAL(triggered()), this, SLOT(deleteOutputVariable()));
-    ui->output_variable_table->addAction(output_variable_new_);
-    ui->output_variable_table->addAction(output_variable_delete_);
-    ui->output_variable_table->setContextMenuPolicy(Qt::ActionsContextMenu);
-    ui->output_variable_table->setDisabled(true);
-    connect(input_variable_new_, SIGNAL(triggered()), this, SLOT(newInputVariable()));
-    connect(input_variable_delete_, SIGNAL(triggered()), this, SLOT(deleteInputVariable()));
-    ui->input_variable_table->addAction(input_variable_new_);
-    ui->input_variable_table->addAction(input_variable_delete_);
-    ui->input_variable_table->setContextMenuPolicy(Qt::ActionsContextMenu);
-    ui->input_variable_table->setDisabled(true);
-    #if QT_VERSION >= 0x050000
-        ui->task_tree->header()->setSectionResizeMode(1, QHeaderView::Stretch);
-        ui->output_variable_table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-        ui->input_variable_table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    #else
-        ui->task_tree->header()->setResizeMode(1, QHeaderView::Stretch);
-        ui->output_variable_table->horizontalHeader()->setResizeMode(QHeaderView::Stretch);
-        ui->input_variable_table->horizontalHeader()->setResizeMode(QHeaderView::Stretch);
-    #endif
-    loadSettings();
 }
 
-void Settings::saveSettings(const QString &path)
+bool Settings::loadFromFile(const QString &path)
 {
-    updateVariables(ui->task_tree->currentItem(),ui->task_tree->currentItem());
-    QSettings* settings=new QSettings();
-    if(! path.isEmpty()){
-        delete settings;
-        settings=new QSettings(path,QSettings::IniFormat);
+    if(!QFile(path).exists()){
+        return false;
     }
-    settings->setValue("num_cpu", ui->num_cpu->value());
-    settings->setValue("num_gpu", ui->num_gpu->value());
-    settings->setValue("gpu_ids", ui->gpu_ids->text());
-    settings->setValue("export_pre_script", ui->export_pre_script->path());
-    settings->setValue("export_post_script", ui->export_post_script->path());
-    settings->setValue("export_custom_script", ui->export_custom_script->path());
-    settings->setValue("export_num_processes", ui->export_num_processes->value());
-    if(ui->export_copy->isChecked()){
-        settings->setValue("export","copy");
+    QSettings settings(path);
+    foreach( QString key, settings.allKeys()){
+        values_.insert(key,values_.value(key));
     }
-    if(ui->export_move->isChecked()){
-        settings->setValue("export","move");
-    }
-    if(ui->export_custom->isChecked()){
-        settings->setValue("export","custom");
-    }
-    settings->beginGroup("Tasks");
-    settings->remove("");
-    saveTask_(settings,ui->task_tree->invisibleRootItem());
-    settings->endGroup();
-    delete settings;
+    return true;
 }
 
-void Settings::loadSettings(const QString &path)
+void Settings::saveToFile(const QString &path) const
 {
-    QSettings *settings=new QSettings;
-    if(! path.isEmpty()){
-        delete settings;
-        settings=new QSettings (path,QSettings::IniFormat);
+    QSettings settings(path);
+    foreach( QString key, values_.keys()){
+        settings.setValue(key,values_.value(key));
     }
-    ui->num_cpu->setValue(settings->value("num_cpu").toInt());
-    ui->num_gpu->setValue(settings->value("num_gpu").toInt());
-    ui->gpu_ids->setText(settings->value("gpu_ids").toString());
-    ui->export_pre_script->setPath(settings->value("export_pre_script").toString());
-    ui->export_post_script->setPath(settings->value("export_post_script").toString());
-    ui->export_custom_script->setPath(settings->value("export_custom_script").toString());
-    ui->export_num_processes->setValue(settings->value("export_num_processes").toInt());
-    QString export_mode=settings->value("export").toString();
-    if(export_mode=="copy"){
-        ui->export_copy->setChecked(true);
-    }else if(export_mode=="move"){
-        ui->export_move->setChecked(true);
-    }else if(export_mode=="custom"){
-        ui->export_custom->setChecked(true);
+}
+
+void Settings::loadFromQSettings()
+{
+    QSettings settings;
+    foreach( QString key, settings.allKeys()){
+        values_.insert(key,values_.value(key));
+    }
+}
+
+void Settings::saveToQSettings() const
+{
+    QSettings settings;
+    foreach( QString key, values_.keys()){
+        settings.setValue(key,values_.value(key));
+    }
+}
+
+void Settings::setValue(const QString &key, const QVariant &value) const
+{
+    if(groups_.empty()){
+        values_.insert(key,value);
     }else{
-        ui->export_copy->setChecked(true);
+        values_.insert(groups_.join("/")+"/"+key,value);
     }
-    settings->beginGroup("Tasks");
-    ui->task_tree->clear();
-    loadTask_(settings,ui->task_tree->invisibleRootItem());
-    settings->endGroup();
-    delete settings;
-    ui->task_tree->expandAll();
-    ui->task_tree->resizeColumnToContents(0);
 }
 
-Settings::~Settings()
+QVariant Settings::value(const QString &key, const QVariant &defaultValue)
 {
-    delete ui;
-}
-
-
-void Settings::newTask()
-{
-    if(ui->task_tree->currentItem()){
-        QTreeWidgetItem *child=new TaskTreeWidgetItem(ui->task_tree->currentItem());
-        ui->task_tree->currentItem()->addChild(child);
+    if(groups_.empty()){
+        return values_.value(key,defaultValue);
     }else{
-        ui->task_tree->addTopLevelItem(new TaskTreeWidgetItem(ui->task_tree));
-    }
-    ui->task_tree->expandAll();
-    ui->task_tree->resizeColumnToContents(0);
-}
-
-void Settings::deleteTask()
-{
-    if(ui->task_tree->currentItem()){
-        delete ui->task_tree->currentItem();
+        return values_.value(groups_.join("/")+"/"+key,defaultValue);
     }
 }
 
-void Settings::newOutputVariable(const InputOutputVariable &variable)
+void Settings::beginGroup(const QString &prefix)
 {
-    int row_count=ui->output_variable_table->rowCount();
-    ui->output_variable_table->insertRow(row_count);
-    ui->output_variable_table->setItem(row_count,0,new QTableWidgetItem());
-    ui->output_variable_table->item(row_count,0)->setText(variable.key);
-    ui->output_variable_table->setItem(row_count,1,new QTableWidgetItem());
-    ui->output_variable_table->item(row_count,1)->setText(variable.label);
-    QComboBox * combo_box=new QComboBox();
-    combo_box->addItems(VariableTypeName);
-    combo_box->setCurrentIndex(variable.type);
-    ui->output_variable_table->setCellWidget(row_count,2,combo_box);
-    ui->output_variable_table->setItem(row_count,3,new QTableWidgetItem());
-    ui->output_variable_table->item(row_count,3)->setCheckState(variable.in_column ? Qt::Checked: Qt::Unchecked);
-    ui->output_variable_table->item(row_count,3)->setFlags(ui->output_variable_table->item(row_count,3)->flags() & ~Qt::ItemIsEditable);
+    groups_.append(prefix);
 }
 
-void Settings::deleteOutputVariable()
+void Settings::endGroup()
 {
-    ui->output_variable_table->removeRow(ui->output_variable_table->currentRow());
-}
-
-void Settings::newInputVariable(const InputOutputVariable &variable)
-{
-    int row_count=ui->input_variable_table->rowCount();
-    ui->input_variable_table->insertRow(row_count);
-    ui->input_variable_table->setItem(row_count,0,new QTableWidgetItem());
-    ui->input_variable_table->item(row_count,0)->setText(variable.key);
-    ui->input_variable_table->setItem(row_count,1,new QTableWidgetItem());
-    ui->input_variable_table->item(row_count,1)->setText(variable.label);
-    QComboBox * combo_box=new QComboBox();
-    combo_box->addItems(VariableTypeName);
-    combo_box->setCurrentIndex(variable.type);
-    ui->input_variable_table->setCellWidget(row_count,2,combo_box);
-    ui->input_variable_table->setItem(row_count,3,new QTableWidgetItem());
-}
-
-void Settings::deleteInputVariable()
-{
-    ui->input_variable_table->removeRow(ui->input_variable_table->currentRow());
-
-}
-
-void Settings::loadFromFile()
-{
-    QString path = QFileDialog::getOpenFileName(0, "Open configuration file","","Ini files (*.ini);; All files (*)");
-    if(! path.isEmpty()){
-        loadSettings(path);
+    if(!groups_.empty()){
+        groups_.removeLast();
     }
 }
 
-void Settings::saveToFile()
-{
-    QString path = QFileDialog::getSaveFileName(0, "Save configuration file","","Ini files (*.ini);; All files (*)");
-    if(! path.isEmpty()){
-        saveSettings(path);
-    }
-}
-
-void Settings::updateVariables(QTreeWidgetItem *new_item, QTreeWidgetItem *old_item)
-{
-    TaskTreeWidgetItem *old_tree_item=dynamic_cast<TaskTreeWidgetItem *>(old_item);
-    TaskTreeWidgetItem *new_tree_item=dynamic_cast<TaskTreeWidgetItem *>(new_item);
-    if(old_tree_item ){
-        old_tree_item->output_variables.clear();
-        int c=ui->output_variable_table->rowCount();
-        for(int i=0;i<ui->output_variable_table->rowCount();++i){
-            QTableWidgetItem *w=ui->output_variable_table->item(i,0);
-            QString name=ui->output_variable_table->item(i,0)->text();
-            QString variable=ui->output_variable_table->item(i,1)->text();
-            QComboBox* combo_box=qobject_cast<QComboBox*>(ui->output_variable_table->cellWidget(i,2));
-            VariableType type;
-            if(combo_box){
-                type=static_cast<VariableType>(combo_box->currentIndex());
-            }
-            bool is_column=ui->output_variable_table->item(i,3)->checkState()==Qt::Checked;
-            old_tree_item->output_variables.append(InputOutputVariable(name,variable,type,is_column));
-        }
-        old_tree_item->input_variables.clear();
-        for(int i=0;i<ui->input_variable_table->rowCount();++i){
-            QString name=ui->input_variable_table->item(i,0)->text();
-            QString variable=ui->input_variable_table->item(i,1)->text();
-            QComboBox* combo_box=qobject_cast<QComboBox*>(ui->input_variable_table->cellWidget(i,2));
-            VariableType type;
-            if(combo_box){
-                type=static_cast<VariableType>(combo_box->currentIndex());
-            }
-            old_tree_item->input_variables.append(InputOutputVariable(name,variable,type));
-        }
-    }
-    ui->output_variable_table->setRowCount(0);
-    ui->input_variable_table->setRowCount(0);
-    if(new_tree_item){
-        ui->input_variable_table->setDisabled(false);
-        ui->output_variable_table->setDisabled(false);
-        foreach(InputOutputVariable v,new_tree_item->input_variables){
-            newInputVariable(v);
-        }
-        foreach(InputOutputVariable v,new_tree_item->output_variables){
-            newOutputVariable(v);
-        }
-    }else{
-        ui->input_variable_table->setDisabled(true);
-        ui->output_variable_table->setDisabled(true);
-
-    }
-}
-
-void Settings::saveTask_(QSettings *settings, QTreeWidgetItem *item) const
-{
-    TaskTreeWidgetItem *task_item=dynamic_cast<TaskTreeWidgetItem*>(item);
-    if(task_item){
-        QString name=task_item->name();
-        settings->beginGroup(name);
-        settings->setValue("script",task_item->script());
-        settings->setValue("is_gpu",task_item->isGPU());
-        QList<QVariant> variant_list;
-        foreach(InputOutputVariable v,task_item->input_variables){
-            variant_list<< v.toQVariant();
-        }
-        settings->setValue("input_variables",variant_list);
-        variant_list.clear();
-        foreach(InputOutputVariable v,task_item->output_variables){
-            variant_list<< v.toQVariant();
-        }
-        settings->setValue("output_variables",variant_list);
-    }
-    for(int i=0;i<item->childCount();++i){
-        saveTask_(settings,item->child(i));
-    }
-    if(task_item){
-        settings->endGroup();
-    }
-}
-
-void Settings::loadTask_(QSettings *settings, QTreeWidgetItem *parent)
-{
-    foreach(QString child_name,settings->childGroups()){
-        TaskTreeWidgetItem *child=new TaskTreeWidgetItem(parent);
-        settings->beginGroup(child_name);
-        child->setName(child_name);
-        child->setScript(settings->value("script").toString());
-        child->setGpu(settings->value("is_gpu").toBool());
-        QList<QVariant> variant_list=settings->value("input_variables").toList();
-        foreach(QVariant v, variant_list){
-            child->input_variables.append(InputOutputVariable(v));
-        }
-        variant_list=settings->value("output_variables").toList();
-        foreach(QVariant v, variant_list){
-            child->output_variables.append(InputOutputVariable(v));
-        }
-        loadTask_(settings,child);
-        settings->endGroup();
-    }
-}
-
+QHash<QString,QVariant> Settings::values_=QHash<QString,QVariant>();

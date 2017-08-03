@@ -6,7 +6,7 @@
 #include <QSettings>
 #include <QGroupBox>
 #include <QFormLayout>
-#include <settings.h>
+#include <settingsdialog.h>
 #include <QSpinBox>
 #include <QDoubleSpinBox>
 #include <QLabel>
@@ -223,7 +223,7 @@ void MainWindow::updateDetailsfromView(const QModelIndex &topLeft, const QModelI
 
 void MainWindow::onSettings()
 {
-    Settings settings(this);
+    SettingsDialog settings(this);
     if (QDialog::Accepted==settings.exec()){
         settings.saveSettings();
         updateTaskWidgets();

@@ -22,11 +22,12 @@ SOURCES += \
     processwrapper.cpp \
     task.cpp \
     imagetablemodel.cpp \
-    settings.cpp \
     tasktreewidgetitem.cpp \
     pathedit.cpp \
     imagetableview.cpp \
-    parallelexporter.cpp
+    parallelexporter.cpp \
+    settingsdialog.cpp \
+    settings.cpp
 
 
 
@@ -39,17 +40,18 @@ HEADERS  += \
     processwrapper.h \
     task.h \
     imagetablemodel.h \
-    settings.h \
     pathedit.h \
     variabletypes.h \
     inputoutputvariable.h \
     imagetableview.h \
-    parallelexporter.h
+    parallelexporter.h \
+    settingsdialog.h \
+    settings.h
 
 
 FORMS    += \
     mainwindow.ui \
-    settings.ui \
+    settingsdialog.ui
 
 #CONFIG += static
 #static {
