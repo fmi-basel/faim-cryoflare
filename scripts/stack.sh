@@ -31,6 +31,6 @@ if (( $(echo "$ice_ratio > 1.5" |bc -l) )); then
 else
   export="true"
 fi
-RESULTS raw_average_thumbnail raw_stack ice_ratio
+RESULTS raw_average_thumbnail raw_stack ice_ratio export
 FILES raw_stack stack_log raw_average raw_average_thumbnail xml ice_ratio_log
 
