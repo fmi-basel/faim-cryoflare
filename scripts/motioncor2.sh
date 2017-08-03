@@ -22,30 +22,6 @@ if [ ! -e ${aligned_avg_mc2_dw} ] || [ ! -e $mc2_shift_plot ] || [ -e $aligned_a
 
   python <<EOT
 import matplotlib.pyplot as plt
-import numpy as np
-x=[]
-y=[]
-with open("$motioncorr2_log") as f:
-    for line in f.readlines():
-        if line.startswith("...... Frame"):
-            sp=line.split()
-            x.append(float(sp[5]))
-            y.append(float(sp[6]))
-x=np.array(x)
-y=np.array(y)
-x-=x[len(x)/2]
-y-=y[len(y)/2]
-plt.figure(figsize=(5,5))
-plt.plot(x,y, 'bo-')
-plt.plot(x[:1],y[:1], 'ro')
-plt.xlabel('shift x (A)')
-plt.ylabel('shift y (A)')
-plt.tight_layout()
-plt.savefig("$mc2_shift_plot",dpi=100)
-EOT
-
-python <<EOT
-import matplotlib.pyplot as plt
 from matplotlib import cm
 import numpy as np
 x=[]
@@ -71,9 +47,29 @@ plt.tight_layout()
 plt.savefig("$mc2_shift_plot",dpi=100)
 EOT
 
-e2proc2d.py --fouriershrink 7.49609375 ${aligned_avg_mc2_dw} ${aligned_avg_mc2_dw_png}  >> $motioncorr2_log 2>&1
+  e2proc2d.py --fouriershrink 7.49609375 ${aligned_avg_mc2_dw} ${aligned_avg_mc2_dw_png}  >> $motioncorr2_log 2>&1
 fi
 
+
+mc2_max_shift=`python <<EOT
+from math import sqrt
+x=[]
+y=[]
+
+with open("$motioncorr2_log") as f:
+    for line in f.readlines():
+        if line.startswith("...... Frame"):
+            sp=line.split()
+            x.append(float(sp[5])*$pixel_size)
+            y.append(float(sp[6])*$pixel_size)
+dist2=0
+for i in range(len(x)):
+    for j in range(i+1,len(x)):
+        dx=x[i]-x[j]
+        dy=y[i]-y[j]
+        dist2=max(dist2,dx*dx+dy*dy)
+print sqrt(dist2)
+EOT`
 
 
 
@@ -85,5 +81,5 @@ relion_alias Import $relion_jobid micrographs_mc2_dw
 write_to_star $destination_path/Import/job00$relion_jobid/micrographs.star "$HEADER" micrographs_mc2_dw/${short_name}.mrc 
 add_to_pipeline  $destination_path/default_pipeline.star Import $relion_jobid micrographs_mc2_dw  "" "Import/job00$relion_jobid/micrographs.star:1"
 
-RESULTS aligned_avg_mc2_dw_png aligned_avg_mc2_dw_fft_thumbnail mc2_shift_plot
+RESULTS aligned_avg_mc2_dw_png aligned_avg_mc2_dw_fft_thumbnail mc2_shift_plot mc2_max_shift
 FILES motioncorr2_log aligned_avg_mc2_dw aligned_avg_mc2_dw_png aligned_avg_mc2_dw_fft_thumbnail mc2_shift_plot

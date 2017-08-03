@@ -92,6 +92,21 @@ plt.savefig("$shift_plot",dpi=100)
 EOT
 
 fi
+unblur_max_shift=`python <<EOT
+from math import sqrt
+with open("$shift_txt") as f:
+    lines=f.readlines()[-2:]
+    x=[float(v) for v in lines[0].split()]
+    y=[float(v) for v in lines[1].split()]
+dist2=0
+for i in range(len(x)):
+    for j in range(i+1,len(x)):
+        dx=x[i]-x[j]
+        dy=y[i]-y[j]
+        dist2=max(dist2,dx*dx+dy*dy)
+print sqrt(dist2)
+EOT`
+
 
 unblur_score=`fgrep "Final Score" $unblur_log|cut -f2 -d:|xargs`
 
@@ -117,6 +132,6 @@ relion_alias Import $relion_jobid movies_unblur
 write_to_star $destination_path/Import/job00$relion_jobid/movies.star "$HEADER" movies_unblur/${short_name}.mrcs 
 add_to_pipeline  $destination_path/default_pipeline.star Import $relion_jobid movies_unblur  "" "Import/job00$relion_jobid/movies.star:0"
 
-RESULTS aligned_avg aligned_avg_png aligned_avg_fft_thumbnail aligned_avg_png_dw aligned_avg_fft_thumbnail_dw unblur_score shift_plot
+RESULTS aligned_avg aligned_avg_png aligned_avg_fft_thumbnail aligned_avg_png_dw aligned_avg_fft_thumbnail_dw unblur_score shift_plot unblur_max_shift
 FILES aligned_stack unblur_log shift_txt frc_txt aligned_avg aligned_avg_png aligned_avg_fft_thumbnail aligned_avg_dw aligned_avg_png_dw aligned_avg_fft_thumbnail_dw shift_plot
 
