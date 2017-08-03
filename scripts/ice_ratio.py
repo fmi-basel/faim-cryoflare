@@ -24,6 +24,6 @@ pos_ref_h=1.0/(resolution_ref-resolution_band/2.0)/rpix
 
 rot_avg_ice=rot_avg.get_clip(Region(int(pos_ice_l),int(pos_ice_h-pos_ice_l)))
 rot_avg_ref=rot_avg.get_clip(Region(int(pos_ref_l),int(pos_ref_h-pos_ref_l)))
-avg_ice=np.mean(rot_avg_ice.get_data_as_vector())
-avg_ref=np.mean(rot_avg_ref.get_data_as_vector())
+avg_ice=np.max(rot_avg_ice.get_data_as_vector())
+avg_ref=np.max(rot_avg_ref.get_data_as_vector())
 print avg_ice/avg_ref

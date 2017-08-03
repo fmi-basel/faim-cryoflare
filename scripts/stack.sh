@@ -21,7 +21,7 @@ if [ ! -e $raw_stack ] || [ ! -e $raw_average_thumbnail ]; then
   e2proc2d.py  --fouriershrink 7.49609375  $raw_average $raw_average_thumbnail>> $stack_log
 fi
 if [ ! -e $ice_ratio_log ] ; then
-  $STACK_GUI_SCRIPTS/ice_ratio.py $raw_average $pixel_size 5.0 3.7 0.4> $ice_ratio_log
+  $STACK_GUI_SCRIPTS/ice_ratio.py $raw_average $pixel_size 5.0 3.89 0.4> $ice_ratio_log
 fi
 
 ice_ratio=`tail -n 1 $ice_ratio_log`
