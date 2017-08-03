@@ -96,7 +96,8 @@ ImageProcessor::ImageProcessor():
     root_task_(new Task("General","dummy",DataPtr(new Data))),
     output_files_(),
     shared_output_files_(),
-    exporter_(new ParallelExporter(this))
+    exporter_(new ParallelExporter(this)),
+    running_state_(false)
 
 {
     loadSettings();
@@ -127,6 +128,7 @@ ImageProcessor::ImageProcessor():
 void ImageProcessor::startStop(bool start)
 {
     if(start){
+        running_state_=true;
         QSettings settings;
         avg_source_path_=settings.value("avg_source_dir").toString()+"/Images-Disc1";
         stack_source_path_=settings.value("stack_source_dir").toString()+"/Images-Disc1";
@@ -134,7 +136,9 @@ void ImageProcessor::startStop(bool start)
         watcher_->addPath(avg_source_path_);
         watcher_->addPath(stack_source_path_);
         onDirChange(avg_source_path_);
+        startTasks();
     }else{
+        running_state_=false;
         watcher_->removePath(avg_source_path_);
         watcher_->removePath(stack_source_path_);
     }
@@ -177,15 +181,11 @@ void ImageProcessor::onTaskFinished(const TaskPtr &task, bool gpu)
         shared_output_files_.insert(destination_dir.relativeFilePath(file));
     }
     foreach(TaskPtr child,task->children){
-        pushTask_(child);
+        QStack<TaskPtr>& stack=child->gpu?gpu_task_stack_:cpu_task_stack_;
+        stack.append(child);
     }
-    if(!stack.empty()){
-        ProcessWrapper* wrapper = qobject_cast<ProcessWrapper*>(sender());
-        if( wrapper != NULL && (! wrapper->running()) ) {
-              wrapper->start(stack.pop());
-              emit queueCountChanged(cpu_task_stack_.size(),gpu_task_stack_.size());
-        }
-    }
+    emit queueCountChanged(cpu_task_stack_.size(),gpu_task_stack_.size());
+    startTasks();
     QFile f(destination_path_+"/"+task->name+"_out.log");
     if (f.open(QIODevice::WriteOnly | QIODevice::Append)) {
         QTextStream stream( &f );
@@ -227,6 +227,29 @@ void ImageProcessor::exportImages(const QString &export_path, const QStringList 
     exporter_->exportImages(destination_path_ , export_path, files_to_export, num_processes, export_mode, custom_script,pre_script,post_script,image_list);
 }
 
+void ImageProcessor::startTasks()
+{
+    if (! running_state_){
+        return;
+    }
+    bool count_changed=false;
+    foreach (ProcessWrapper* proc, cpu_processes_) {
+       if(! proc->running() &&  ! cpu_task_stack_.empty()){
+           proc->start(cpu_task_stack_.pop());
+           count_changed=true;
+       }
+    }
+    foreach (ProcessWrapper* proc, gpu_processes_) {
+       if(! proc->running() &&  ! gpu_task_stack_.empty()){
+           proc->start(gpu_task_stack_.pop());
+           count_changed=true;
+       }
+    }
+    if(count_changed){
+        emit queueCountChanged(cpu_task_stack_.size(),gpu_task_stack_.size());
+    }
+}
+
 void ImageProcessor::updateGridSquare_(const QString &grid_square)
 {
     QString grid_square_data=QDir(grid_square).absoluteFilePath("Data");
@@ -248,12 +271,12 @@ void ImageProcessor::updateImages_(const QString &grid_square)
     for(int i=0;i<xml_files.size();++i){
         if(!images_.contains(xml_files.at(i).absoluteFilePath())){
             images_.append(xml_files.at(i).absoluteFilePath());
-            createTask_(xml_files.at(i).absoluteFilePath());
+            createTaskTree_(xml_files.at(i).absoluteFilePath());
         }
     }
 }
 
-void ImageProcessor::createTask_(const QString &path)
+void ImageProcessor::createTaskTree_(const QString &path)
 {
     DataPtr data=parse_xml_data(path);
     data->insert("destination_path",destination_path_);
@@ -272,34 +295,13 @@ void ImageProcessor::createTask_(const QString &path)
     TaskPtr root_task=root_task_->clone();
     root_task->setData(data);
     for(int i=0;i<root_task->children.size();++i){
-        pushTask_(root_task->children[i]);
+        QStack<TaskPtr>& stack=root_task->children[i]->gpu?gpu_task_stack_:cpu_task_stack_;
+        stack.append(root_task->children[i]);
     }
+    emit queueCountChanged(cpu_task_stack_.size(),gpu_task_stack_.size());
+    startTasks();
 }
 
-void ImageProcessor::pushTask_(const TaskPtr &task)
-{
-    if(task->gpu){
-        gpu_task_stack_.append(task);
-        emit queueCountChanged(cpu_task_stack_.size(),gpu_task_stack_.size());
-        foreach (ProcessWrapper* proc, gpu_processes_) {
-           if(! (proc->running() || gpu_task_stack_.empty())){
-               proc->start(gpu_task_stack_.pop());
-               emit queueCountChanged(cpu_task_stack_.size(),gpu_task_stack_.size());
-               break;
-           }
-        }
-    }else{
-        cpu_task_stack_.append(task);
-        emit queueCountChanged(cpu_task_stack_.size(),gpu_task_stack_.size());
-        foreach (ProcessWrapper* proc, cpu_processes_) {
-           if(! (proc->running()|| cpu_task_stack_.empty())){
-               proc->start(cpu_task_stack_.pop());
-               emit queueCountChanged(cpu_task_stack_.size(),gpu_task_stack_.size());
-               break;
-           }
-        }
-    }
-}
 
 void ImageProcessor::loadTask_(QSettings *settings, const TaskPtr &task)
 {

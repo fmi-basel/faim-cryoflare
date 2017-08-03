@@ -25,6 +25,7 @@ public slots:
     void onTaskFinished(const TaskPtr& task, bool gpu);
     void loadSettings();
     void exportImages(const QString& export_path,const QStringList& image_list);
+    void startTasks();
 signals:
     void newImage(DataPtr data);
     void dataChanged(DataPtr data);
@@ -34,8 +35,7 @@ signals:
 private:
     void updateGridSquare_(const QString& grid_square);
     void updateImages_(const QString& grid_square);
-    void createTask_(const QString& path);
-    void pushTask_(const TaskPtr& task);
+    void createTaskTree_(const QString& path);
     void loadTask_(QSettings *setting,const TaskPtr& task);
 
     FileSystemWatcher* watcher_;
@@ -52,6 +52,7 @@ private:
     QHash<QString,QSet<QString> > output_files_;
     QSet<QString> shared_output_files_;
     ParallelExporter* exporter_;
+    bool running_state_;
 
 
 };
