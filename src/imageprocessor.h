@@ -11,7 +11,7 @@
 class FileSystemWatcher;
 class ProcessWrapper;
 class ParallelExporter;
-class QSettings;
+class Settings;
 
 class ImageProcessor: public QObject
 {
@@ -36,7 +36,7 @@ private:
     void updateGridSquare_(const QString& grid_square);
     void updateImages_(const QString& grid_square);
     void createTaskTree_(const QString& path);
-    void loadTask_(QSettings *setting,const TaskPtr& task);
+    void loadTask_(Settings *setting,const TaskPtr& task);
 
     FileSystemWatcher* watcher_;
     QString avg_source_path_;

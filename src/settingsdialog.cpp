@@ -1,5 +1,5 @@
 #include <QtDebug>
-#include <QSettings>
+#include "settings.h"
 #include <QFileDialog>
 #include <QtDebug>
 #include <QStringList>
@@ -9,6 +9,113 @@
 #include <variabletypes.h>
 #include "settingsdialog.h"
 #include "ui_settingsdialog.h"
+
+namespace  {
+
+template<typename SETTINGS>
+void save_task(SETTINGS *settings, QTreeWidgetItem *item)
+{
+    TaskTreeWidgetItem *task_item=dynamic_cast<TaskTreeWidgetItem*>(item);
+    if(task_item){
+        QString name=task_item->name();
+        settings->beginGroup(name);
+        settings->setValue("script",task_item->script());
+        settings->setValue("is_gpu",task_item->isGPU());
+        QList<QVariant> variant_list;
+        foreach(InputOutputVariable v,task_item->input_variables){
+            variant_list<< v.toQVariant();
+        }
+        settings->setValue("input_variables",variant_list);
+        variant_list.clear();
+        foreach(InputOutputVariable v,task_item->output_variables){
+            variant_list<< v.toQVariant();
+        }
+        settings->setValue("output_variables",variant_list);
+    }
+    for(int i=0;i<item->childCount();++i){
+        save_task(settings,item->child(i));
+    }
+    if(task_item){
+        settings->endGroup();
+    }
+}
+
+template<typename SETTINGS>
+void load_task(SETTINGS *settings, QTreeWidgetItem *parent)
+{
+    foreach(QString child_name,settings->childGroups()){
+        TaskTreeWidgetItem *child=new TaskTreeWidgetItem(parent);
+        settings->beginGroup(child_name);
+        child->setName(child_name);
+        child->setScript(settings->value("script").toString());
+        child->setGpu(settings->value("is_gpu").toBool());
+        QList<QVariant> variant_list=settings->value("input_variables").toList();
+        foreach(QVariant v, variant_list){
+            child->input_variables.append(InputOutputVariable(v));
+        }
+        variant_list=settings->value("output_variables").toList();
+        foreach(QVariant v, variant_list){
+            child->output_variables.append(InputOutputVariable(v));
+        }
+        load_task(settings,child);
+        settings->endGroup();
+    }
+}
+
+template<typename SETTINGS>
+void save_to_settings(SETTINGS* settings, Ui::SettingsDialog* ui){
+    settings->setValue("num_cpu", ui->num_cpu->value());
+    settings->setValue("num_gpu", ui->num_gpu->value());
+    settings->setValue("gpu_ids", ui->gpu_ids->text());
+    settings->setValue("export_pre_script", ui->export_pre_script->path());
+    settings->setValue("export_post_script", ui->export_post_script->path());
+    settings->setValue("export_custom_script", ui->export_custom_script->path());
+    settings->setValue("export_num_processes", ui->export_num_processes->value());
+    if(ui->export_copy->isChecked()){
+        settings->setValue("export","copy");
+    }
+    if(ui->export_move->isChecked()){
+        settings->setValue("export","move");
+    }
+    if(ui->export_custom->isChecked()){
+        settings->setValue("export","custom");
+    }
+    settings->beginGroup("Tasks");
+    settings->remove("");
+    save_task(settings,ui->task_tree->invisibleRootItem());
+    settings->endGroup();
+}
+
+
+template<typename SETTINGS>
+void load_from_settings(SETTINGS* settings, Ui::SettingsDialog* ui){
+    ui->num_cpu->setValue(settings->value("num_cpu").toInt());
+    ui->num_gpu->setValue(settings->value("num_gpu").toInt());
+    ui->gpu_ids->setText(settings->value("gpu_ids").toString());
+    ui->export_pre_script->setPath(settings->value("export_pre_script").toString());
+    ui->export_post_script->setPath(settings->value("export_post_script").toString());
+    ui->export_custom_script->setPath(settings->value("export_custom_script").toString());
+    ui->export_num_processes->setValue(settings->value("export_num_processes").toInt());
+    QString export_mode=settings->value("export").toString();
+    if(export_mode=="copy"){
+        ui->export_copy->setChecked(true);
+    }else if(export_mode=="move"){
+        ui->export_move->setChecked(true);
+    }else if(export_mode=="custom"){
+        ui->export_custom->setChecked(true);
+    }else{
+        ui->export_copy->setChecked(true);
+    }
+    settings->beginGroup("Tasks");
+    ui->task_tree->clear();
+    load_task(settings,ui->task_tree->invisibleRootItem());
+    settings->endGroup();
+    ui->task_tree->expandAll();
+    ui->task_tree->resizeColumnToContents(0);
+
+}
+
+}
 
 SettingsDialog::SettingsDialog(QWidget *parent) :
     QDialog(parent),
@@ -57,68 +164,17 @@ SettingsDialog::SettingsDialog(QWidget *parent) :
     loadSettings();
 }
 
-void SettingsDialog::saveSettings(const QString &path)
+void SettingsDialog::saveSettings()
 {
     updateVariables(ui->task_tree->currentItem(),ui->task_tree->currentItem());
-    QSettings* settings=new QSettings();
-    if(! path.isEmpty()){
-        delete settings;
-        settings=new QSettings(path,QSettings::IniFormat);
-    }
-    settings->setValue("num_cpu", ui->num_cpu->value());
-    settings->setValue("num_gpu", ui->num_gpu->value());
-    settings->setValue("gpu_ids", ui->gpu_ids->text());
-    settings->setValue("export_pre_script", ui->export_pre_script->path());
-    settings->setValue("export_post_script", ui->export_post_script->path());
-    settings->setValue("export_custom_script", ui->export_custom_script->path());
-    settings->setValue("export_num_processes", ui->export_num_processes->value());
-    if(ui->export_copy->isChecked()){
-        settings->setValue("export","copy");
-    }
-    if(ui->export_move->isChecked()){
-        settings->setValue("export","move");
-    }
-    if(ui->export_custom->isChecked()){
-        settings->setValue("export","custom");
-    }
-    settings->beginGroup("Tasks");
-    settings->remove("");
-    saveTask_(settings,ui->task_tree->invisibleRootItem());
-    settings->endGroup();
-    delete settings;
+    Settings settings;
+    save_to_settings(&settings,ui);
 }
 
-void SettingsDialog::loadSettings(const QString &path)
+void SettingsDialog::loadSettings()
 {
-    QSettings *settings=new QSettings;
-    if(! path.isEmpty()){
-        delete settings;
-        settings=new QSettings (path,QSettings::IniFormat);
-    }
-    ui->num_cpu->setValue(settings->value("num_cpu").toInt());
-    ui->num_gpu->setValue(settings->value("num_gpu").toInt());
-    ui->gpu_ids->setText(settings->value("gpu_ids").toString());
-    ui->export_pre_script->setPath(settings->value("export_pre_script").toString());
-    ui->export_post_script->setPath(settings->value("export_post_script").toString());
-    ui->export_custom_script->setPath(settings->value("export_custom_script").toString());
-    ui->export_num_processes->setValue(settings->value("export_num_processes").toInt());
-    QString export_mode=settings->value("export").toString();
-    if(export_mode=="copy"){
-        ui->export_copy->setChecked(true);
-    }else if(export_mode=="move"){
-        ui->export_move->setChecked(true);
-    }else if(export_mode=="custom"){
-        ui->export_custom->setChecked(true);
-    }else{
-        ui->export_copy->setChecked(true);
-    }
-    settings->beginGroup("Tasks");
-    ui->task_tree->clear();
-    loadTask_(settings,ui->task_tree->invisibleRootItem());
-    settings->endGroup();
-    delete settings;
-    ui->task_tree->expandAll();
-    ui->task_tree->resizeColumnToContents(0);
+    Settings settings;
+    load_from_settings(&settings,ui);
 }
 
 SettingsDialog::~SettingsDialog()
@@ -193,15 +249,20 @@ void SettingsDialog::loadFromFile()
 {
     QString path = QFileDialog::getOpenFileName(0, "Open configuration file","","Ini files (*.ini);; All files (*)");
     if(! path.isEmpty()){
-        loadSettings(path);
+        QSettings* settings=new QSettings(path,QSettings::IniFormat);
+        load_from_settings(settings,ui);
+        delete settings;
     }
 }
 
 void SettingsDialog::saveToFile()
 {
+    updateVariables(ui->task_tree->currentItem(),ui->task_tree->currentItem());
     QString path = QFileDialog::getSaveFileName(0, "Save configuration file","","Ini files (*.ini);; All files (*)");
     if(! path.isEmpty()){
-        saveSettings(path);
+        QSettings* settings=new QSettings(path,QSettings::IniFormat);
+        save_to_settings(settings,ui);
+        delete settings;
     }
 }
 
@@ -211,9 +272,7 @@ void SettingsDialog::updateVariables(QTreeWidgetItem *new_item, QTreeWidgetItem 
     TaskTreeWidgetItem *new_tree_item=dynamic_cast<TaskTreeWidgetItem *>(new_item);
     if(old_tree_item ){
         old_tree_item->output_variables.clear();
-        int c=ui->output_variable_table->rowCount();
         for(int i=0;i<ui->output_variable_table->rowCount();++i){
-            QTableWidgetItem *w=ui->output_variable_table->item(i,0);
             QString name=ui->output_variable_table->item(i,0)->text();
             QString variable=ui->output_variable_table->item(i,1)->text();
             QComboBox* combo_box=qobject_cast<QComboBox*>(ui->output_variable_table->cellWidget(i,2));
@@ -251,54 +310,6 @@ void SettingsDialog::updateVariables(QTreeWidgetItem *new_item, QTreeWidgetItem 
         ui->input_variable_table->setDisabled(true);
         ui->output_variable_table->setDisabled(true);
 
-    }
-}
-
-void SettingsDialog::saveTask_(QSettings *settings, QTreeWidgetItem *item) const
-{
-    TaskTreeWidgetItem *task_item=dynamic_cast<TaskTreeWidgetItem*>(item);
-    if(task_item){
-        QString name=task_item->name();
-        settings->beginGroup(name);
-        settings->setValue("script",task_item->script());
-        settings->setValue("is_gpu",task_item->isGPU());
-        QList<QVariant> variant_list;
-        foreach(InputOutputVariable v,task_item->input_variables){
-            variant_list<< v.toQVariant();
-        }
-        settings->setValue("input_variables",variant_list);
-        variant_list.clear();
-        foreach(InputOutputVariable v,task_item->output_variables){
-            variant_list<< v.toQVariant();
-        }
-        settings->setValue("output_variables",variant_list);
-    }
-    for(int i=0;i<item->childCount();++i){
-        saveTask_(settings,item->child(i));
-    }
-    if(task_item){
-        settings->endGroup();
-    }
-}
-
-void SettingsDialog::loadTask_(QSettings *settings, QTreeWidgetItem *parent)
-{
-    foreach(QString child_name,settings->childGroups()){
-        TaskTreeWidgetItem *child=new TaskTreeWidgetItem(parent);
-        settings->beginGroup(child_name);
-        child->setName(child_name);
-        child->setScript(settings->value("script").toString());
-        child->setGpu(settings->value("is_gpu").toBool());
-        QList<QVariant> variant_list=settings->value("input_variables").toList();
-        foreach(QVariant v, variant_list){
-            child->input_variables.append(InputOutputVariable(v));
-        }
-        variant_list=settings->value("output_variables").toList();
-        foreach(QVariant v, variant_list){
-            child->output_variables.append(InputOutputVariable(v));
-        }
-        loadTask_(settings,child);
-        settings->endGroup();
     }
 }
 

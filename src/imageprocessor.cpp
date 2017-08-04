@@ -2,7 +2,7 @@
 #include <QApplication>
 #include <QDir>
 #include <QDateTime>
-#include <QSettings>
+#include "settings.h"
 #include <QtDebug>
 #include <filesystemwatcher.h>
 #include <QDomDocument>
@@ -103,7 +103,7 @@ ImageProcessor::ImageProcessor():
     loadSettings();
     connect(watcher_, SIGNAL(fileChanged(const QString &)), this, SLOT(onFileChange(const QString &)));
     connect(watcher_, SIGNAL(directoryChanged(const QString &)), this, SLOT(onDirChange(const QString &)));
-    QSettings settings;
+    Settings settings;
     int num_cpu=settings.value("num_cpu",10).toInt();
     int num_gpu=settings.value("num_gpu",2).toInt();
     QStringList gpu_ids=settings.value("gpu_ids","0").toString().split(",", QString::SkipEmptyParts);
@@ -129,7 +129,7 @@ void ImageProcessor::startStop(bool start)
 {
     if(start){
         running_state_=true;
-        QSettings settings;
+        Settings settings;
         avg_source_path_=settings.value("avg_source_dir").toString()+"/Images-Disc1";
         stack_source_path_=settings.value("stack_source_dir").toString()+"/Images-Disc1";
         destination_path_=settings.value("destination_dir").toString();
@@ -203,7 +203,7 @@ void ImageProcessor::onTaskFinished(const TaskPtr &task, bool gpu)
 void ImageProcessor::loadSettings()
 {
     root_task_->children.clear();
-    QSettings *settings=new QSettings;
+    Settings *settings=new Settings;
     settings->beginGroup("Tasks");
     loadTask_(settings,root_task_);
     settings->endGroup();
@@ -218,7 +218,7 @@ void ImageProcessor::exportImages(const QString &export_path, const QStringList 
     foreach(QString image,image_list){
         files_to_export.enqueue(output_files_[image]);
     }
-    QSettings settings;
+    Settings settings;
     QString export_mode=settings.value("export").toString();
     QString custom_script=settings.value("export_custom_script").toString();
     int num_processes=settings.value("export_num_processes",1).toInt();
@@ -303,7 +303,7 @@ void ImageProcessor::createTaskTree_(const QString &path)
 }
 
 
-void ImageProcessor::loadTask_(QSettings *settings, const TaskPtr &task)
+void ImageProcessor::loadTask_(Settings *settings, const TaskPtr &task)
 {
     foreach(QString child_name,settings->childGroups()){
         settings->beginGroup(child_name);

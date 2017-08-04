@@ -2,11 +2,12 @@
 #define SETTINGS_H
 
 #include <QObject>
-#include <QHash>
 #include <QString>
 #include <QVariant>
 #include <QSettings>
 
+//fw decl
+class SettingsGroup;
 
 class Settings: public QObject
 {
@@ -17,12 +18,15 @@ public:
     void saveToFile(const QString& path) const;
     void loadFromQSettings();
     void saveToQSettings() const;
-    void setValue(const QString &key, const QVariant &value) const;
-    QVariant value(const QString &key, const QVariant &defaultValue = QVariant());
+    void setValue(const QString &key, const QVariant &value);
+    QVariant value(const QString &key, const QVariant &defaultValue = QVariant()) const;
     void beginGroup(const QString &prefix);
     void endGroup();
+    QStringList childGroups() const;
+    QStringList allKeys() const;
+    QStringList childKeys() const;
+    void remove(const QString & key);
 protected:
-    QStringList groups_;
-    static QHash<QString,QVariant> values_;
+    SettingsGroup* current_;
 };
 #endif // SETTINGS_H

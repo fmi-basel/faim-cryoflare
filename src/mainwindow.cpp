@@ -3,7 +3,7 @@
 #include "epuimageinfo.h"
 #include <QtDebug>
 #include <QFileDialog>
-#include <QSettings>
+#include "settings.h"
 #include <QGroupBox>
 #include <QFormLayout>
 #include <settingsdialog.h>
@@ -40,7 +40,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::init()
 {
-    QSettings settings;
+    Settings settings;
     ui->avg_source_dir->setText(settings.value("avg_source_dir").toString());
     ui->stack_source_dir->setText(settings.value("stack_source_dir").toString());
     ui->destination_dir->setText(settings.value("destination_dir").toString());
@@ -99,7 +99,7 @@ void MainWindow::updateTaskWidgets()
         delete widget_ptr;
     }
     model_->clearColumns();
-    QSettings *settings=new QSettings;
+    Settings *settings=new Settings;
     model_->addColumn(InputOutputVariable("Name","short_name",String));
     model_->addColumn(InputOutputVariable("Timestamp","timestamp",String));
     model_->addColumn(InputOutputVariable("Nominal Defocus","defocus",Float));
@@ -112,7 +112,7 @@ void MainWindow::updateTaskWidgets()
     delete settings;
 }
 
-void MainWindow::updateTaskWidget_(QSettings *settings)
+void MainWindow::updateTaskWidget_(Settings *settings)
 {
 
     foreach(QString child_name, settings->childGroups()){
@@ -125,7 +125,7 @@ void MainWindow::updateTaskWidget_(QSettings *settings)
         QFormLayout *input_layout = new QFormLayout;
         input_group->setLayout(input_layout);
         QList<QVariant> variant_list=settings->value("input_variables").toList();
-        QSettings script_input_settings;
+        Settings script_input_settings;
         foreach(QVariant v,variant_list){
             InputOutputVariable iov(v);
             QWidget* local_widget;
@@ -191,19 +191,19 @@ void MainWindow::updateTaskWidget_(QSettings *settings)
 
 void MainWindow::onAvgSourceDirTextChanged(const QString &dir)
 {
-    QSettings settings;
+    Settings settings;
     settings.setValue("avg_source_dir",ui->avg_source_dir->text());
 }
 
 void MainWindow::onStackSourceDirTextChanged(const QString &dir)
 {
-    QSettings settings;
+    Settings settings;
     settings.setValue("stack_source_dir",ui->stack_source_dir->text());
 }
 
 void MainWindow::onDestinationDirTextChanged(const QString &dir)
 {
-    QSettings settings;
+    Settings settings;
     settings.setValue("destination_dir",ui->destination_dir->text());
 }
 
@@ -238,7 +238,7 @@ void MainWindow::inputDataChanged()
     QVariant type= sender_widget->property("type");
     QVariant task= sender_widget->property("task");
     if(label.isValid() && type.isValid() && task.isValid()){
-       QSettings settings;
+       Settings settings;
         settings.beginGroup("ScriptInput");
         settings.beginGroup(task.toString());
         switch(static_cast<VariableType>(type.toInt())){

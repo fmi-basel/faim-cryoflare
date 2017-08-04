@@ -2,7 +2,7 @@
 #define SETTINGSDIALOG_H
 
 #include <QDialog>
-#include <QSettings>
+#include "settings.h"
 #include <inputoutputvariable.h>
 
 //fw decl
@@ -20,8 +20,8 @@ class SettingsDialog : public QDialog
 
 public:
     explicit SettingsDialog(QWidget *parent = 0);
-    void saveSettings(const QString &path="");
-    void loadSettings(const QString &path="");
+    void saveSettings();
+    void loadSettings();
     ~SettingsDialog();
 public slots:
     void newTask();
@@ -34,8 +34,6 @@ public slots:
     void saveToFile();
     void updateVariables(QTreeWidgetItem* new_item, QTreeWidgetItem* old_item);
 private:
-    void saveTask_(QSettings *settings, QTreeWidgetItem *item) const;
-    void loadTask_(QSettings *settings, QTreeWidgetItem *parent);
     Ui::SettingsDialog *ui;
     QMenu *task_tree_menu_;
     QAction *task_tree_new_;

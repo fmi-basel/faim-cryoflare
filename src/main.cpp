@@ -4,7 +4,7 @@
 #include <QHash>
 #include <QTimer>
 #include <QDebug>
-#include <QSettings>
+#include  "settings.h"
 
 
 QCoreApplication* createApplication(int &argc, char *argv[])
@@ -21,6 +21,12 @@ int main(int argc, char* argv[])
     QCoreApplication::setOrganizationName("Friedrich Miescher Institute");
     QCoreApplication::setOrganizationDomain("fmi.ch");
     QCoreApplication::setApplicationName("StackGUI");
+
+    Settings settings;
+    if(!settings.loadFromFile(".stack_gui.ini")){
+        qDebug() << "No settings found in local directory. Using global settings.";
+        settings.loadFromQSettings();
+    }
     ImageProcessor processor;
     if (qobject_cast<QApplication *>(app.data())) {
          // start GUI version...
@@ -38,7 +44,6 @@ int main(int argc, char* argv[])
      } else {
          // start non-GUI version...
         int path_count=0;
-        QSettings settings;
         for (int i = 1; i < app->arguments().size(); ++i){
             if (qstrcmp(argv[i], "-no-gui")){
                 switch(path_count){

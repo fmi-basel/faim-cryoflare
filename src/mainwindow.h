@@ -13,6 +13,7 @@ class MainWindow;
 
 //fw decl
 class QLabel;
+class Settings;
 
 class MainWindow : public QMainWindow
 {
@@ -46,7 +47,7 @@ signals:
 
 private:
     void updateDetails_(int row);
-    void updateTaskWidget_(QSettings *settings);
+    void updateTaskWidget_(Settings *settings);
     Ui::MainWindow *ui;
     ImageTableModel *model_;
     QSortFilterProxyModel *sort_proxy_;
