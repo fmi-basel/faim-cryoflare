@@ -277,7 +277,7 @@ void ImageProcessor::createTaskTree_(const QString &path)
 {
     DataPtr data=parse_xml_data(path);
     data->insert("destination_path",QDir::currentPath());
-    data->insert("stack_source_path",stack_source_path_);
+    data->insert("stack_source_path",QString("%1/%2/Data").arg(stack_source_path_).arg(data->value("grid_name")));
     data->insert("avg_source_path",QString("%1/%2/Data").arg(avg_source_path_).arg(data->value("grid_name")));
     QStringList stack_frames;
     if(QString("BM-Falcon")==data->value("camera")){
