@@ -27,7 +27,8 @@ SOURCES += \
     imagetableview.cpp \
     parallelexporter.cpp \
     settingsdialog.cpp \
-    settings.cpp
+    settings.cpp \
+    filelocker.cpp
 
 
 
@@ -46,7 +47,8 @@ HEADERS  += \
     imagetableview.h \
     parallelexporter.h \
     settingsdialog.h \
-    settings.h
+    settings.h \
+    filelocker.h
 
 
 FORMS    += \

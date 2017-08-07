@@ -86,7 +86,6 @@ ImageProcessor::ImageProcessor():
     watcher_(new FileSystemWatcher),
     avg_source_path_(),
     stack_source_path_(),
-    destination_path_(),
     grid_squares_(),
     images_(),
     cpu_task_stack_(),
@@ -132,7 +131,6 @@ void ImageProcessor::startStop(bool start)
         Settings settings;
         avg_source_path_=settings.value("avg_source_dir").toString()+"/Images-Disc1";
         stack_source_path_=settings.value("stack_source_dir").toString()+"/Images-Disc1";
-        destination_path_=settings.value("destination_dir").toString();
         watcher_->addPath(avg_source_path_);
         watcher_->addPath(stack_source_path_);
         onDirChange(avg_source_path_);
@@ -173,12 +171,11 @@ void ImageProcessor::onTaskFinished(const TaskPtr &task, bool gpu)
     if(! output_files_.contains(task->data->value("short_name"))){
         output_files_[task->data->value("short_name")]=QSet<QString>();
     }
-    QDir destination_dir(destination_path_);
     foreach(QString file, task->output_files){
-        output_files_[task->data->value("short_name")].insert(destination_dir.relativeFilePath(file));
+        output_files_[task->data->value("short_name")].insert(QDir::current().relativeFilePath(file));
     }
     foreach(QString file, task->shared_output_files){
-        shared_output_files_.insert(destination_dir.relativeFilePath(file));
+        shared_output_files_.insert(QDir::current().relativeFilePath(file));
     }
     foreach(TaskPtr child,task->children){
         QStack<TaskPtr>& stack=child->gpu?gpu_task_stack_:cpu_task_stack_;
@@ -186,12 +183,12 @@ void ImageProcessor::onTaskFinished(const TaskPtr &task, bool gpu)
     }
     emit queueCountChanged(cpu_task_stack_.size(),gpu_task_stack_.size());
     startTasks();
-    QFile f(destination_path_+"/"+task->name+"_out.log");
+    QFile f(QDir::current().relativeFilePath(task->name+"_out.log"));
     if (f.open(QIODevice::WriteOnly | QIODevice::Append)) {
         QTextStream stream( &f );
         stream << task->output << endl;
     }
-    QFile ferr(destination_path_+"/"+task->name+"_error.log");
+    QFile ferr(QDir::current().relativeFilePath(task->name+"_error.log"));
     if (ferr.open(QIODevice::WriteOnly | QIODevice::Append)) {
         QTextStream stream( &f );
         stream << task->error << endl;
@@ -224,7 +221,7 @@ void ImageProcessor::exportImages(const QString &export_path, const QStringList 
     int num_processes=settings.value("export_num_processes",1).toInt();
     QString pre_script=settings.value("export_pre_script").toString();
     QString post_script=settings.value("export_post_script").toString();
-    exporter_->exportImages(destination_path_ , export_path, files_to_export, num_processes, export_mode, custom_script,pre_script,post_script,image_list);
+    exporter_->exportImages(QDir::currentPath() , export_path, files_to_export, num_processes, export_mode, custom_script,pre_script,post_script,image_list);
 }
 
 void ImageProcessor::startTasks()
@@ -279,7 +276,7 @@ void ImageProcessor::updateImages_(const QString &grid_square)
 void ImageProcessor::createTaskTree_(const QString &path)
 {
     DataPtr data=parse_xml_data(path);
-    data->insert("destination_path",destination_path_);
+    data->insert("destination_path",QDir::currentPath());
     data->insert("stack_source_path",stack_source_path_);
     data->insert("avg_source_path",QString("%1/%2/Data").arg(avg_source_path_).arg(data->value("grid_name")));
     QStringList stack_frames;

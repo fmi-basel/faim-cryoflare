@@ -61,23 +61,6 @@
           </widget>
          </item>
          <item>
-          <widget class="QLabel" name="label_4">
-           <property name="text">
-            <string>Destination </string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLineEdit" name="destination_dir"/>
-         </item>
-         <item>
-          <widget class="QPushButton" name="destination_dir_browse">
-           <property name="text">
-            <string>Browse...</string>
-           </property>
-          </widget>
-         </item>
-         <item>
           <widget class="QPushButton" name="start_stop">
            <property name="text">
             <string>Start</string>
@@ -253,38 +236,6 @@
    </hints>
   </connection>
   <connection>
-   <sender>start_stop</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>destination_dir</receiver>
-   <slot>setDisabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>1144</x>
-     <y>79</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>972</x>
-     <y>79</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>destination_dir_browse</sender>
-   <signal>clicked()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>onDestinationDirBrowse()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>1058</x>
-     <y>79</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>895</x>
-     <y>50</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>avg_source_dir</sender>
    <signal>textChanged(QString)</signal>
    <receiver>MainWindow</receiver>
@@ -317,22 +268,6 @@
    </hints>
   </connection>
   <connection>
-   <sender>destination_dir</sender>
-   <signal>textChanged(QString)</signal>
-   <receiver>MainWindow</receiver>
-   <slot>onDestinationDirTextChanged(QString)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>972</x>
-     <y>79</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>914</x>
-     <y>-3</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>start_stop</sender>
    <signal>toggled(bool)</signal>
    <receiver>avg_source_dir_browse</receiver>
@@ -361,22 +296,6 @@
     <hint type="destinationlabel">
      <x>718</x>
      <y>79</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>start_stop</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>destination_dir_browse</receiver>
-   <slot>setDisabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>1144</x>
-     <y>79</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>1052</x>
-     <y>74</y>
     </hint>
    </hints>
   </connection>

@@ -26,7 +26,6 @@ MainWindow::MainWindow(QWidget *parent) :
     //ui->image_list->horizontalHeader()->setSectionResizeMode(0,QHeaderView::ResizeToContents);
     connect(ui->avg_source_dir, SIGNAL(textChanged(QString)), this, SLOT(onAvgSourceDirTextChanged(QString)));
     connect(ui->stack_source_dir, SIGNAL(textChanged(QString)), this, SLOT(onStackSourceDirTextChanged(QString)));
-    connect(ui->destination_dir, SIGNAL(textChanged(QString)), this, SLOT(onDestinationDirTextChanged(QString)));
     connect(ui->start_stop, SIGNAL(toggled(bool)), this, SLOT(onStartStop(bool)));
     connect(model_,SIGNAL(dataChanged(QModelIndex,QModelIndex)),this,SLOT(updateDetailsfromModel(QModelIndex,QModelIndex)));
     connect(ui->image_list->selectionModel(),SIGNAL(currentChanged(QModelIndex,QModelIndex)),this,SLOT(updateDetailsfromView(QModelIndex,QModelIndex)));
@@ -43,7 +42,6 @@ void MainWindow::init()
     Settings settings;
     ui->avg_source_dir->setText(settings.value("avg_source_dir").toString());
     ui->stack_source_dir->setText(settings.value("stack_source_dir").toString());
-    ui->destination_dir->setText(settings.value("destination_dir").toString());
     updateTaskWidgets();
 }
 
@@ -63,13 +61,6 @@ void MainWindow::onStackSourceDirBrowse()
     }
 }
 
-void MainWindow::onDestinationDirBrowse()
-{
-    QString dir_name = QFileDialog::getExistingDirectory(this, tr("Open Directory"),ui->destination_dir->text(),QFileDialog::ShowDirsOnly| QFileDialog::DontResolveSymlinks);
-    if(!dir_name.isEmpty()){
-        ui->destination_dir->setText(dir_name);
-    }
-}
 
 void MainWindow::onStartStop(bool start)
 {
@@ -193,18 +184,16 @@ void MainWindow::onAvgSourceDirTextChanged(const QString &dir)
 {
     Settings settings;
     settings.setValue("avg_source_dir",ui->avg_source_dir->text());
+    settings.saveToQSettings();
+    settings.saveToFile(".stack_gui.ini");
 }
 
 void MainWindow::onStackSourceDirTextChanged(const QString &dir)
 {
     Settings settings;
     settings.setValue("stack_source_dir",ui->stack_source_dir->text());
-}
-
-void MainWindow::onDestinationDirTextChanged(const QString &dir)
-{
-    Settings settings;
-    settings.setValue("destination_dir",ui->destination_dir->text());
+    settings.saveToQSettings();
+    settings.saveToFile(".stack_gui.ini");
 }
 
 void MainWindow::updateDetailsfromModel(const QModelIndex &topLeft, const QModelIndex &bottomRight)
@@ -223,9 +212,12 @@ void MainWindow::updateDetailsfromView(const QModelIndex &topLeft, const QModelI
 
 void MainWindow::onSettings()
 {
-    SettingsDialog settings(this);
-    if (QDialog::Accepted==settings.exec()){
-        settings.saveSettings();
+    SettingsDialog settings_dialog(this);
+    if (QDialog::Accepted==settings_dialog.exec()){
+        settings_dialog.saveSettings();
+        Settings settings;
+        settings.saveToQSettings();
+        settings.saveToFile(".stack_gui.ini");
         updateTaskWidgets();
         emit settingsChanged();
     }

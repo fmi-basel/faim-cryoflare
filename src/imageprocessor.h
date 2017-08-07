@@ -41,7 +41,6 @@ private:
     FileSystemWatcher* watcher_;
     QString avg_source_path_;
     QString stack_source_path_;
-    QString destination_path_;
     QStringList grid_squares_;
     QStringList images_;
     QStack<TaskPtr> cpu_task_stack_;

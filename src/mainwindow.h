@@ -27,13 +27,11 @@ public:
 public slots:
     void onAvgSourceDirBrowse();
     void onStackSourceDirBrowse();
-    void onDestinationDirBrowse();
     void onStartStop(bool start);
     void addImage(const DataPtr &data);
     void onDataChanged(const DataPtr &data);
     void onAvgSourceDirTextChanged(const QString & dir);
     void onStackSourceDirTextChanged(const QString & dir);
-    void onDestinationDirTextChanged(const QString & dir);
     void updateDetailsfromModel(const QModelIndex & topLeft, const QModelIndex & bottomRight);
     void updateDetailsfromView(const QModelIndex & topLeft, const QModelIndex & bottomRight);
     void onSettings();
