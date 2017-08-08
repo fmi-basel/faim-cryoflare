@@ -6,6 +6,7 @@
 #include <QFile>
 #include <QDebug>
 #include <QCoreApplication>
+#include <QStringList>
 
 
 class SettingsGroup: public QObject

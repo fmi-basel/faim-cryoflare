@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <QFile>
 #include <QTextStream>
+#include <QStringList>
 #include <QDebug>
 
 #include "filelocker.h"

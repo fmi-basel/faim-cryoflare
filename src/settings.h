@@ -13,7 +13,7 @@ class Settings: public QObject
 {
     Q_OBJECT
 public:
-    Settings(QObject *parent = Q_NULLPTR);
+    Settings(QObject *parent = NULL);
     bool loadFromFile(const QString& path);
     void saveToFile(const QString& path) const;
     void loadFromQSettings();
