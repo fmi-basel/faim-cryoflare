@@ -10,6 +10,8 @@ raw_stack=$destination_path/movies_raw/${short_name}.mrcs
 raw_average_thumbnail=$destination_path/micrographs_raw/${short_name}.png
 raw_average=$destination_path/micrographs_raw/${short_name}.mrc
 xml=$destination_path/xml/${short_name}.xml
+gain_ref=$stack_source_path/${name}*gain-ref*
+source_stack=$stack_source_path/${name}*mrc
 
 if [ ! -e $raw_stack ] || [ ! -e $raw_average_thumbnail ]; then
   module purge
@@ -18,9 +20,14 @@ if [ ! -e $raw_stack ] || [ ! -e $raw_average_thumbnail ]; then
 
   cp $xml_file $xml
   rm  $raw_stack $raw_average >& /dev/null
-  clip unpack $stack_source_path/${name}*mrc $stack_source_path/${name}*gain-ref* $raw_stack >> $stack_log
-  e2proc2d.py  --average $raw_stack $raw_average>> $stack_log
-  e2proc2d.py  --fouriershrink 7.49609375  $raw_average $raw_average_thumbnail>> $stack_log
+  if [ -w $gain_ref ]; then
+    # apply gain normalization
+    clip unpack $source_stack $gain_ref  $raw_stack >> $unpack_log
+  else
+    cp $source_stack $raw_stack >> $unpack_log
+  fi
+  e2proc2d.py  --average $raw_stack $raw_average>> $unpack_log
+  e2proc2d.py  --fouriershrink 7.49609375  $raw_average $raw_average_thumbnail>> $unpack_log
 fi
 if [ ! -e $ice_ratio_log ] ; then
   $STACK_GUI_SCRIPTS/ice_ratio.py $raw_average $pixel_size 5.0 3.89 0.4> $ice_ratio_log
@@ -34,5 +41,5 @@ else
   export="true"
 fi
 RESULTS raw_average_thumbnail raw_stack ice_ratio export
-FILES raw_stack stack_log raw_average raw_average_thumbnail xml ice_ratio_log
+FILES raw_stack unpack_log raw_average raw_average_thumbnail xml ice_ratio_log
 
