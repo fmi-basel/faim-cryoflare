@@ -80,3 +80,13 @@ void ProcessWrapper::onFinished(int exitcode)
     running_=false;
     emit finished(task,-1!=gpu_id_);
 }
+
+void ProcessWrapper::kill()
+{
+    process_->kill();
+}
+
+void ProcessWrapper::terminate()
+{
+    process_->terminate();
+}

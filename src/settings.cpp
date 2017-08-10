@@ -65,6 +65,7 @@ bool Settings::loadFromFile(const QString &path)
     if(!QFile(path).exists()){
         return false;
     }
+    clear();
     QSettings settings(path,QSettings::IniFormat);
     foreach( QString key, settings.allKeys()){
         setValue(key,settings.value(key));
@@ -75,6 +76,7 @@ bool Settings::loadFromFile(const QString &path)
 void Settings::saveToFile(const QString &path) const
 {
     QSettings settings(path,QSettings::IniFormat);
+    settings.clear();
     foreach( QString key, allKeys()){
         settings.setValue(key,value(key));
     }
@@ -83,6 +85,7 @@ void Settings::saveToFile(const QString &path) const
 void Settings::loadFromQSettings()
 {
     QSettings settings;
+    clear();
     foreach( QString key, settings.allKeys()){
         setValue(key,settings.value(key));
     }
@@ -91,6 +94,7 @@ void Settings::loadFromQSettings()
 void Settings::saveToQSettings() const
 {
     QSettings settings;
+    settings.clear();
     foreach( QString key, allKeys()){
         settings.setValue(key,value(key));
     }
@@ -169,6 +173,9 @@ void Settings::remove(const QString &key)
 {
     if(key==QString("")){
         current_->values.clear();
+        while(! current_->child_groups.empty()){
+            current_->child_groups.takeLast()->deleteLater();
+        }
     }else{
         current_->values.remove(key);
         for(int i=0;i<current_->child_groups.size();++i){
@@ -178,5 +185,13 @@ void Settings::remove(const QString &key)
             }
         }
     }
+}
+
+void Settings::clear()
+{
+    while (current_->parent_group) {
+        endGroup();
+    }
+    remove("");
 }
 

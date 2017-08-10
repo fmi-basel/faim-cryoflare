@@ -124,6 +124,16 @@ ImageProcessor::ImageProcessor():
     }
 }
 
+ImageProcessor::~ImageProcessor()
+{
+    foreach (ProcessWrapper* process, cpu_processes_) {
+        process->kill();
+    }
+    foreach (ProcessWrapper* process, gpu_processes_) {
+        process->kill();
+    }
+}
+
 void ImageProcessor::startStop(bool start)
 {
     if(start){

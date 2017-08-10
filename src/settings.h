@@ -26,6 +26,7 @@ public:
     QStringList allKeys() const;
     QStringList childKeys() const;
     void remove(const QString & key);
+    void clear();
 protected:
     SettingsGroup* current_;
 };

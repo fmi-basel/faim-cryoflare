@@ -19,6 +19,8 @@ signals:
 public slots:
     void start(const TaskPtr &task);
     void onFinished(int exitcode);
+    void kill();
+    void terminate();
 private:
     QProcess *process_;
     TaskPtr task_;

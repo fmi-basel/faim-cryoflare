@@ -18,6 +18,7 @@ class ImageProcessor: public QObject
     Q_OBJECT
 public:
     ImageProcessor();
+    ~ImageProcessor();
 public slots:
     void startStop(bool start=true);
     void onFileChange(const QString & path);
