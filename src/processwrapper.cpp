@@ -2,20 +2,25 @@
 #include <QProcessEnvironment>
 #include <QCoreApplication>
 #include <QTextStream>
+#include <QTimer>
 #include "settings.h"
 #include "processwrapper.h"
 
-ProcessWrapper::ProcessWrapper(QObject *parent, int gpu_id) :
+ProcessWrapper::ProcessWrapper(QObject *parent, int timeout, int gpu_id) :
     QObject(parent),
     process_(new QProcess),
     task_(),
+    timeout_(timeout),
     gpu_id_(gpu_id),
-    running_(false)
+    running_(false),
+    timeout_timer_(new QTimer)
 {
     connect(process_,SIGNAL(finished(int)),this,SLOT(onFinished(int)));
     QProcessEnvironment env=QProcessEnvironment::systemEnvironment();
     env.insert("STACK_GUI_SCRIPTS",QCoreApplication::applicationDirPath()+"/scripts");
     process_->setProcessEnvironment(env);
+    connect(timeout_timer_, SIGNAL(timeout()), this, SLOT(timeout()));
+    timeout_timer_->setSingleShot(true);
 }
 
 bool ProcessWrapper::running() const
@@ -45,7 +50,9 @@ void ProcessWrapper::start(const TaskPtr &task)
     settings.endGroup();
     settings.endGroup();
     process_->closeWriteChannel();
-
+    if(timeout_>0){
+        timeout_timer_->start(timeout_*1000);
+    }
 }
 
 void ProcessWrapper::onFinished(int exitcode)
@@ -89,4 +96,10 @@ void ProcessWrapper::kill()
 void ProcessWrapper::terminate()
 {
     process_->terminate();
+}
+
+void ProcessWrapper::timeout()
+{
+    terminate();
+    start(task_);
 }

@@ -6,11 +6,14 @@
 #include <QHash>
 #include "task.h"
 
+//fw decl
+class QTimer;
+
 class ProcessWrapper : public QObject
 {
     Q_OBJECT
 public:
-    explicit ProcessWrapper(QObject *parent, int gpu_id);
+    explicit ProcessWrapper(QObject *parent, int timeout, int gpu_id);
     bool running() const;
 
 signals:
@@ -21,11 +24,14 @@ public slots:
     void onFinished(int exitcode);
     void kill();
     void terminate();
+    void timeout();
 private:
     QProcess *process_;
     TaskPtr task_;
+    int timeout_;
     int gpu_id_;
     bool running_;
+    QTimer* timeout_timer_;
 };
 
 #endif // PROCESSWRAPPER_H

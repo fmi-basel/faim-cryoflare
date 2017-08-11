@@ -4,6 +4,10 @@ cleanup(){
   rm -fr $scratch
 }
 
+cleanup_and_terminate(){
+  cleanup
+  kill 0
+}
 
 calculate() {
 echo $1 | sed 's/[Ee]+\?/*10^/g' | bc -l
@@ -75,7 +79,8 @@ script_name=${0##*/}
 scratch=$(mktemp -d /data/Gatan_X/scratch/${script_name%%.sh}.XXXXXX)
 
 
-trap cleanup INT TERM HUP EXIT
+trap cleanup EXIT
+trap cleanup_and_terminate INT TERM HUP
 
 while IFS='=' read k v; do declare $k="$v"; done
 

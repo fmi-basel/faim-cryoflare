@@ -105,6 +105,7 @@ ImageProcessor::ImageProcessor():
     Settings settings;
     int num_cpu=settings.value("num_cpu",10).toInt();
     int num_gpu=settings.value("num_gpu",2).toInt();
+    int timeout=settings.value("timeout",300).toInt();
     QStringList gpu_ids=settings.value("gpu_ids","0").toString().split(",", QString::SkipEmptyParts);
     if(gpu_ids.empty()){
         for(int i=0;i<num_gpu;++i) {
@@ -112,13 +113,13 @@ ImageProcessor::ImageProcessor():
         }
     }
     for(int i=0;i<num_cpu;++i) {
-        ProcessWrapper* wrapper=new ProcessWrapper(this,-1);
+        ProcessWrapper* wrapper=new ProcessWrapper(this,timeout,-1);
         connect(wrapper,SIGNAL(finished(TaskPtr,bool)),this,SLOT(onTaskFinished(TaskPtr,bool)));
         cpu_processes_.append(wrapper);
 
     }
     for(int i=0;i<num_gpu;++i) {
-        ProcessWrapper* wrapper=new ProcessWrapper(this,gpu_ids.at(i%gpu_ids.size()).toInt());
+        ProcessWrapper* wrapper=new ProcessWrapper(this,timeout,gpu_ids.at(i%gpu_ids.size()).toInt());
         connect(wrapper,SIGNAL(finished(TaskPtr,bool)),this,SLOT(onTaskFinished(TaskPtr,bool)));
         gpu_processes_.append(wrapper);
     }
@@ -127,10 +128,10 @@ ImageProcessor::ImageProcessor():
 ImageProcessor::~ImageProcessor()
 {
     foreach (ProcessWrapper* process, cpu_processes_) {
-        process->kill();
+        process->terminate();
     }
     foreach (ProcessWrapper* process, gpu_processes_) {
-        process->kill();
+        process->terminate();
     }
 }
 

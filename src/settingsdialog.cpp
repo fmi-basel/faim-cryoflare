@@ -67,6 +67,7 @@ void save_to_settings(SETTINGS* settings, Ui::SettingsDialog* ui){
     settings->setValue("num_cpu", ui->num_cpu->value());
     settings->setValue("num_gpu", ui->num_gpu->value());
     settings->setValue("gpu_ids", ui->gpu_ids->text());
+    settings->setValue("timeout", ui->timeout->value());
     settings->setValue("export_pre_script", ui->export_pre_script->path());
     settings->setValue("export_post_script", ui->export_post_script->path());
     settings->setValue("export_custom_script", ui->export_custom_script->path());
@@ -92,6 +93,7 @@ void load_from_settings(SETTINGS* settings, Ui::SettingsDialog* ui){
     ui->num_cpu->setValue(settings->value("num_cpu").toInt());
     ui->num_gpu->setValue(settings->value("num_gpu").toInt());
     ui->gpu_ids->setText(settings->value("gpu_ids").toString());
+    ui->timeout->setValue(settings->value("timeout").toInt());
     ui->export_pre_script->setPath(settings->value("export_pre_script").toString());
     ui->export_post_script->setPath(settings->value("export_post_script").toString());
     ui->export_custom_script->setPath(settings->value("export_custom_script").toString());
