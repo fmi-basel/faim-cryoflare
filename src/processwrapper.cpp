@@ -102,6 +102,9 @@ void ProcessWrapper::kill()
 
 void ProcessWrapper::terminate()
 {
+    if(!running_){
+        return;
+    }
     qDebug() <<"terminating: " << task_->script;
     process_->terminate();
     process_->waitForFinished();
