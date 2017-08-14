@@ -11,7 +11,7 @@ raw_average_thumbnail=$destination_path/micrographs_raw/${short_name}.png
 raw_average=$destination_path/micrographs_raw/${short_name}.mrc
 xml=$destination_path/xml/${short_name}.xml
 gain_ref=$stack_source_path/${name}*gain-ref*
-source_stack=$stack_source_path/${name}*mrc
+source_stack=$stack_source_path/${name::-4}*mrc
 
 if [ ! -e $raw_stack ] || [ ! -e $raw_average_thumbnail ]; then
   module purge
