@@ -100,29 +100,7 @@ ImageProcessor::ImageProcessor():
 
 {
     loadSettings();
-    connect(watcher_, SIGNAL(fileChanged(const QString &)), this, SLOT(onFileChange(const QString &)));
     connect(watcher_, SIGNAL(directoryChanged(const QString &)), this, SLOT(onDirChange(const QString &)));
-    Settings settings;
-    int num_cpu=settings.value("num_cpu",10).toInt();
-    int num_gpu=settings.value("num_gpu",2).toInt();
-    int timeout=settings.value("timeout",300).toInt();
-    QStringList gpu_ids=settings.value("gpu_ids","0").toString().split(",", QString::SkipEmptyParts);
-    if(gpu_ids.empty()){
-        for(int i=0;i<num_gpu;++i) {
-            gpu_ids << QString("%1").arg(i);
-        }
-    }
-    for(int i=0;i<num_cpu;++i) {
-        ProcessWrapper* wrapper=new ProcessWrapper(this,timeout,-1);
-        connect(wrapper,SIGNAL(finished(TaskPtr,bool)),this,SLOT(onTaskFinished(TaskPtr,bool)));
-        cpu_processes_.append(wrapper);
-
-    }
-    for(int i=0;i<num_gpu;++i) {
-        ProcessWrapper* wrapper=new ProcessWrapper(this,timeout,gpu_ids.at(i%gpu_ids.size()).toInt());
-        connect(wrapper,SIGNAL(finished(TaskPtr,bool)),this,SLOT(onTaskFinished(TaskPtr,bool)));
-        gpu_processes_.append(wrapper);
-    }
 }
 
 ImageProcessor::~ImageProcessor()
@@ -138,26 +116,55 @@ ImageProcessor::~ImageProcessor()
 void ImageProcessor::startStop(bool start)
 {
     if(start){
-        running_state_=true;
         Settings settings;
+        int num_cpu=settings.value("num_cpu",10).toInt();
+        int num_gpu=settings.value("num_gpu",2).toInt();
+        int timeout=settings.value("timeout",300).toInt();
+        QStringList gpu_ids=settings.value("gpu_ids","0").toString().split(",", QString::SkipEmptyParts);
+        if(gpu_ids.empty()){
+            for(int i=0;i<num_gpu;++i) {
+                gpu_ids << QString("%1").arg(i);
+            }
+        }
+        for(int i=0;i<num_cpu;++i) {
+            ProcessWrapper* wrapper=new ProcessWrapper(this,timeout,-1);
+            connect(wrapper,SIGNAL(finished(TaskPtr,bool)),this,SLOT(onTaskFinished(TaskPtr,bool)));
+            cpu_processes_.append(wrapper);
+
+        }
+        for(int i=0;i<num_gpu;++i) {
+            ProcessWrapper* wrapper=new ProcessWrapper(this,timeout,gpu_ids.at(i%gpu_ids.size()).toInt());
+            connect(wrapper,SIGNAL(finished(TaskPtr,bool)),this,SLOT(onTaskFinished(TaskPtr,bool)));
+            gpu_processes_.append(wrapper);
+        }
+        running_state_=true;
         avg_source_path_=settings.value("avg_source_dir").toString()+"/Images-Disc1";
         stack_source_path_=settings.value("stack_source_dir").toString()+"/Images-Disc1";
         watcher_->addPath(avg_source_path_);
-        watcher_->addPath(stack_source_path_);
         onDirChange(avg_source_path_);
         startTasks();
     }else{
         running_state_=false;
         watcher_->removePath(avg_source_path_);
-        watcher_->removePath(stack_source_path_);
+        cpu_task_stack_.clear();
+        gpu_task_stack_.clear();
+        foreach(ProcessWrapper* process, cpu_processes_){
+            process->terminate();
+        }
+        foreach(ProcessWrapper* process, gpu_processes_){
+            process->terminate();
+        }
+        images_.clear();
+        while(!cpu_processes_.empty()){
+            cpu_processes_.takeLast()->deleteLater();
+        }
+        while(!gpu_processes_.empty()){
+            gpu_processes_.takeLast()->deleteLater();
+        }
     }
 }
 
 
-
-void ImageProcessor::onFileChange(const QString &path)
-{
-}
 
 void ImageProcessor::onDirChange(const QString &path)
 {
@@ -166,8 +173,6 @@ void ImageProcessor::onDirChange(const QString &path)
         for(int i=0;i<grid_squares.size();++i){
             updateGridSquare_(grid_squares.at(i).absoluteFilePath());
         }
-    }else if(path==stack_source_path_){
-
     }else if(avg_source_path_==QFileInfo(path).absolutePath()){
         // changes within gridsquare dir
         updateGridSquare_(path);

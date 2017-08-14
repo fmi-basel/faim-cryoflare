@@ -21,7 +21,6 @@ public:
     ~ImageProcessor();
 public slots:
     void startStop(bool start=true);
-    void onFileChange(const QString & path);
     void onDirChange(const QString & path);
     void onTaskFinished(const TaskPtr& task, bool gpu);
     void loadSettings();
