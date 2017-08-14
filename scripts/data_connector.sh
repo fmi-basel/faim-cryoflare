@@ -8,7 +8,7 @@ echo $1 | sed 's/[Ee]+\?/*10^/g' | bc -l
 relion_alias(){
   local local_job_id
   printf -v local_job_id "%03d" $2
-  [ -e $destination_path/$1/$3 ] || ln -s ../$1/job00$local_job_id $destination_path/$1/$3
+  [ -e $destination_path/$1/$3 ] || ln -s ../$1/job$local_job_id $destination_path/$1/$3
   SHARED_FILES $destination_path/$1/$3
 }
 
