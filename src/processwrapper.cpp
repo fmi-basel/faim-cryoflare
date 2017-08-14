@@ -57,6 +57,13 @@ void ProcessWrapper::start(const TaskPtr &task)
 
 void ProcessWrapper::onFinished(int exitcode)
 {
+    timeout_timer_->stop();
+    if(!running_){
+        //process was terminated
+        process_->readAllStandardError();
+        process_->readAllStandardOutput();
+        return;
+    }
     QTextStream output_stream(process_->readAllStandardOutput(),QIODevice::ReadOnly);
     QString result_token("RESULT_EXPORT:");
     QString result_file_token("FILE_EXPORT:");
@@ -95,11 +102,22 @@ void ProcessWrapper::kill()
 
 void ProcessWrapper::terminate()
 {
+    qDebug() <<"terminating: " << task_->script;
     process_->terminate();
+    process_->waitForFinished();
+    qDebug() <<"finished: " << task_->script;
+
 }
 
 void ProcessWrapper::timeout()
 {
+    if(!process_->state()==QProcess::Running){
+        return;
+    }
+    qDebug() << "timeout for process " << task_->script << ". Terminating";
+    running_=false;
     terminate();
+    process_->waitForFinished();
+    qDebug() <<  task_->script << " process finished. Restarting";
     start(task_);
 }
