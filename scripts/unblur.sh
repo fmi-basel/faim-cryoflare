@@ -24,11 +24,11 @@ dose_per_frame=`calculate "1e-20*$dose/$pixel_size/$pixel_size/$num_frames"`
 if [ ! -e ${aligned_stack} ] || [ ! -e ${shift_plot} ] || [ ! -e ${aligned_avg} ] || [ ! -e ${aligned_avg_dw} ] || [ ! -e ${aligned_avg_dw} ]; then
   module purge
   module load unblur
-  module load eman2
-
+  module load eman2/2.2
+  rm -fr $aligned_stack > /dev/null
   clamped_stack=$scratch/${short_name}_clamped.mrcs
   clamped_stack_mrc=$scratch/${short_name}_clamped.mrc
-  e2proc2d.py $raw_stack $clamped_stack --process threshold.clampminmax.nsigma:nsigma=4:tomean=1 > $unblur_log
+  run e2proc2d.py $raw_stack $clamped_stack --process threshold.clampminmax.nsigma:nsigma=4:tomean=1 > $unblur_log
   ln -s $clamped_stack $clamped_stack_mrc >> $unblur_log
 
 
@@ -43,14 +43,14 @@ if [ ! -e ${aligned_stack} ] || [ ! -e ${shift_plot} ] || [ ! -e ${aligned_avg} 
   echo aligned_frames_filename $aligned_stack  >> $unblur_param
   echo set_expert_options no >> $unblur_param
 
-  export OMP_NUM_THREADS=4
-  unblur  $unblur_param  >> $unblur_log
+  export OMP_NUM_THREADS=8
+  run unblur  $unblur_param  >> $unblur_log
   rm -f ${aligned_stack}s
   mv $aligned_stack ${aligned_stack}s
   ln -s ${aligned_stack}s $aligned_stack
 
-  e2proc2d.py --process math.realtofft  --fouriershrink 7.49609375  --process mask.sharp:inner_radius=1 $aligned_avg $aligned_avg_fft_thumbnail
-  e2proc2d.py --fouriershrink 7.49609375 ${aligned_avg} ${aligned_avg_png}
+  run e2proc2d.py --process math.realtofft  --fouriershrink 7.49609375  --process mask.sharp:inner_radius=1 $aligned_avg $aligned_avg_fft_thumbnail
+  run e2proc2d.py --fouriershrink 7.49609375 ${aligned_avg} ${aligned_avg_png}
 
   summovie_param=$scratch/${short_name}_summovie.param
   echo INPUT_FILENAME $aligned_stack > $summovie_param
@@ -67,11 +67,11 @@ if [ ! -e ${aligned_stack} ] || [ ! -e ${shift_plot} ] || [ ! -e ${aligned_avg} 
   echo pre_exposure_amount 0.0 >> $summovie_param
   echo restore_power yes >> $summovie_param
 
-  export OMP_NUM_THREADS=4
-  summovie  $summovie_param  >> $unblur_log
-  e2proc2d.py --process math.realtofft  --fouriershrink 7.49609375  --process mask.sharp:inner_radius=1 $aligned_avg_dw $aligned_avg_fft_thumbnail_dw
-  e2proc2d.py --fouriershrink 7.49609375 ${aligned_avg_dw} ${aligned_avg_png_dw}
-  python <<EOT
+  export OMP_NUM_THREADS=8
+  run summovie  $summovie_param  >> $unblur_log
+  run e2proc2d.py --process math.realtofft  --fouriershrink 7.49609375  --process mask.sharp:inner_radius=1 $aligned_avg_dw $aligned_avg_fft_thumbnail_dw
+  run e2proc2d.py --fouriershrink 7.49609375 ${aligned_avg_dw} ${aligned_avg_png_dw}
+  run python <<EOT
 import matplotlib.pyplot as plt
 from matplotlib import cm
 import numpy as np
@@ -92,7 +92,7 @@ plt.savefig("$shift_plot",dpi=100)
 EOT
 
 fi
-unblur_max_shift=`python <<EOT
+unblur_max_shift=`run python <<EOT
 from math import sqrt
 with open("$shift_txt") as f:
     lines=f.readlines()[-2:]

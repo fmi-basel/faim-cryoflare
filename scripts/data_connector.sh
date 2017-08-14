@@ -1,13 +1,5 @@
 #!/bin/sh --noprofile
 
-cleanup(){
-  rm -fr $scratch
-}
-
-cleanup_and_terminate(){
-  cleanup
-  kill 0
-}
 
 calculate() {
 echo $1 | sed 's/[Ee]+\?/*10^/g' | bc -l
@@ -74,13 +66,29 @@ SHARED_FILES() {
   done
 }
 
+_cleanup(){
+  rm -fr $scratch
+}
+
+_terminate(){
+  kill -TERM $PID 
+  wait $PID
+  exit
+}
+
+run(){
+  $@ &
+  PID=$!
+  wait $PID
+} 
+
 script_name=${0##*/}
 #scratch=$(mktemp -d /scratch/$USER/${script_name%%.sh}.XXXXXX)
 scratch=$(mktemp -d /data/Gatan_X/scratch/${script_name%%.sh}.XXXXXX)
 
 
-trap cleanup EXIT
-trap cleanup_and_terminate INT TERM HUP
+trap _cleanup EXIT
+trap _terminate INT TERM HUP
 
 while IFS='=' read k v; do declare $k="$v"; done
 

@@ -15,22 +15,22 @@ source_stack=$stack_source_path/${name}*mrc
 
 if [ ! -e $raw_stack ] || [ ! -e $raw_average_thumbnail ]; then
   module purge
-  module load eman2
+  module load eman2/2.2
   module load imod
 
   cp $xml_file $xml
   rm  $raw_stack $raw_average >& /dev/null
   if [ -w $gain_ref ]; then
     # apply gain normalization
-    clip unpack $source_stack $gain_ref  $raw_stack >> $unpack_log
+    run clip unpack $source_stack $gain_ref  $raw_stack >> $unpack_log
   else
     cp $source_stack $raw_stack >> $unpack_log
   fi
-  e2proc2d.py  --average $raw_stack $raw_average>> $unpack_log
-  e2proc2d.py  --fouriershrink 7.49609375  $raw_average $raw_average_thumbnail>> $unpack_log
+  run e2proc2d.py  --average $raw_stack $raw_average>> $unpack_log
+  run e2proc2d.py  --fouriershrink 7.49609375  $raw_average $raw_average_thumbnail>> $unpack_log
 fi
 if [ ! -e $ice_ratio_log ] ; then
-  $STACK_GUI_SCRIPTS/ice_ratio.py $raw_average $pixel_size 5.0 3.89 0.4> $ice_ratio_log
+  run $STACK_GUI_SCRIPTS/ice_ratio.py $raw_average $pixel_size 5.0 3.89 0.4> $ice_ratio_log
 fi
 
 ice_ratio=`tail -n 1 $ice_ratio_log`

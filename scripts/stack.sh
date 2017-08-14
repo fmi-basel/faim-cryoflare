@@ -13,16 +13,16 @@ xml=$destination_path/xml/${short_name}.xml
 
 if [ ! -e $raw_stack ] || [ ! -e $raw_average_thumbnail ]; then
   module purge
-  module load eman2
+  module load eman2/2.2
 
   cp $xml_file $xml
   rm  $raw_stack $raw_average >& /dev/null
-  e2proc2d.py  $stack_frames  $raw_stack >> $stack_log
-  e2proc2d.py  --average $raw_stack $raw_average>> $stack_log
-  e2proc2d.py  --fouriershrink 7.49609375  $raw_average $raw_average_thumbnail>> $stack_log
+  run e2proc2d.py  $stack_frames  $raw_stack >> $stack_log
+  run e2proc2d.py  --average $raw_stack $raw_average>> $stack_log
+  run e2proc2d.py  --fouriershrink 7.49609375  $raw_average $raw_average_thumbnail>> $stack_log
 fi
 if [ ! -e $ice_ratio_log ] ; then
-  $STACK_GUI_SCRIPTS/ice_ratio.py $raw_average $pixel_size 5.0 3.89 0.4> $ice_ratio_log
+  run $STACK_GUI_SCRIPTS/ice_ratio.py $raw_average $pixel_size 5.0 3.89 0.4> $ice_ratio_log
 fi
 
 ice_ratio=`tail -n 1 $ice_ratio_log`

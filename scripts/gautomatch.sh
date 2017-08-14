@@ -19,11 +19,11 @@ if [ ! -e $gautomatch_box_file ]; then
   module purge
   module load gautomatch
   module switch gautomatch/0.53_cuda7
-  module load eman2
+  module load eman2/2.2
   full_png=$scratch/${short_name}_gautomatch_full.png
-  gautomatch $gautomach_params $aligned_avg >> $gautomatch_log 
-  e2proc2d.py $aligned_avg $full_png
-  $STACK_GUI_SCRIPTS/draw_boxes.sh  $full_png $gautomatch_box_file  $aligned_avg_boxes_png
+  run gautomatch $gautomach_params $aligned_avg >> $gautomatch_log 
+  run e2proc2d.py $aligned_avg $full_png
+  run $STACK_GUI_SCRIPTS/draw_boxes.sh  $full_png $gautomatch_box_file  $aligned_avg_boxes_png
 fi
 
 num_particles=`cat $gautomatch_box_file|wc -l`

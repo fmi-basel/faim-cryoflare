@@ -15,12 +15,12 @@ dose_per_frame=`calculate "1e-20*$dose/$pixel_size/$pixel_size"`
 if [ ! -e ${aligned_avg_mc2_dw} ] || [ ! -e $mc2_shift_plot ] || [ -e $aligned_avg_mc2_dw_png ]; then
   module purge
   module load motioncor2/20161019
-  module load eman2
+  module load eman2/2.2
 
-  MotionCor2 -InMrc $raw_stack -Patch $patch -bft $bft -OutMrc $aligned_avg_mc2_dw -LogFile $motioncorr2_log -FmDose $dose_per_frame -PixSize $pixel_size -kV 300 -Align 1 -Gpu $gpu_id  > $motioncorr2_log  2>&1
-  e2proc2d.py --process math.realtofft  --fouriershrink 7.49609375  --process mask.sharp:inner_radius=1 $aligned_avg_mc2_dw $aligned_avg_mc2_dw_fft_thumbnail  >> $motioncorr2_log   2>&1
+  run MotionCor2 -InMrc $raw_stack -Patch $patch -bft $bft -OutMrc $aligned_avg_mc2_dw -LogFile $motioncorr2_log -FmDose $dose_per_frame -PixSize $pixel_size -kV 300 -Align 1 -Gpu $gpu_id  > $motioncorr2_log  2>&1
+  run e2proc2d.py --process math.realtofft  --fouriershrink 7.49609375  --process mask.sharp:inner_radius=1 $aligned_avg_mc2_dw $aligned_avg_mc2_dw_fft_thumbnail  >> $motioncorr2_log   2>&1
 
-  python <<EOT
+  run python <<EOT
 import matplotlib.pyplot as plt
 from matplotlib import cm
 import numpy as np
@@ -47,11 +47,11 @@ plt.tight_layout()
 plt.savefig("$mc2_shift_plot",dpi=100)
 EOT
 
-  e2proc2d.py --fouriershrink 7.49609375 ${aligned_avg_mc2_dw} ${aligned_avg_mc2_dw_png}  >> $motioncorr2_log 2>&1
+  run e2proc2d.py --fouriershrink 7.49609375 ${aligned_avg_mc2_dw} ${aligned_avg_mc2_dw_png}  >> $motioncorr2_log 2>&1
 fi
 
 
-mc2_max_shift=`python <<EOT
+mc2_max_shift=`run python <<EOT
 from math import sqrt
 x=[]
 y=[]

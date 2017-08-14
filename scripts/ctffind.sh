@@ -22,7 +22,7 @@ ctffind_diag_file_png=${ctffind_aligned_avg_link/mrc/ctf.png}
 ln -s ../../../micrographs_unblur/${aligned_avg##*/} $ctffind_aligned_avg_link
 if [ ! -e $ctffind_diag_file ]; then
   module purge
-  module load eman2 ctffind
+  module load eman2/2.2 ctffind
   ctffind_param=$scratch/${short_name}_ctffind4.param
   echo "$ctffind_aligned_avg_link" > $ctffind_param
   echo "$ctffind_diag_file" >> $ctffind_param
@@ -52,8 +52,8 @@ if [ ! -e $ctffind_diag_file ]; then
   cat $ctffind_param > $ctffind_log
   echo PhasePlate: $phase_plate >> $ctffind_log
 
-  ctffind   < $ctffind_param >> $ctffind_log
-  e2proc2d.py  --fouriershrink 2 $ctffind_diag_file $ctffind_diag_file_png
+  run ctffind   < $ctffind_param >> $ctffind_log
+  run e2proc2d.py --parallel thread:n=8  --fouriershrink 2 $ctffind_diag_file $ctffind_diag_file_png
 fi
 
 defocus_u=`tail -n 1 $ctffind_out_txt|cut -f2 -d" "`

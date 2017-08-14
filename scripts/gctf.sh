@@ -23,7 +23,7 @@ if [ ! -e $gctf_aligned_log ] || [ ! -e $gctf_epa_log ] || [ ! -e $gctf_diag_fil
   module purge
   module load gctf
   module switch gctf/1.06_cuda7
-  module load eman2
+  module load eman2/2.2
 
   gctf_params=" --gid $gpu_id"
   gctf_params+=" --apix $pixel_size"
@@ -63,9 +63,9 @@ if [ ! -e $gctf_aligned_log ] || [ ! -e $gctf_epa_log ] || [ ! -e $gctf_diag_fil
   ln -s ../../../micrographs_unblur/${aligned_avg##*/} $relion_job_micrographs_dir
   aligned_avg_link=$relion_job_micrographs_dir/${aligned_avg##*/}
   if [ $phase_plate == "true" ] ; then
-    gctf $gctf_params $gctf_defocus_params $gctf_phase_plate_params $aligned_avg_link &>> $gctf_log
+    run gctf $gctf_params $gctf_defocus_params $gctf_phase_plate_params $aligned_avg_link &>> $gctf_log
   else
-    gctf $gctf_params $gctf_defocus_params  $aligned_avg_link  &>> $gctf_log
+    run gctf $gctf_params $gctf_defocus_params  $aligned_avg_link  &>> $gctf_log
   fi
   measured_defocus=`fgrep -A 1 "Defocus_U" $gctf_aligned_log|head -n 2 |tail -n 1|xargs`
   defocus_u=`echo $measured_defocus|cut -f1 -d" "`
@@ -76,13 +76,13 @@ if [ ! -e $gctf_aligned_log ] || [ ! -e $gctf_epa_log ] || [ ! -e $gctf_diag_fil
   gctf_defocus_params+=" --defH `calculate 1.2*$average_defocus`"
   gctf_defocus_params+=" --defS 100"
   if [ $phase_plate == "true" ] ; then
-    gctf $gctf_params $gctf_defocus_params $gctf_phase_plate_params $aligned_avg_link &>> $gctf_log
+    run gctf $gctf_params $gctf_defocus_params $gctf_phase_plate_params $aligned_avg_link &>> $gctf_log
   else
-    gctf $gctf_params $gctf_defocus_params  $aligned_avg_link  &>> $gctf_log
+    run gctf $gctf_params $gctf_defocus_params  $aligned_avg_link  &>> $gctf_log
   fi
 
   ln -s $gctf_diag_file $gctf_diag_file_mrc
-  e2proc2d.py  --meanshrink 2  $gctf_diag_file_mrc  $gctf_diag_file_png
+  run e2proc2d.py  --meanshrink 2  $gctf_diag_file_mrc  $gctf_diag_file_png
 fi
 measured_defocus=`fgrep -A 1 "Defocus_U" $gctf_aligned_log|head -n 2 |tail -n 1|xargs`
 defocus_u=`echo $measured_defocus|cut -f1 -d" "`
