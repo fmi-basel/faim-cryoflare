@@ -45,6 +45,7 @@ signals:
 
 private:
     void updateDetails_(int row);
+    void updateChart_(int column);
     void updateTaskWidget_(Settings *settings);
     Ui::MainWindow *ui;
     ImageTableModel *model_;

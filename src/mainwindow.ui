@@ -84,41 +84,59 @@
            </property>
            <property name="icon">
             <iconset theme="window-new">
-             <normaloff/>
-            </iconset>
+             <normaloff>.</normaloff>.</iconset>
            </property>
           </widget>
          </item>
         </layout>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="1,0">
+        <layout class="QHBoxLayout" name="horizontalLayout_3" stretch="0,0">
          <item>
-          <widget class="ImageTableView" name="image_list">
-           <property name="editTriggers">
-            <set>QAbstractItemView::NoEditTriggers</set>
+          <widget class="QSplitter" name="splitter">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
            </property>
-           <property name="alternatingRowColors">
-            <bool>true</bool>
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
            </property>
-           <property name="selectionBehavior">
-            <enum>QAbstractItemView::SelectRows</enum>
-           </property>
-           <property name="showGrid">
-            <bool>true</bool>
-           </property>
-           <property name="sortingEnabled">
-            <bool>true</bool>
-           </property>
-           <attribute name="horizontalHeaderMinimumSectionSize">
-            <number>120</number>
-           </attribute>
+           <widget class="ImageTableView" name="image_list">
+            <property name="editTriggers">
+             <set>QAbstractItemView::NoEditTriggers</set>
+            </property>
+            <property name="alternatingRowColors">
+             <bool>true</bool>
+            </property>
+            <property name="selectionBehavior">
+             <enum>QAbstractItemView::SelectItems</enum>
+            </property>
+            <property name="showGrid">
+             <bool>true</bool>
+            </property>
+            <property name="sortingEnabled">
+             <bool>true</bool>
+            </property>
+            <attribute name="horizontalHeaderMinimumSectionSize">
+             <number>120</number>
+            </attribute>
+           </widget>
+           <widget class="QtCharts::QChartView" name="chart">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+           </widget>
           </widget>
          </item>
          <item>
           <widget class="QTabWidget" name="image_data">
            <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
              <horstretch>0</horstretch>
              <verstretch>0</verstretch>
             </sizepolicy>
@@ -167,6 +185,11 @@
    <class>ImageTableView</class>
    <extends>QTableView</extends>
    <header>imagetableview.h</header>
+  </customwidget>
+  <customwidget>
+   <class>QtCharts::QChartView</class>
+   <extends>QGraphicsView</extends>
+   <header location="global">QtCharts/QChartView</header>
   </customwidget>
  </customwidgets>
  <resources/>

@@ -307,3 +307,8 @@ void MainWindow::updateDetails_(int row)
         }
     }
 }
+
+void MainWindow::updateChart_(int column)
+{
+
+}
