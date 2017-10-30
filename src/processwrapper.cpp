@@ -11,8 +11,8 @@ ProcessWrapper::ProcessWrapper(QObject *parent, int timeout, int gpu_id) :
     process_(new QProcess),
     task_(),
     timeout_(timeout),
+    terminated_(false),
     gpu_id_(gpu_id),
-    running_(false),
     timeout_timer_(new QTimer)
 {
     connect(process_,SIGNAL(finished(int)),this,SLOT(onFinished(int)));
@@ -25,12 +25,11 @@ ProcessWrapper::ProcessWrapper(QObject *parent, int timeout, int gpu_id) :
 
 bool ProcessWrapper::running() const
 {
-    return running_;
+    return process_->state()!=QProcess::NotRunning;
 }
 
 void ProcessWrapper::start(const TaskPtr &task)
 {
-    running_=true;
     task_=task;
     process_->start(task_->script);
     foreach(QString key,task_->data->keys()){
@@ -58,10 +57,10 @@ void ProcessWrapper::start(const TaskPtr &task)
 void ProcessWrapper::onFinished(int exitcode)
 {
     timeout_timer_->stop();
-    if(!running_){
-        //process was terminated
+    if(terminated_){
         process_->readAllStandardError();
         process_->readAllStandardOutput();
+        terminated_=false;
         return;
     }
     QTextStream output_stream(process_->readAllStandardOutput(),QIODevice::ReadOnly);
@@ -91,36 +90,32 @@ void ProcessWrapper::onFinished(int exitcode)
     task_->state=exitcode;
     TaskPtr task=task_;
     task_.clear();
-    running_=false;
     emit finished(task,-1!=gpu_id_);
 }
 
 void ProcessWrapper::kill()
 {
     process_->kill();
+    process_->waitForFinished();
 }
 
 void ProcessWrapper::terminate()
 {
-    if(!running_){
+    if(!running()){
         return;
     }
-    qDebug() <<"terminating: " << task_->script;
+    terminated_=true;
     process_->terminate();
     process_->waitForFinished();
-    qDebug() <<"finished: " << task_->script;
 
 }
 
 void ProcessWrapper::timeout()
 {
-    if(!process_->state()==QProcess::Running){
+    if(!running()){
         return;
     }
-    qDebug() << "timeout for process " << task_->script << ". Terminating";
-    running_=false;
     terminate();
     process_->waitForFinished();
-    qDebug() <<  task_->script << " process finished. Restarting";
     start(task_);
 }

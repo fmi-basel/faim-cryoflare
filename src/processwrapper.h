@@ -29,9 +29,10 @@ private:
     QProcess *process_;
     TaskPtr task_;
     int timeout_;
+    bool terminated_;
     int gpu_id_;
-    bool running_;
     QTimer* timeout_timer_;
+  
 };
 
 #endif // PROCESSWRAPPER_H
