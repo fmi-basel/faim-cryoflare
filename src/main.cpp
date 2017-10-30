@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "imageprocessor.h"
 #include <QApplication>
+#include <QStyleFactory>
 #include <QHash>
 #include <QTimer>
 #include <QDebug>
@@ -31,11 +32,16 @@ int main(int argc, char* argv[])
     FileLocker file_locker(".stack_gui.ini");
     if(!file_locker.tryLock()){
         qWarning() << "Directory is already used by process: " << file_locker.getLockOwner() << ". Please use a differnt directory or stop the other process first." ;
-        return 1;
+        qWarning() << "Ignore (y/N):";
+        int c=getchar();
+        if(c!='y' && c!='Y'){
+            return 1;
+        }
     }
     ImageProcessor processor;
     if (qobject_cast<QApplication *>(app.data())) {
          // start GUI version...
+        qobject_cast<QApplication *>(app.data())->setStyle(QStyleFactory::create("fusion"));
         MainWindow w;
         QObject::connect(&w, SIGNAL(startStop(bool)), &processor, SLOT(startStop(bool)));
         QObject::connect(&w,SIGNAL(exportImages(QString,QStringList)),&processor,SLOT(exportImages(QString,QStringList)));
