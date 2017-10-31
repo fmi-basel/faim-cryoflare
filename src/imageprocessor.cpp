@@ -24,6 +24,8 @@ DataPtr parse_xml_data(const QString& xml_path){
     result->insert("xml_file",xml_path);
     result->insert("name",name);
     result->insert("grid_name",grid_name);
+    xml_dir.cdUp();
+    result->insert("disc_name",xml_dir.dirName());
     QDomDocument dom_document;
     QFile file(xml_path);
     if (!file.open(QIODevice::ReadOnly))
@@ -138,8 +140,8 @@ void ImageProcessor::startStop(bool start)
             gpu_processes_.append(wrapper);
         }
         running_state_=true;
-        avg_source_path_=settings.value("avg_source_dir").toString()+"/Images-Disc1";
-        stack_source_path_=settings.value("stack_source_dir").toString()+"/Images-Disc1";
+        avg_source_path_=settings.value("avg_source_dir").toString();
+        stack_source_path_=settings.value("stack_source_dir").toString();
         watcher_->addPath(avg_source_path_);
         onDirChange(avg_source_path_);
         startTasks();
@@ -168,16 +170,34 @@ void ImageProcessor::startStop(bool start)
 
 void ImageProcessor::onDirChange(const QString &path)
 {
-    if(path==avg_source_path_){
-        QFileInfoList grid_squares=QDir(avg_source_path_).entryInfoList(QStringList("GridSquare_*"),QDir::Dirs,QDir::Time | QDir::Reversed);
+    QDir dir(path);
+    if(dir.absolutePath()==avg_source_path_){
+        QFileInfoList images_discs=dir.entryInfoList(QStringList("Images-Disc*"),QDir::Dirs,QDir::Time | QDir::Reversed);
+        for(int i=0;i<images_discs.size();++i){
+            watcher_->addPath(images_discs.at(i).absoluteFilePath());
+        }
+        return;
+    }
+    dir.cdUp();
+    if(dir.absolutePath()==avg_source_path_){
+        //Images-Disc* directory has changed
+
+        QFileInfoList grid_squares=QDir(path).entryInfoList(QStringList("GridSquare_*"),QDir::Dirs,QDir::Time | QDir::Reversed);
         for(int i=0;i<grid_squares.size();++i){
             updateGridSquare_(grid_squares.at(i).absoluteFilePath());
         }
-    }else if(avg_source_path_==QFileInfo(path).absolutePath()){
+        return;
+    }
+    dir.cdUp();
+    if(dir.absolutePath()==avg_source_path_){
         // changes within gridsquare dir
         updateGridSquare_(path);
-    }else{
+        return;
+    }
+    dir.cdUp();
+    if(dir.absolutePath()==avg_source_path_){
         updateImages_(path);
+        return;
     }
 }
 
@@ -291,15 +311,18 @@ void ImageProcessor::updateImages_(const QString &grid_square)
 void ImageProcessor::createTaskTree_(const QString &path)
 {
     DataPtr data=parse_xml_data(path);
+    QString relative_path=QString("%1/%2/Data").arg(data->value("disc_name")).arg(data->value("grid_name"));
+    QString avg_s_path=QString("%1/%2").arg(avg_source_path_).arg(relative_path);
+    QString stack_s_path=QString("%1/%2").arg(stack_source_path_).arg(relative_path);
     data->insert("destination_path",QDir::currentPath());
-    data->insert("stack_source_path",QString("%1/%2/Data").arg(stack_source_path_).arg(data->value("grid_name")));
-    data->insert("avg_source_path",QString("%1/%2/Data").arg(avg_source_path_).arg(data->value("grid_name")));
+    data->insert("stack_source_path",stack_s_path);
+    data->insert("avg_source_path",avg_s_path);
     QStringList stack_frames;
     if(QString("BM-Falcon")==data->value("camera")){
-        data->insert("stack_frames",QString("%1/%2/Data/%3_frames.mrc").arg(stack_source_path_).arg(data->value("grid_name")).arg(data->value("name")));
+        data->insert("stack_frames",QString("%1/%2_frames.mrc").arg(stack_s_path).arg(data->value("name")));
     }else if(QString("EF-CCD")==data->value("camera")){
         for(int i=1;i<=data->value("num_frames").toInt();++i){
-            stack_frames.append(QString("%1/%2/Data/%3-*-%4.???").arg(stack_source_path_).arg(data->value("grid_name")).arg(data->value("name")).arg(i,4,10,QChar('0')));
+            stack_frames.append(QString("%1/%2-*-%3.???").arg(stack_s_path).arg(data->value("name")).arg(i,4,10,QChar('0')));
         }
         data->insert("stack_frames",stack_frames.join(" "));
     }
