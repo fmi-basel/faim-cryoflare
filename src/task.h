@@ -39,6 +39,7 @@ public:
     bool gpu;
     QString output;
     QString error;
+    QSet<QString> raw_files;
     QSet<QString> output_files;
     QSet<QString> shared_output_files;
     int state;

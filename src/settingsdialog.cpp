@@ -72,14 +72,18 @@ void save_to_settings(SETTINGS* settings, Ui::SettingsDialog* ui){
     settings->setValue("export_post_script", ui->export_post_script->path());
     settings->setValue("export_custom_script", ui->export_custom_script->path());
     settings->setValue("export_num_processes", ui->export_num_processes->value());
+    settings->setValue("ask_destination",ui->ask_destination->isChecked());
     if(ui->export_copy->isChecked()){
         settings->setValue("export","copy");
     }
     if(ui->export_move->isChecked()){
         settings->setValue("export","move");
     }
-    if(ui->export_custom->isChecked()){
+    if(ui->export_custom1->isChecked()){
         settings->setValue("export","custom");
+    }
+    if(ui->export_custom2->isChecked()){
+        settings->setValue("export","custom2");
     }
     settings->beginGroup("Tasks");
     settings->remove("");
@@ -98,13 +102,16 @@ void load_from_settings(SETTINGS* settings, Ui::SettingsDialog* ui){
     ui->export_post_script->setPath(settings->value("export_post_script").toString());
     ui->export_custom_script->setPath(settings->value("export_custom_script").toString());
     ui->export_num_processes->setValue(settings->value("export_num_processes").toInt());
+    ui->ask_destination->setChecked(settings->value("ask_destination").toBool());
     QString export_mode=settings->value("export").toString();
     if(export_mode=="copy"){
         ui->export_copy->setChecked(true);
     }else if(export_mode=="move"){
         ui->export_move->setChecked(true);
     }else if(export_mode=="custom"){
-        ui->export_custom->setChecked(true);
+        ui->export_custom1->setChecked(true);
+    }else if(export_mode=="custom2"){
+        ui->export_custom2->setChecked(true);
     }else{
         ui->export_copy->setChecked(true);
     }

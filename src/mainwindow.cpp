@@ -252,8 +252,13 @@ void MainWindow::inputDataChanged()
 
 void MainWindow::onExport()
 {
-    QString export_path = QFileDialog::getExistingDirectory(0, "Export folder","",  QFileDialog::ShowDirsOnly| QFileDialog::DontResolveSymlinks);
-    if(! export_path.isEmpty()){
+    QString export_path;
+    Settings settings;
+    bool ask_destination=settings.value("ask_destination").toBool();
+    if(ask_destination){
+        export_path=QFileDialog::getExistingDirectory(0, "Export folder","",  QFileDialog::ShowDirsOnly| QFileDialog::DontResolveSymlinks);
+    }
+    if( (! export_path.isEmpty()) || (! ask_destination)){
         QStringList images;
         for(int i=0;i<model_->rowCount();++i){
             DataPtr data=model_->image(i);

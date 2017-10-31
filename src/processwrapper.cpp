@@ -65,6 +65,7 @@ void ProcessWrapper::onFinished(int exitcode)
     }
     QTextStream output_stream(process_->readAllStandardOutput(),QIODevice::ReadOnly);
     QString result_token("RESULT_EXPORT:");
+    QString raw_file_token("RAW_FILE_EXPORT:");
     QString result_file_token("FILE_EXPORT:");
     QString shared_result_file_token("SHARED_FILE_EXPORT:");
     QString output;
@@ -75,6 +76,9 @@ void ProcessWrapper::onFinished(int exitcode)
             line.remove(0,result_token.size());
             QStringList splitted=line.split("=");
             task_->data->insert(splitted[0].trimmed(),splitted[1].trimmed());
+        }else if(line.startsWith(raw_file_token)){
+            line.remove(0,raw_file_token.size());
+            task_->raw_files.insert(line.trimmed());
         }else if(line.startsWith(result_file_token)){
             line.remove(0,result_file_token.size());
             task_->output_files.insert(line.trimmed());
