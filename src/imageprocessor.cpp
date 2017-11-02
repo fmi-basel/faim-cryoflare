@@ -95,6 +95,7 @@ ImageProcessor::ImageProcessor():
     cpu_processes_(),
     gpu_processes_(),
     root_task_(new Task("General","dummy",DataPtr(new Data))),
+    raw_files_(),
     output_files_(),
     shared_output_files_(),
     exporter_(new ParallelExporter(this)),
@@ -205,6 +206,12 @@ void ImageProcessor::onTaskFinished(const TaskPtr &task, bool gpu)
     foreach(QString file, task->output_files){
         output_files_[task->data->value("short_name")].insert(QDir::current().relativeFilePath(file));
     }
+    if(! raw_files_.contains(task->data->value("short_name"))){
+        raw_files_[task->data->value("short_name")]=QSet<QString>();
+    }
+    foreach(QString file, task->raw_files){
+        raw_files_[task->data->value("short_name")].insert(QDir::current().relativeFilePath(file));
+    }
     foreach(QString file, task->shared_output_files){
         shared_output_files_.insert(QDir::current().relativeFilePath(file));
     }
@@ -242,9 +249,11 @@ void ImageProcessor::loadSettings()
 void ImageProcessor::exportImages(const QString &export_path, const QStringList &image_list)
 {
     QQueue<QSet<QString> >files_to_export;
+    QQueue<QSet<QString> >raw_files_to_export;
     files_to_export.enqueue(shared_output_files_);
     foreach(QString image,image_list){
         files_to_export.enqueue(output_files_[image]);
+        raw_files_to_export.enqueue(raw_files_[image]);
     }
     Settings settings;
     QString export_mode=settings.value("export").toString();
@@ -252,7 +261,24 @@ void ImageProcessor::exportImages(const QString &export_path, const QStringList 
     int num_processes=settings.value("export_num_processes",1).toInt();
     QString pre_script=settings.value("export_pre_script").toString();
     QString post_script=settings.value("export_post_script").toString();
-    exporter_->exportImages(QDir::currentPath() , export_path, files_to_export, num_processes, export_mode, custom_script,pre_script,post_script,image_list);
+    if(export_mode=="custom2"){
+        QProcess process;
+        process. setProcessChannelMode(QProcess::MergedChannels);
+        process.setStandardOutputFile(QDir(QDir::currentPath()).absoluteFilePath("export.log"));
+        QStringList arguments;
+        arguments << QDir::currentPath();
+        process.start(custom_script,arguments);
+        process.waitForStarted(-1);
+        foreach(QString image,image_list){
+            process.write(QString("raw_%1=%2").arg(image).arg(QStringList(raw_files_[image].toList()).join(",")).toLatin1());
+            process.write(QString("%1=%2").arg(image).arg(QStringList(output_files_[image].toList()).join(",")).toLatin1());
+        }
+        process.waitForFinished(-1);
+
+    }else{
+        exporter_->exportImages(QDir::currentPath() , export_path, files_to_export, num_processes, export_mode, custom_script,pre_script,post_script,image_list);
+    }
+
 }
 
 void ImageProcessor::startTasks()

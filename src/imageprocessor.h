@@ -49,6 +49,7 @@ private:
     QList<ProcessWrapper*> cpu_processes_;
     QList<ProcessWrapper*> gpu_processes_;
     TaskPtr root_task_;
+    QHash<QString,QSet<QString> > raw_files_;
     QHash<QString,QSet<QString> > output_files_;
     QSet<QString> shared_output_files_;
     ParallelExporter* exporter_;
