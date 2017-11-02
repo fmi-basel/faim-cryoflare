@@ -33,6 +33,7 @@ signals:
     void queueCountChanged(int,int);
 
 private:
+    void updateDisc_(const QString& disc);
     void updateGridSquare_(const QString& grid_square);
     void updateImages_(const QString& grid_square);
     void createTaskTree_(const QString& path);

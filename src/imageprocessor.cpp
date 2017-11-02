@@ -174,18 +174,14 @@ void ImageProcessor::onDirChange(const QString &path)
     if(dir.absolutePath()==avg_source_path_){
         QFileInfoList images_discs=dir.entryInfoList(QStringList("Images-Disc*"),QDir::Dirs,QDir::Time | QDir::Reversed);
         for(int i=0;i<images_discs.size();++i){
-            watcher_->addPath(images_discs.at(i).absoluteFilePath());
+            updateDisc_(images_discs.at(i).absoluteFilePath());
         }
         return;
     }
     dir.cdUp();
     if(dir.absolutePath()==avg_source_path_){
         //Images-Disc* directory has changed
-
-        QFileInfoList grid_squares=QDir(path).entryInfoList(QStringList("GridSquare_*"),QDir::Dirs,QDir::Time | QDir::Reversed);
-        for(int i=0;i<grid_squares.size();++i){
-            updateGridSquare_(grid_squares.at(i).absoluteFilePath());
-        }
+        updateDisc_(path);
         return;
     }
     dir.cdUp();
@@ -282,6 +278,14 @@ void ImageProcessor::startTasks()
     }
 }
 
+void ImageProcessor::updateDisc_(const QString &disc)
+{
+    QFileInfoList grid_squares=QDir(disc).entryInfoList(QStringList("GridSquare_*"),QDir::Dirs,QDir::Time | QDir::Reversed);
+    for(int i=0;i<grid_squares.size();++i){
+        updateGridSquare_(grid_squares.at(i).absoluteFilePath());
+    }
+    return;
+}
 void ImageProcessor::updateGridSquare_(const QString &grid_square)
 {
     QString grid_square_data=QDir(grid_square).absoluteFilePath("Data");
