@@ -193,7 +193,7 @@
    <widget class="QWidget" name="dockWidgetContents_4">
     <layout class="QHBoxLayout" name="horizontalLayout_3">
      <item>
-      <widget class="QGraphicsView" name="chart">
+      <widget class="QtCharts::QChartView" name="chart">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
          <horstretch>0</horstretch>
@@ -214,7 +214,7 @@
    <widget class="QWidget" name="dockWidgetContents_5">
     <layout class="QHBoxLayout" name="horizontalLayout_6">
      <item>
-      <widget class="QGraphicsView" name="histogramm"/>
+      <widget class="QtCharts::QChartView" name="histogram"/>
      </item>
     </layout>
    </widget>
@@ -226,6 +226,11 @@
    <class>ImageTableView</class>
    <extends>QTableView</extends>
    <header>imagetableview.h</header>
+  </customwidget>
+  <customwidget>
+   <class>QtCharts::QChartView</class>
+   <extends>QGraphicsView</extends>
+   <header location="global">QtCharts/QChartView</header>
   </customwidget>
  </customwidgets>
  <resources/>
