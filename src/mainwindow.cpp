@@ -315,5 +315,17 @@ void MainWindow::updateDetails_(int row)
 
 void MainWindow::updateChart_(int column)
 {
+    QLineSeries *series = new QLineSeries();
+    for(unsigned int i=0;i<model_->rowCount();++i){
+        QVariant val=model_->data(model_->index(i,column),ImageTableModel::SortRole);
+        if(val.canConvert<float>()){
+            series << QPointF(i,val.toFloat());
+        }
+    }
+    QChart *chart = new QChart();
+    chart->legend()->hide();
+    chart->addSeries(series);
+    chart->createDefaultAxes();
+    chart->setTitle(model_->headerData(column));
 
 }
