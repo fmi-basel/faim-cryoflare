@@ -301,7 +301,7 @@ void MainWindow::updateDetails_(int row)
                 if(static_cast<VariableType>(type.toInt())==Image){
                     QString path=data->value(label.toString());
                     if(QFileInfo(path).exists()){
-                        qlabel->setPixmap(QPixmap(path));
+                        qlabel->setPixmap(QPixmap(path).scaled(QSize(512,512),Qt::KeepAspectRatio,Qt::SmoothTransformation));
                     } else {
                         QPixmap p(512,512);
                         p.fill();
