@@ -1,3 +1,4 @@
+#include <sys/mman.h>
 #include "mainwindow.h"
 #include "imageprocessor.h"
 #include <QApplication>
@@ -5,6 +6,7 @@
 #include <QHash>
 #include <QTimer>
 #include <QDebug>
+#include <QtPlugin>
 #include  "settings.h"
 #include "filelocker.h"
 
@@ -16,8 +18,13 @@ QCoreApplication* createApplication(int &argc, char *argv[])
     return new QApplication(argc, argv);
 }
 
+Q_IMPORT_PLUGIN(MRCIOPlugin)
+
 int main(int argc, char* argv[])
 {
+    if(-1==mlockall(MCL_CURRENT|MCL_FUTURE)){
+        qWarning() << "failed to lock virtual address space into RAM";
+    }
     QScopedPointer<QCoreApplication> app(createApplication(argc, argv));
     QCoreApplication::setOrganizationName("Friedrich Miescher Institute");
     QCoreApplication::setOrganizationDomain("fmi.ch");
@@ -26,7 +33,7 @@ int main(int argc, char* argv[])
     Settings settings;
     if(!settings.loadFromFile(".stack_gui.ini")){
         qWarning() << "No settings found in local directory. Using global settings.";
-        settings.loadFromQSettings();
+        settings.loadFromQSettings(QStringList() << "avg_source_dir" << "stack_source_dir");
         settings.saveToFile(".stack_gui.ini");
     }
     FileLocker file_locker(".stack_gui.ini");

@@ -17,7 +17,8 @@ ProcessWrapper::ProcessWrapper(QObject *parent, int timeout, int gpu_id) :
 {
     connect(process_,SIGNAL(finished(int)),this,SLOT(onFinished(int)));
     QProcessEnvironment env=QProcessEnvironment::systemEnvironment();
-    env.insert("STACK_GUI_SCRIPTS",QCoreApplication::applicationDirPath()+"/scripts");
+    QString path=env.value("PATH");
+    env.insert("PATH",QCoreApplication::applicationDirPath()+"/scripts:"+path);
     process_->setProcessEnvironment(env);
     connect(timeout_timer_, SIGNAL(timeout()), this, SLOT(timeout()));
     timeout_timer_->setSingleShot(true);
@@ -72,6 +73,7 @@ void ProcessWrapper::onFinished(int exitcode)
     QString line;
     do {
         line = output_stream.readLine();
+        output.append(line+"\n");
         if(line.startsWith(result_token)){
             line.remove(0,result_token.size());
             QStringList splitted=line.split("=");
@@ -85,8 +87,6 @@ void ProcessWrapper::onFinished(int exitcode)
         }else if(line.startsWith(shared_result_file_token)){
             line.remove(0,shared_result_file_token.size());
             task_->shared_output_files.insert(line.trimmed());
-        }else{
-            output.append(line+"\n");
         }
     } while (!line.isNull());
     task_->output=output;

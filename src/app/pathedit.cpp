@@ -9,7 +9,6 @@ PathEdit::PathEdit(QWidget *parent):
     QWidget(parent),
     path_type_(OpenFileName),
     caption_(),
-    path_(),
     filter_(),
     path_widget_(new QLineEdit(this)),
     browse_(new QPushButton("Browse...",this))
@@ -26,9 +25,8 @@ PathEdit::PathEdit(PathEdit::PathType t, QString caption, QString path, QString 
     QWidget(parent),
     path_type_(t),
     caption_(caption),
-    path_(path),
     filter_(filter),
-    path_widget_(new QLineEdit(this)),
+    path_widget_(new QLineEdit(path,this)),
     browse_(new QPushButton("Browse...",this))
 {
     QHBoxLayout *layout=new QHBoxLayout();
@@ -51,19 +49,19 @@ void PathEdit::setPath(const QString &path)
 
 void PathEdit::onBrowse()
 {
-    QString path;
+    QString new_path;
     switch(path_type_){
     case ExistingDirectory:
-        path = QFileDialog::getExistingDirectory(0, caption_,path_,  QFileDialog::ShowDirsOnly| QFileDialog::DontResolveSymlinks);
+        new_path = QFileDialog::getExistingDirectory(0, caption_,path(),  QFileDialog::ShowDirsOnly| QFileDialog::DontResolveSymlinks);
         break;
     case OpenFileName:
-        path = QFileDialog::getOpenFileName(0, caption_,path_,filter_);
+        new_path = QFileDialog::getOpenFileName(0, caption_,path(),filter_);
         break;
     case SaveFileName:
-        path = QFileDialog::getSaveFileName(0, caption_,path_,filter_);
+        new_path = QFileDialog::getSaveFileName(0, caption_,path(),filter_);
         break;
     }
-    if(! path.isEmpty()){
-        path_widget_->setText(path);
+    if(! new_path.isEmpty()){
+        path_widget_->setText(new_path);
     }
 }

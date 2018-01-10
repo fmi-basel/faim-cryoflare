@@ -4,7 +4,6 @@
 #include <QQueue>
 #include <QPair>
 #include <QFile>
-#include <QDebug>
 #include <QCoreApplication>
 #include <QStringList>
 
@@ -60,43 +59,67 @@ Settings::Settings(QObject *parent):
     current_=root;
 }
 
-bool Settings::loadFromFile(const QString &path)
+bool Settings::loadFromFile(const QString &path, const QStringList &excludes, const QStringList &includes)
 {
     if(!QFile(path).exists()){
         return false;
     }
-    clear();
+    foreach( QString key, allKeys()){
+        if(!excludes.contains(key) && (includes.empty() || includes.contains(key))){
+            remove(key);
+        }
+    }
     QSettings settings(path,QSettings::IniFormat);
     foreach( QString key, settings.allKeys()){
-        setValue(key,settings.value(key));
+        if(!excludes.contains(key) && (includes.empty() || includes.contains(key))){
+            setValue(key,settings.value(key));
+        }
     }
     return true;
 }
 
-void Settings::saveToFile(const QString &path) const
+void Settings::saveToFile(const QString &path, const QStringList &excludes, const QStringList &includes) const
 {
     QSettings settings(path,QSettings::IniFormat);
-    settings.clear();
-    foreach( QString key, allKeys()){
-        settings.setValue(key,value(key));
-    }
-}
-
-void Settings::loadFromQSettings()
-{
-    QSettings settings;
-    clear();
     foreach( QString key, settings.allKeys()){
-        setValue(key,settings.value(key));
+        if(!excludes.contains(key) && (includes.empty() || includes.contains(key))){
+            settings.remove(key);
+        }
+    }
+    foreach( QString key, allKeys()){
+        if(!excludes.contains(key) && (includes.empty() || includes.contains(key))){
+            settings.setValue(key,value(key));
+        }
     }
 }
 
-void Settings::saveToQSettings() const
+void Settings::loadFromQSettings(const QStringList &excludes, const QStringList &includes)
 {
     QSettings settings;
-    settings.clear();
     foreach( QString key, allKeys()){
-        settings.setValue(key,value(key));
+        if(!excludes.contains(key) && (includes.empty() || includes.contains(key))){
+            remove(key);
+        }
+    }
+    foreach( QString key, settings.allKeys()){
+        if(!excludes.contains(key) && (includes.empty() || includes.contains(key))){
+            setValue(key,settings.value(key));
+        }
+    }
+}
+
+void Settings::saveToQSettings(const QStringList &excludes, const QStringList &includes) const
+{
+    QSettings settings;
+    foreach( QString key, settings.allKeys()){
+        if(!excludes.contains(key) && (includes.empty() || includes.contains(key))){
+            settings.remove(key);
+        }
+    }
+    foreach( QString key, allKeys()){
+        if(!excludes.contains(key) && (includes.empty() || includes.contains(key))){
+            settings.setValue(key,value(key));
+        }
     }
 }
 
@@ -123,6 +146,20 @@ QVariant Settings::value(const QString &key, const QVariant &defaultValue) const
         }
     }
     return group->values.value(keylist.takeFirst(),defaultValue);
+}
+
+bool Settings::contains(const QString &key)
+{
+    QStringList keylist=key.split("/");
+    SettingsGroup* group=current_;
+    while(keylist.size()>1){
+        QString group_name=keylist.takeFirst();
+        if(! (group=group->childGroup(group_name))){
+            return false;
+        }
+    }
+    return true;
+
 }
 
 void Settings::beginGroup(const QString &prefix)

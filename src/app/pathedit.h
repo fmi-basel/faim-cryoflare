@@ -29,7 +29,6 @@ public slots:
 private:
     PathType path_type_;
     QString caption_;
-    QString path_;
     QString filter_;
     QLineEdit *path_widget_;
     QPushButton *browse_;

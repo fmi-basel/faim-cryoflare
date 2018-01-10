@@ -99,6 +99,7 @@ ImageProcessor::ImageProcessor():
     output_files_(),
     shared_output_files_(),
     exporter_(new ParallelExporter(this)),
+    process_(new QProcess(this)),
     running_state_(false)
 
 {
@@ -262,18 +263,21 @@ void ImageProcessor::exportImages(const QString &export_path, const QStringList 
     QString pre_script=settings.value("export_pre_script").toString();
     QString post_script=settings.value("export_post_script").toString();
     if(export_mode=="custom2"){
-        QProcess process;
-        process. setProcessChannelMode(QProcess::MergedChannels);
-        process.setStandardOutputFile(QDir(QDir::currentPath()).absoluteFilePath("export.log"));
+        process_->setProcessChannelMode(QProcess::MergedChannels);
+        process_->setStandardOutputFile(QDir(QDir::currentPath()).absoluteFilePath("export.log"));
         QStringList arguments;
         arguments << QDir::currentPath();
-        process.start(custom_script,arguments);
-        process.waitForStarted(-1);
+        process_->start(custom_script,arguments);
+        process_->waitForStarted(-1);
         foreach(QString image,image_list){
-            process.write(QString("raw_%1=%2").arg(image).arg(QStringList(raw_files_[image].toList()).join(",")).toLatin1());
-            process.write(QString("%1=%2").arg(image).arg(QStringList(output_files_[image].toList()).join(",")).toLatin1());
+	    qDebug() << "gui writing: " << QStringList(raw_files_[image].toList()).join(",") << "\n";
+	    qDebug() << "gui writing: " << QStringList(output_files_[image].toList()).join(",") << "\n";
+            process_->write(QString("raw_%1=%2\n").arg(image).arg(QStringList(raw_files_[image].toList()).join(",")).toLatin1());
+            process_->write(QString("%1=%2\n").arg(image).arg(QStringList(output_files_[image].toList()).join(",")).toLatin1());
         }
-        process.waitForFinished(-1);
+        qDebug() << "gui data written\n";
+	process_->closeWriteChannel();
+        //process.waitForFinished(-1);
 
     }else{
         exporter_->exportImages(QDir::currentPath() , export_path, files_to_export, num_processes, export_mode, custom_script,pre_script,post_script,image_list);

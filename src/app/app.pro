@@ -6,11 +6,11 @@
 
 QT       += core gui xml charts
 
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+greaterThan(QT_MAJOR_VERSION, 5): QT += widgets
 
 TARGET = StackGUI
 TEMPLATE = app
-
+PRE_TARGETDEPS += ../mrcio/libmrcio.a
 
 SOURCES += \
     main.cpp\
@@ -28,7 +28,7 @@ SOURCES += \
     parallelexporter.cpp \
     settingsdialog.cpp \
     settings.cpp \
-    filelocker.cpp
+    filelocker.cpp 
 
 
 
@@ -48,14 +48,15 @@ HEADERS  += \
     parallelexporter.h \
     settingsdialog.h \
     settings.h \
-    filelocker.h
+    filelocker.h 
 
 
 FORMS    += \
     mainwindow.ui \
     settingsdialog.ui
 
-#CONFIG += static
-#static {
-#    DEFINES += STATIC
-#}
+LIBS     += ../mrcio/libmrcio.a 
+CONFIG += static
+static {
+    DEFINES += STATIC
+}

@@ -34,15 +34,22 @@ QVariant ImageTableModel::data(const QModelIndex &index, int role) const
     }
     // handle other columns
     if(role==SortRole){
+        QVariant v=data_.at(index.row())->value(columns_[index.column()-1].label);
         switch(columns_[index.column()-1].type){
         case String:
-            return data_.at(index.row())->value(columns_[index.column()-1].label);
+            return v;
             break;
         case Float:
-            return data_.at(index.row())->value(columns_[index.column()-1].label).toDouble();
+            if(v.toString()==QString("")){
+                return QVariant();
+            }
+            return v.toDouble();
             break;
         case Int:
-            return data_.at(index.row())->value(columns_[index.column()-1].label).toInt();
+            if( v.toString()==QString("")){
+                return QVariant();
+            }
+            return v.toInt();
             break;
         case Image:
         default:

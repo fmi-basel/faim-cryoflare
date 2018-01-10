@@ -57,7 +57,7 @@
      <x>0</x>
      <y>0</y>
      <width>1337</width>
-     <height>27</height>
+     <height>20</height>
     </rect>
    </property>
   </widget>
@@ -173,8 +173,7 @@
          </property>
          <property name="icon">
           <iconset theme="window-new">
-           <normaloff/>
-          </iconset>
+           <normaloff>.</normaloff>.</iconset>
          </property>
         </widget>
        </item>
@@ -203,8 +202,6 @@
       </widget>
      </item>
     </layout>
-    <zorder>splitter</zorder>
-    <zorder>chart</zorder>
    </widget>
   </widget>
   <widget class="QDockWidget" name="dockWidget_4">
@@ -242,8 +239,8 @@
    <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1144</x>
-     <y>79</y>
+     <x>1154</x>
+     <y>76</y>
     </hint>
     <hint type="destinationlabel">
      <x>265</x>
@@ -258,12 +255,12 @@
    <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1144</x>
-     <y>79</y>
+     <x>1154</x>
+     <y>76</y>
     </hint>
     <hint type="destinationlabel">
-     <x>632</x>
-     <y>79</y>
+     <x>982</x>
+     <y>76</y>
     </hint>
    </hints>
   </connection>
@@ -274,8 +271,8 @@
    <slot>onAvgSourceDirBrowse()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>373</x>
-     <y>79</y>
+     <x>554</x>
+     <y>76</y>
     </hint>
     <hint type="destinationlabel">
      <x>5</x>
@@ -290,8 +287,8 @@
    <slot>onStackSourceDirBrowse()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>718</x>
-     <y>79</y>
+     <x>1068</x>
+     <y>76</y>
     </hint>
     <hint type="destinationlabel">
      <x>1023</x>
@@ -322,8 +319,8 @@
    <slot>onStackSourceDirTextChanged(QString)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>632</x>
-     <y>79</y>
+     <x>982</x>
+     <y>76</y>
     </hint>
     <hint type="destinationlabel">
      <x>559</x>
@@ -342,8 +339,8 @@
      <y>72</y>
     </hint>
     <hint type="destinationlabel">
-     <x>355</x>
-     <y>78</y>
+     <x>554</x>
+     <y>76</y>
     </hint>
    </hints>
   </connection>
@@ -358,8 +355,8 @@
      <y>69</y>
     </hint>
     <hint type="destinationlabel">
-     <x>718</x>
-     <y>79</y>
+     <x>1068</x>
+     <y>76</y>
     </hint>
    </hints>
   </connection>
@@ -370,8 +367,8 @@
    <slot>onSettings()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1316</x>
-     <y>80</y>
+     <x>1326</x>
+     <y>77</y>
     </hint>
     <hint type="destinationlabel">
      <x>1330</x>
@@ -386,12 +383,12 @@
    <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1144</x>
-     <y>79</y>
+     <x>1154</x>
+     <y>76</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1316</x>
-     <y>80</y>
+     <x>1326</x>
+     <y>77</y>
     </hint>
    </hints>
   </connection>
@@ -427,6 +424,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>image_data</sender>
+   <signal>currentChanged(int)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>updateDetails()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1168</x>
+     <y>263</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1339</x>
+     <y>538</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <signal>avgSourceDirChanged()</signal>
@@ -439,5 +452,6 @@
   <slot>onDestinationDirTextChanged(QString)</slot>
   <slot>onSettings()</slot>
   <slot>onExport()</slot>
+  <slot>updateDetails()</slot>
  </slots>
 </ui>

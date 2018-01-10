@@ -20,7 +20,7 @@
    <item row="0" column="0">
     <widget class="QTabWidget" name="settings">
      <property name="currentIndex">
-      <number>2</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="tab">
       <attribute name="title">
@@ -101,6 +101,23 @@
          </property>
         </widget>
        </item>
+       <item row="4" column="0">
+        <widget class="QLabel" name="label_9">
+         <property name="text">
+          <string>Number of bins for histogram:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QSpinBox" name="histogram_bins">
+         <property name="minimum">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+          <number>256</number>
+         </property>
+        </widget>
+       </item>
       </layout>
      </widget>
      <widget class="QWidget" name="tab_2">
@@ -129,7 +146,7 @@
              <bool>false</bool>
             </property>
             <property name="columnCount">
-             <number>3</number>
+             <number>4</number>
             </property>
             <attribute name="headerVisible">
              <bool>false</bool>
@@ -156,6 +173,11 @@
             <column>
              <property name="text">
               <string>GPU task</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>Group with parent</string>
              </property>
             </column>
            </widget>
@@ -406,6 +428,20 @@
       </widget>
      </item>
      <item>
+      <widget class="QPushButton" name="save_defaults">
+       <property name="text">
+        <string>Save as defaults</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="reset_to_defaults">
+       <property name="text">
+        <string>Reset to defaults</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QDialogButtonBox" name="buttonBox">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -487,7 +523,7 @@
    <slot>saveToFile()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>185</x>
+     <x>175</x>
      <y>891</y>
     </hint>
     <hint type="destinationlabel">
@@ -544,9 +580,43 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>save_defaults</sender>
+   <signal>clicked()</signal>
+   <receiver>SettingsDialog</receiver>
+   <slot>saveAsDefaults()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>251</x>
+     <y>874</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>3</x>
+     <y>350</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>reset_to_defaults</sender>
+   <signal>clicked()</signal>
+   <receiver>SettingsDialog</receiver>
+   <slot>resetToDefaults()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>324</x>
+     <y>879</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>293</x>
+     <y>897</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>loadFromFile()</slot>
   <slot>saveToFile()</slot>
+  <slot>saveAsDefaults()</slot>
+  <slot>resetToDefaults()</slot>
  </slots>
 </ui>

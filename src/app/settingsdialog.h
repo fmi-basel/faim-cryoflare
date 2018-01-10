@@ -32,6 +32,8 @@ public slots:
     void deleteInputVariable();
     void loadFromFile();
     void saveToFile();
+    void saveAsDefaults();
+    void resetToDefaults();
     void updateVariables(QTreeWidgetItem* new_item, QTreeWidgetItem* old_item);
 private:
     Ui::SettingsDialog *ui;

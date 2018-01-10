@@ -12,6 +12,7 @@ class FileSystemWatcher;
 class ProcessWrapper;
 class ParallelExporter;
 class Settings;
+class QProcess;
 
 class ImageProcessor: public QObject
 {
@@ -53,6 +54,7 @@ private:
     QHash<QString,QSet<QString> > output_files_;
     QSet<QString> shared_output_files_;
     ParallelExporter* exporter_;
+    QProcess* process_;
     bool running_state_;
 
 

@@ -21,6 +21,7 @@ void save_task(SETTINGS *settings, QTreeWidgetItem *item)
         settings->beginGroup(name);
         settings->setValue("script",task_item->script());
         settings->setValue("is_gpu",task_item->isGPU());
+        settings->setValue("group_with_parent",task_item->groupWithParent());
         QList<QVariant> variant_list;
         foreach(InputOutputVariable v,task_item->input_variables){
             variant_list<< v.toQVariant();
@@ -49,6 +50,7 @@ void load_task(SETTINGS *settings, QTreeWidgetItem *parent)
         child->setName(child_name);
         child->setScript(settings->value("script").toString());
         child->setGpu(settings->value("is_gpu").toBool());
+        child->setGroupWithParent(settings->value("group_with_parent").toBool());
         QList<QVariant> variant_list=settings->value("input_variables").toList();
         foreach(QVariant v, variant_list){
             child->input_variables.append(InputOutputVariable(v));
@@ -68,6 +70,7 @@ void save_to_settings(SETTINGS* settings, Ui::SettingsDialog* ui){
     settings->setValue("num_gpu", ui->num_gpu->value());
     settings->setValue("gpu_ids", ui->gpu_ids->text());
     settings->setValue("timeout", ui->timeout->value());
+    settings->setValue("histogram_bins", ui->histogram_bins->value());
     settings->setValue("export_pre_script", ui->export_pre_script->path());
     settings->setValue("export_post_script", ui->export_post_script->path());
     settings->setValue("export_custom_script", ui->export_custom_script->path());
@@ -98,6 +101,7 @@ void load_from_settings(SETTINGS* settings, Ui::SettingsDialog* ui){
     ui->num_gpu->setValue(settings->value("num_gpu").toInt());
     ui->gpu_ids->setText(settings->value("gpu_ids").toString());
     ui->timeout->setValue(settings->value("timeout").toInt());
+    ui->histogram_bins->setValue(settings->value("histogram_bins").toInt());
     ui->export_pre_script->setPath(settings->value("export_pre_script").toString());
     ui->export_post_script->setPath(settings->value("export_post_script").toString());
     ui->export_custom_script->setPath(settings->value("export_custom_script").toString());
@@ -273,6 +277,20 @@ void SettingsDialog::saveToFile()
         save_to_settings(settings,ui);
         delete settings;
     }
+}
+
+void SettingsDialog::saveAsDefaults()
+{
+    saveSettings();
+    Settings settings;
+    settings.saveToQSettings(QStringList() << "avg_source_dir" << "stack_source_dir");
+}
+
+void SettingsDialog::resetToDefaults()
+{
+    Settings settings;
+    settings.loadFromQSettings(QStringList() << "avg_source_dir" << "stack_source_dir");
+    loadSettings();
 }
 
 void SettingsDialog::updateVariables(QTreeWidgetItem *new_item, QTreeWidgetItem *old_item)
