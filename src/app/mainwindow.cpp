@@ -22,12 +22,9 @@
 #include <QAreaSeries>
 #include <QImageReader>
 #include <QPicture>
-#include <QElapsedTimer>
 
 ChartData create_chart_(QList<QPointF > data, int num_buckets)
 {
-    QElapsedTimer elapsed_timer;
-    elapsed_timer.start();
     float maxval=std::numeric_limits<float>::lowest();
     float minval=std::numeric_limits<float>::max();
     float last_idx=0;
@@ -70,7 +67,6 @@ ChartData create_chart_(QList<QPointF > data, int num_buckets)
     for(unsigned int i=0;i<num_buckets;++i){
         histogram << QPointF(minval+(i+half_gap)*bucket_size,0) << QPointF(minval+(i+half_gap)*bucket_size,buckets[i]) << QPointF(minval+(i+1.0-half_gap)*bucket_size,buckets[i]) << QPointF(minval+(i+1.0-half_gap)*bucket_size,0);
     }    
-    qDebug() << "create_chart_: " << elapsed_timer.elapsed() << "ms";
     return ChartData(line_list,histogram);
 }
 

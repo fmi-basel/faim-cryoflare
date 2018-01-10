@@ -1,32 +1,57 @@
 #!/bin/sh --noprofile
-. $STACK_GUI_SCRIPTS/data_connector.sh
+######################## get parameters from GUI ###############################
+
+. data_connector.sh
 
 
-pixel_size=`calculate "1e10*$apix_x"`
-gautomatch_log=${aligned_avg/.mrc/_gautomatch.log}
-aligned_avg_boxes_png=${aligned_avg/.mrc/_boxes.png}
-gautomatch_box_file=${aligned_avg/.mrc/_automatch.box}
-gautomatch_star_file=${aligned_avg/.mrc/_automatch.star}
+######################## load modules ##########################################
 
-if [ ! -e $gautomatch_box_file ]; then
-  gautomach_params=" --gid $gpu_id"
-  gautomach_params+=" --apixM $pixel_size"
-  gautomach_params+=" --lsigma_cutoff $sigma_cutoff"
-  gautomach_params+=" --lsigma_D $sigma_d"
-  gautomach_params+=" --speed $speed"
-  gautomach_params+="  --diameter $box_size"
+module purge
+module load gautomatch/0.53_cuda7
 
-  module purge
-  module load gautomatch
-  module switch gautomatch/0.53_cuda7
-  module load eman2/2.2
-  full_png=$scratch/${short_name}_gautomatch_full.png
-  run gautomatch $gautomach_params $aligned_avg >> $gautomatch_log 
-  run e2proc2d.py $aligned_avg $full_png
-  run $STACK_GUI_SCRIPTS/draw_boxes.sh  $full_png $gautomatch_box_file  $aligned_avg_boxes_png
+
+######################## create destination folders ############################
+
+mkdir -p $destination_path/
+
+
+######################## define output files ###################################
+
+if [ -n "motioncor2_aligned_avg" ]; then
+    average_var=motioncor2_aligned_avg # use average from motioncor2
+else
+    average_var=unblur_aligned_avg # use average from unblur
 fi
 
-num_particles=`cat $gautomatch_box_file|wc -l`
 
-RESULTS num_particles  aligned_avg_boxes_png
-FILES aligned_avg_boxes_png gautomatch_box_file gautomatch_star_file
+gautomatch_log=${!average_var/.mrc/_gautomatch.log}
+gautomatch_box_file=${!average_var/.mrc/_automatch.box}
+gautomatch_rejected_box_file=${!average_var/.mrc/_rejected.box}
+gautomatch_star_file=${!average_var/.mrc/_automatch.star}
+FILES gautomatch_log gautomatch_box_file gautomatch_rejected_box_file gautomatch_star_file
+
+
+######################## define additional parameters ##########################
+
+pixel_size=`CALCULATE "1e10*$apix_x"`
+
+
+######################## run processing if files are missing ###################
+
+if FILES_MISSING; then
+  gautomach_params=" --gid $gpu_id"
+  gautomach_params+=" --apixM $pixel_size"
+  gautomach_params+=" --lsigma_cutoff ${gautomatch_input_sigma_cutoff:=1.3}"
+  gautomach_params+=" --lsigma_D ${gautomatch_input_sigma_d:=200}"
+  gautomach_params+=" --speed ${gautomatch_input_speed:=2}"
+  gautomach_params+="  --diameter ${gautomatch_input_diameter:=400}"
+  gautomach_params+="  --cc_cutoff ${gautomatch_input_cc_cutoff:=0.1}"
+  if [ -n "$gautomatch_input_reference" ]; then
+    gautomach_params+="  --T $gautomatch_input_reference"
+    gautomach_params+="  --apixT $gautomatch_input_reference_pixel_size"
+  fi
+  
+  RUN gautomatch $gautomach_params ${!average_var} >> $gautomatch_log 
+fi
+
+

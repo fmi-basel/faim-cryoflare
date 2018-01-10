@@ -95,7 +95,8 @@ else:
     while lines and "job" in lines[-1]:
         output+=lines.pop()
     for node in input_nodes.split(","):
-        output+="%s %s\n" % (node,process_dir)
+        if node and process_dir:
+            output+="%s %s\n" % (node,process_dir)
     while lines  and not "_rlnPipeLineEdgeToNode" in lines[-1]:
         output+=lines.pop()
     output+=lines.pop()

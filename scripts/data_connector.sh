@@ -1,94 +1,168 @@
 #!/bin/sh --noprofile
 
 
-calculate() {
-echo $1 | sed 's/[Ee]+\?/*10^/g' | bc -l
+######################## floating point calculator #############################
+
+CALCULATE() {
+python -c "print $1"
 }
 
-relion_alias(){
-  local local_job_id
-  printf -v local_job_id "%03d" $2
-  [ -e $destination_path/$1/$3 ] || ln -s ../$1/job$local_job_id $destination_path/$1/$3
-  SHARED_FILES $destination_path/$1/$3
+
+######################## Helper function to create files needed for Relion #####
+
+RELION_WRITE(){
+	local destination=$1
+	local jobtype=$2
+	local jobid=$3
+	local jobalias=$4
+	local nodetype=$5
+	local starname=$6
+	local inputstar=$7
+	local header=$8
+	local datastart=9
+	local jobfolder
+	printf -v jobfolder "job%03d" $jobid
+	local jobpath=$destination/$jobtype/$jobfolder
+	local starpath=$jobpath/$starname
+	local default_pipeline="$destination/default_pipeline.star"
+	local gui_projectdir="$destination_path/.gui_projectdir"
+	local jobalias_link=$destination/$jobtype/$jobalias
+	
+	### create folders and aliases ###
+	mkdir -p $destination/$jobtype/$jobfolder
+        [ -e $jobalias_link ] || ln -s ../$jobtype/$jobfolder $jobalias_link
+	
+        SHARED_FILES jobalias_link
+	### create node files ###
+	mkdir -p $destination/.Nodes/$nodetype/$jobtype/$jobalias
+	mkdir -p $destination/.Nodes/$nodetype/$jobtype/$jobfolder
+	touch $destination/.Nodes/$nodetype/$jobtype/$jobalias/$starname
+	touch $destination/.Nodes/$nodetype/$jobtype/$jobfolder/$starname
+	
+	### write to star file ###
+	(
+		flock -n 9 || exit 1
+     		local tmpfile=`mktemp --tmpdir=$scratch`
+     		if [[ -s $starpath ]]; then
+       			cp $starpath $tmpfile
+     		else
+       			echo -e "\ndata_\n\nloop_\n" > $tmpfile
+			for headeritem in ${header[@]}; do
+				echo -e "$headeritem\n" >> $tmpfile
+			done
+     		fi
+		local imagename=${!datastart##*/}
+     		local awk_string=' ! /'$imagename'/ {print} 
+                  	     END {print "'${@:$datastart}'"}'
+     		[ $# -ge $datastart ] && awk "$awk_string" < $tmpfile > $starpath
+     		SHARED_FILES  starpath
+	) 9>> $starpath
+	
+	### update pipeline file ### 
+  	(
+    		flock -n 9 || exit 1
+    		touch $destination/.gui_projectdir
+    		add_to_pipeline.py $default_pipeline  $jobtype $jobid $jobalias $inputstar "$jobtype/$jobfolder/$starname:$nodetype"
+    		SHARED_FILES default_pipeline gui_projectdir
+  	) 9>> $default_pipeline
 }
 
-write_to_star() {
-  (
-     flock -n 9 || exit 1
-     tmpfile=`mktemp --tmpdir=$scratch`
-     if [[ -s $1 ]]; then
-       cp $1 $tmpfile
-     else
-       echo -e "$2" > $tmpfile
-     fi
-     awk_string=' ! /'${3##*/}'/ {print} 
-                  END {print "'${@:3}'"}'
-     [ $# -gt 2 ] && awk "$awk_string" < $tmpfile > $1
-     SHARED_FILES  $1
-  ) 9>> $1
-}
 
-add_to_pipeline() {
-  (
-    flock -n 9 || exit 1
-    touch $destination_path/.gui_projectdir
-    $STACK_GUI_SCRIPTS/add_to_pipeline.py "$@"
-    SHARED_FILES "$destination_path/default_pipeline.star" "$destination_path/.gui_projectdir"
-  ) 9>> $1
-}
+######################## functions for exporting results and files #############
 
 RESULTS (){
-  for var in "$@"
+  for var in "$@" 
   do
-    echo RESULT_EXPORT:$var=${!var}
+    if [ -n "${!var}" ]; then 
+      echo RESULT_EXPORT:$var=${!var}
+    else 
+      echo WARNING: result "$var" not defined
+    fi
   done
 }
 
-FILES() {
-  for var in "$@"
+
+_export_files(){
+  for var in "${@:2}"
   do
-    if [ -z ${!var+x} ];then
-      echo FILE_EXPORT:$var
-    else
-    echo FILE_EXPORT:${!var}
+    if [ -n "${!var}" ]; then 
+      echo $1:${!var}
+    else 
+      echo WARNING: file "$var" not defined
     fi
+    _exported_files_+=(${!var})
   done
+}
+
+
+FILES() {
+  RESULTS "$@"
+  _export_files FILE_EXPORT "$@"
+}
+
+RAW_FILES() {
+  RESULTS "$@"
+  _export_files RAW_FILE_EXPORT "$@"
 }
 
 SHARED_FILES() {
-  for var in "$@"
+  _export_files SHARED_FILE_EXPORT "$@"
+}
+
+
+FILES_MISSING() {
+  for var in "${_exported_files_[@]}"
   do
-    if [ -z ${!var+x} ];then
-      echo SHARED_FILE_EXPORT:$var
-    else
-    echo SHARED_FILE_EXPORT:${!var}
-    fi
+    [ ! -e $var ] && return
   done
 }
+
+
+
+
+######################## functions for cleanup of scratch and running jobs #####
 
 _cleanup(){
   rm -fr $scratch
 }
 
 _terminate(){
-  kill -TERM $PID 
+  kill -9 $PID 
   wait $PID
   exit
 }
 
-run(){
+RUN(){
+  echo $@
   $@ &
   PID=$!
   wait $PID
 } 
 
-script_name=${0##*/}
-#scratch=$(mktemp -d /scratch/$USER/${script_name%%.sh}.XXXXXX)
-scratch=$(mktemp -d /data/Gatan_X/scratch/${script_name%%.sh}.XXXXXX)
 
+
+######################## function for export limitation ########################
+
+LIMIT_EXPORT (){
+  if python -c "if ${!1}>=$2 and ${!1}<=$3: exit(1) "; then
+    export="false"
+    RESULTS export
+  fi
+}
+
+
+######################## scratch dir creation on RAM disk ######################
+
+script_name=${0##*/}
+scratch=$(mktemp -d /dev/shm/${script_name%%.sh}.XXXXXX)
+
+
+######################## hooks for termination and cleanup functions ###########
 
 trap _cleanup EXIT
 trap _terminate INT TERM HUP
+
+######################## definition of input parameters ########################
 
 while IFS='=' read k v; do declare $k="$v"; done
 
