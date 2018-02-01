@@ -18,10 +18,13 @@ public:
 
 signals:
     void finished(const TaskPtr &task, bool gpu=false);
+    void started(const QString &image, const QString &task,int process_id);
+    void stopped();
 
 public slots:
     void start(const TaskPtr &task);
     void onFinished(int exitcode);
+    void onStarted();
     void kill();
     void terminate();
     void timeout();

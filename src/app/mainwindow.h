@@ -22,21 +22,7 @@ class Settings;
 class QChart;
 class QFormLayout;
 class QVBoxLayout;
-
-struct ChartData
-{
-    ChartData():
-        line_list(),
-        histogram()
-
-    {}
-    ChartData(const QList<QList<QPointF> >& l, const QList<QPointF>&  h):
-        line_list(l),
-        histogram(h)
-    {}
-    QList<QList<QPointF> > line_list;
-    QList<QPointF> histogram;
-};
+class ProcessIndicator;
 
 class MainWindow : public QMainWindow
 {
@@ -50,7 +36,6 @@ public:
 public slots:
     void onAvgSourceDirBrowse();
     void onStackSourceDirBrowse();
-    void onStartStop(bool start);
     void addImage(const DataPtr &data);
     void onDataChanged(const DataPtr &data);
     void onAvgSourceDirTextChanged(const QString & dir);
@@ -63,11 +48,23 @@ public slots:
     void updateQueueCounts(int cpu_queue, int gpu_queue);
     void updateDetails();
     void updateChart();
+    void createProcessIndicator(ProcessWrapper * wrapper, int gpu_id);
+    void deleteProcessIndicators();
+    void displayLinearChartDetails(const QPointF &point, bool state);
+    void displayHistogramChartDetails(const QPointF &point, bool state);
+    void exportLinearChart();
+    void exportHistogramChart();
+    void selectFromLinearChart(float start, float end, bool invert);
+    void selectFromHistogramChart(float start, float end, bool invert);
+    void onStartStopButton(bool start);
 
 signals:
     void startStop(bool start);
     void settingsChanged();
     void exportImages(const QString& path,const QStringList& images);
+
+private slots:
+    void on_actionAbout_triggered();
 
 private:
     void updateTaskWidget_(Settings *settings, QFormLayout *parent_input_layout, QFormLayout *parent_output_layout);
@@ -76,6 +73,10 @@ private:
     QSortFilterProxyModel *sort_proxy_;
     QLabel *statusbar_queue_count_;
     QTimer chart_update_timer_;
+    QList<ProcessIndicator*> process_indicators_;
+    float histogram_min_;
+    float histogram_bucket_size_;
+    QVector<float> histogram_;
 };
 
 #endif // MAINWINDOW_H

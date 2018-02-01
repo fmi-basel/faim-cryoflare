@@ -4,8 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui xml charts
-
+QT       += core gui xml charts printsupport
 greaterThan(QT_MAJOR_VERSION, 5): QT += widgets
 
 TARGET = StackGUI
@@ -28,7 +27,10 @@ SOURCES += \
     parallelexporter.cpp \
     settingsdialog.cpp \
     settings.cpp \
-    filelocker.cpp 
+    filelocker.cpp \ 
+    processindicator.cpp \
+    chartview.cpp \
+    aboutdialog.cpp
 
 
 
@@ -48,15 +50,22 @@ HEADERS  += \
     parallelexporter.h \
     settingsdialog.h \
     settings.h \
-    filelocker.h 
+    filelocker.h \ 
+    processindicator.h \
+    chartview.h \
+    aboutdialog.h
 
 
 FORMS    += \
     mainwindow.ui \
-    settingsdialog.ui
+    settingsdialog.ui \
+    aboutdialog.ui
 
 LIBS     += ../mrcio/libmrcio.a 
 CONFIG += static
 static {
     DEFINES += STATIC
 }
+
+RESOURCES += \
+    app.qrc

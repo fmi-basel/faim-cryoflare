@@ -142,3 +142,12 @@ void ImageTableModel::onDataChanged(const DataPtr &data)
         dataChanged(index(idx,0),index(idx,columns_.size()));
     }
 }
+
+void ImageTableModel::clearData()
+{
+    if(! data_.empty()){
+        beginResetModel();
+        data_.clear();
+        endResetModel();
+    }
+}

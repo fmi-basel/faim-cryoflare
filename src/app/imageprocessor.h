@@ -32,6 +32,8 @@ signals:
     void dataChanged(DataPtr data);
     void imageUpdated(const QString& image);
     void queueCountChanged(int,int);
+    void processCreated(ProcessWrapper *wrapper,int gpu_id);
+    void processesDeleted();
 
 private:
     void updateDisc_(const QString& disc);

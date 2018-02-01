@@ -74,3 +74,8 @@ void FileSystemWatcher::removePaths(const QStringList &paths)
     impl_->removePaths(paths);
 }
 
+void FileSystemWatcher::removeAllPaths()
+{
+    impl_->removeAllPaths();
+}
+

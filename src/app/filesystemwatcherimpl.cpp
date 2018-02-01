@@ -70,6 +70,16 @@ void FileSystemWatcherImpl::removePaths(const QStringList &paths)
     }
 }
 
+void FileSystemWatcherImpl::removeAllPaths()
+{
+    mutex.lock();
+    dirs_.clear();
+    dir_file_mod_times_.clear();
+    files_.clear();
+    file_mod_times_.clear();
+    mutex.unlock();
+}
+
 void FileSystemWatcherImpl::update(){
     mutex.lock();
     foreach(QString path,dirs_){

@@ -24,6 +24,8 @@ public:
     void removePath(const QString & path);
 
     void removePaths(const QStringList & paths);
+    void removeAllPaths();
+
 signals:
     void directoryChanged(const QString & path);
     void fileChanged(const QString & path);

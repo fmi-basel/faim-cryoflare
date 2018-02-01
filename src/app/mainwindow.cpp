@@ -1,5 +1,7 @@
 #include <cmath> 
 #include <limits>
+#include "processindicator.h"
+#include "processwrapper.h"
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "epuimageinfo.h"
@@ -22,54 +24,11 @@
 #include <QAreaSeries>
 #include <QImageReader>
 #include <QPicture>
-
-ChartData create_chart_(QList<QPointF > data, int num_buckets)
-{
-    float maxval=std::numeric_limits<float>::lowest();
-    float minval=std::numeric_limits<float>::max();
-    float last_idx=0;
-    QList<QPointF> series;
-    QList<QList<QPointF> > line_list;
-    for(int i=0;i<data.size();++i){ 
-        if(data[i].x()>last_idx+1 && series.count()>0){
-            line_list.append(series);
-            series = QList<QPointF>();
-        }
-        series << data[i];
-        last_idx=data[i].x();
-        if(data[i].y()<minval)
-        {
-             minval=data[i].y();
-        }
-        if(data[i].y()>maxval)
-        {
-             maxval=data[i].y();
-        }
-    }
-    if(series.count()>0){
-        line_list.append(series);
-    }
-
-    QVector<qreal> buckets(num_buckets);
-    float bucket_size;
-    if(maxval>minval){
-        bucket_size=(maxval-minval)/num_buckets;
-    }else{
-        bucket_size=0.01;
-    }
-    while (!data.isEmpty()){
-        QPointF datapoint=data.takeFirst();
-        int bucket_id=std::min(num_buckets-1,static_cast<int>(floor((datapoint.y()-minval)/bucket_size)));
-        buckets[bucket_id]+=1.0;
-    }
-    QList<QPointF> histogram;
-    float half_gap=0.05;
-    for(unsigned int i=0;i<num_buckets;++i){
-        histogram << QPointF(minval+(i+half_gap)*bucket_size,0) << QPointF(minval+(i+half_gap)*bucket_size,buckets[i]) << QPointF(minval+(i+1.0-half_gap)*bucket_size,buckets[i]) << QPointF(minval+(i+1.0-half_gap)*bucket_size,0);
-    }    
-    return ChartData(line_list,histogram);
-}
-
+#include <QToolTip>
+#include <QElapsedTimer>
+#include <QPrinter>
+#include <QPrintDialog>
+#include "aboutdialog.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -77,13 +36,19 @@ MainWindow::MainWindow(QWidget *parent) :
     model_(new ImageTableModel(this)),
     sort_proxy_(new QSortFilterProxyModel(this)),
     statusbar_queue_count_(new QLabel("CPU queue: 0 / GPU queue: 0")),
-    chart_update_timer_()
+    chart_update_timer_(),
+    process_indicators_(),
+    histogram_min_(0),
+    histogram_bucket_size_(1),
+    histogram_()
 {
     ui->setupUi(this);
-    ui->chart->setRenderHint(QPainter::Antialiasing,false);
+    //ui->chart->setRenderHint(QPainter::Antialiasing,false);
+    ui->chart->setRenderHints(QPainter::HighQualityAntialiasing|QPainter::TextAntialiasing|QPainter::SmoothPixmapTransform|QPainter::Antialiasing);
     ui->chart->setOptimizationFlag(QGraphicsView::DontSavePainterState);
     ui->chart->setOptimizationFlag(QGraphicsView::DontAdjustForAntialiasing);
-    ui->histogram->setRenderHint(QPainter::Antialiasing,false);
+    //ui->histogram->setRenderHint(QPainter::Antialiasing,false);
+    ui->histogram->setRenderHints(QPainter::HighQualityAntialiasing|QPainter::TextAntialiasing|QPainter::SmoothPixmapTransform|QPainter::Antialiasing);
     ui->histogram->setOptimizationFlag(QGraphicsView::DontSavePainterState);
     ui->histogram->setOptimizationFlag(QGraphicsView::DontAdjustForAntialiasing);
     sort_proxy_->setSourceModel(model_);
@@ -92,7 +57,7 @@ MainWindow::MainWindow(QWidget *parent) :
     //ui->image_list->horizontalHeader()->setSectionResizeMode(0,QHeaderView::ResizeToContents);
     connect(ui->avg_source_dir, SIGNAL(textChanged(QString)), this, SLOT(onAvgSourceDirTextChanged(QString)));
     connect(ui->stack_source_dir, SIGNAL(textChanged(QString)), this, SLOT(onStackSourceDirTextChanged(QString)));
-    connect(ui->start_stop, SIGNAL(toggled(bool)), this, SLOT(onStartStop(bool)));
+    connect(ui->start_stop, SIGNAL(toggled(bool)), this, SLOT(onStartStopButton(bool)));
     connect(model_,SIGNAL(dataChanged(QModelIndex,QModelIndex)),this,SLOT(updateDetailsfromModel(QModelIndex,QModelIndex)));
     connect(ui->image_list->selectionModel(),SIGNAL(currentChanged(QModelIndex,QModelIndex)),this,SLOT(updateDetailsfromView(QModelIndex,QModelIndex)));
     statusBar()->addPermanentWidget(statusbar_queue_count_);
@@ -129,16 +94,6 @@ void MainWindow::onStackSourceDirBrowse()
     }
 }
 
-
-void MainWindow::onStartStop(bool start)
-{
-    if(start){
-        ui->start_stop->setText("Stop");
-    }else{
-        ui->start_stop->setText("Start");
-    }
-    emit startStop(start);
-}
 
 void MainWindow::addImage(const DataPtr &data)
 {
@@ -197,9 +152,10 @@ void MainWindow::updateTaskWidget_(Settings *settings, QFormLayout *parent_input
                 if(!script_input_settings.contains(settings_key)){
                     script_input_settings.setValue(settings_key,"");
                 }
-                le_widget->setText(script_input_settings.value(settings_key).toString());
                 local_widget=le_widget;
                 connect(local_widget,SIGNAL(textChanged(QString)),this,SLOT(inputDataChanged()));
+                le_widget->setText(script_input_settings.value(settings_key).toString());
+                local_widget=le_widget;
             }else if(iov.type==Int){
                 if(!script_input_settings.contains(settings_key)){
                     script_input_settings.setValue(settings_key,0);
@@ -207,8 +163,8 @@ void MainWindow::updateTaskWidget_(Settings *settings, QFormLayout *parent_input
                 QSpinBox *sp_widget=new QSpinBox();
                 sp_widget->setMaximum(9999999);
                 local_widget=sp_widget;
-                sp_widget->setValue(script_input_settings.value(settings_key).toInt());
                 connect(local_widget,SIGNAL(valueChanged(int)),this,SLOT(inputDataChanged()));
+                sp_widget->setValue(script_input_settings.value(settings_key).toInt());
             }else if(iov.type==Float){
                 if(!script_input_settings.contains(settings_key)){
                     script_input_settings.setValue(settings_key,0.0);
@@ -216,8 +172,8 @@ void MainWindow::updateTaskWidget_(Settings *settings, QFormLayout *parent_input
                 QDoubleSpinBox *sp_widget=new QDoubleSpinBox();
                 sp_widget->setMaximum(9999999);
                 local_widget=sp_widget;
-                sp_widget->setValue(script_input_settings.value(settings_key).toFloat());
                 connect(local_widget,SIGNAL(valueChanged(double)),this,SLOT(inputDataChanged()));
+                sp_widget->setValue(script_input_settings.value(settings_key).toFloat());
             }else{
                 continue;
             }
@@ -346,6 +302,7 @@ void MainWindow::inputDataChanged()
         }
         settings.endGroup();
         settings.endGroup();
+        settings.saveToFile(".stack_gui.ini", QStringList(), QStringList() << "ScriptInput/"+task.toString()+"/"+label.toString());
     }
 }
 
@@ -422,47 +379,229 @@ void MainWindow::updateDetails()
 
 void MainWindow::updateChart()
 {
+    QElapsedTimer timer;
+    timer.start();
     int column=sort_proxy_->mapToSource(ui->image_list->currentIndex()).column();
     if(column<0 || column>= model_->columnCount(QModelIndex())){
         return;
     }
     QList<QPointF> datalist;
+    QList<float> histo_datalist;
     for(unsigned int i=0;i<model_->rowCount();++i){
         QVariant val=model_->data(model_->index(i,column),ImageTableModel::SortRole);
         DataPtr data=model_->image(i);
         QString export_val=data->value("export","true");
-        bool export_flag=export_val.compare("true", Qt::CaseInsensitive) == 0 || export_val==QString("1");
-        if(val.canConvert<float>() && val.toString()!=QString("") && export_flag){
+        bool linear_export_flag=export_val.compare("true", Qt::CaseInsensitive) == 0 || export_val==QString("1") || ui->filter_linear_chart->isChecked()==false;
+        bool chart_export_flag=export_val.compare("true", Qt::CaseInsensitive) == 0 || export_val==QString("1") || ui->filter_histogram_chart->isChecked()==false;
+        if(val.canConvert<float>() && val.toString()!=QString("")){
             float fval=val.toFloat();
-            datalist.append(QPointF(i,fval));
+            if(linear_export_flag){
+                datalist.append(QPointF(i,fval));
+            }
+            if(chart_export_flag){
+                histo_datalist.append(fval);
+            }
         }
     }
-
     Settings settings;
     int histogram_bins=settings.value("histogram_bins",256).toInt();
-    ChartData chart_data=create_chart_(datalist,histogram_bins);
+    auto chart_min_max = std::minmax_element(histo_datalist.begin(), histo_datalist.end());
+    histogram_min_=*chart_min_max.first;
+    float histogram_max=*chart_min_max.second;
+    float last_idx=0;
+    QList<QPointF> series;
+    QList<QList<QPointF> > line_list;
+    for(int i=0;i<datalist.size();++i){
+        if(datalist[i].x()>last_idx+1 && series.count()>0){
+            line_list.append(series);
+            series = QList<QPointF>();
+        }
+        series << datalist[i];
+        last_idx=datalist[i].x();
+    }
+    if(series.count()>0){
+        line_list.append(series);
+    }
+
+    QVector<float> buckets(histogram_bins);
+    if(histogram_max>histogram_min_){
+        histogram_bucket_size_=(histogram_max-histogram_min_)/histogram_bins;
+    }else{
+        histogram_bucket_size_=0.01;
+    }
+    while (!histo_datalist.isEmpty()){
+        float datapoint=histo_datalist.takeFirst();
+        int bucket_id=std::min(histogram_bins-1,static_cast<int>(floor((datapoint-histogram_min_)/histogram_bucket_size_)));
+        buckets[bucket_id]+=1.0;
+    }
+    histogram_=buckets;
+    QList<QPointF> histogram;
+    float half_gap=0.05;
+    for(unsigned int i=0;i<histogram_bins;++i){
+        histogram << QPointF(histogram_min_+(i+half_gap)*histogram_bucket_size_,0) << QPointF(histogram_min_+(i+half_gap)*histogram_bucket_size_,buckets[i]) << QPointF(histogram_min_+(i+1.0-half_gap)*histogram_bucket_size_,buckets[i]) << QPointF(histogram_min_+(i+1.0-half_gap)*histogram_bucket_size_,0);
+    }
+
     QColor color(23,159,223);
     QtCharts::QChart *chart = ui->chart->chart();
     chart->removeAllSeries();
-    foreach( QList<QPointF> line, chart_data.line_list){
+    foreach( QList<QPointF> line, line_list){
         QtCharts::QLineSeries *series = new QtCharts::QLineSeries();
         series->setColor(color);
+        series->setPointsVisible();
         series->append(line);
         chart->addSeries(series);
+        connect(series,&QtCharts::QLineSeries::hovered,this,&MainWindow::displayLinearChartDetails);
     }
     chart->legend()->hide();
     chart->createDefaultAxes();
     chart->setTitle(model_->headerData(column,Qt::Horizontal,Qt::DisplayRole).toString());
     chart = ui->histogram->chart();
     chart->removeAllSeries();
-    QtCharts::QLineSeries *series = new QtCharts::QLineSeries();
-    series->append(chart_data.histogram);
-    series->setColor(color);
-    QtCharts::QAreaSeries *aseries = new QtCharts::QAreaSeries(series);
+    QtCharts::QLineSeries *line_series = new QtCharts::QLineSeries();
+    line_series->append(histogram);
+    line_series->setColor(color);
+    QtCharts::QAreaSeries *aseries = new QtCharts::QAreaSeries(line_series);
     aseries->setBrush(QBrush(color));
+    connect(aseries,&QtCharts::QAreaSeries::hovered,this,&MainWindow::displayHistogramChartDetails);
     chart->addSeries(aseries);
     chart->legend()->hide();
     chart->createDefaultAxes();
     chart->setTitle(model_->headerData(column,Qt::Horizontal,Qt::DisplayRole).toString());
 }
 
+void MainWindow::createProcessIndicator(ProcessWrapper *wrapper, int gpu_id)
+{
+    ProcessIndicator *indicator=new ProcessIndicator(gpu_id);
+    process_indicators_.append(indicator);
+    statusBar()->addWidget(indicator);
+    connect(wrapper,&ProcessWrapper::started,indicator,&ProcessIndicator::started);
+    connect(wrapper,&ProcessWrapper::stopped,indicator,&ProcessIndicator::finished);
+}
+
+void MainWindow::deleteProcessIndicators()
+{
+    while(!process_indicators_.empty()){
+        ProcessIndicator *indicator=process_indicators_.takeLast();
+        statusBar()->removeWidget(indicator);
+        indicator->deleteLater();
+    }
+
+}
+
+void MainWindow::displayLinearChartDetails(const QPointF &point, bool state)
+{
+    if(state){
+        ui->linear_chart_details->setText(QString("Image: %1, Value: %2").arg(static_cast<int>(point.x())).arg(point.y()));
+    }else{
+        ui->linear_chart_details->setText("");
+    }
+}
+
+void MainWindow::displayHistogramChartDetails(const QPointF &point, bool state)
+{
+    if(state){
+        int bucket_id=std::min(histogram_.size()-1,static_cast<int>((point.x()-histogram_min_)/histogram_bucket_size_));
+        ui->histogram_chart_details->setText(QString("Bin: %1-%2, Value: %3").arg(histogram_min_+histogram_bucket_size_*bucket_id).arg(histogram_min_+histogram_bucket_size_*(bucket_id+1)).arg(histogram_[bucket_id]));
+    }else{
+        ui->histogram_chart_details->setText("");
+    }
+}
+
+void MainWindow::exportLinearChart()
+{
+    QPrinter printer;
+    printer.setOrientation(QPrinter::Landscape);
+    QPrintDialog dialog(&printer);
+    dialog.setWindowTitle("Print Linear Chart");
+    if (dialog.exec() == QDialog::Accepted){
+        QPainter painter;
+        painter.begin(&printer);
+        ui->chart->render(&painter, printer.pageRect());
+        painter.end();
+    }
+}
+
+void MainWindow::exportHistogramChart()
+{
+    QPrinter printer;
+    printer.setOrientation(QPrinter::Landscape);
+    QPrintDialog dialog(&printer);
+    dialog.setWindowTitle("Print Histogram Chart");
+    if (dialog.exec() == QDialog::Accepted){
+        QPainter painter;
+        painter.begin(&printer);
+        ui->histogram->render(&painter, printer.pageRect());
+        painter.end();
+    }
+}
+
+void MainWindow::selectFromLinearChart(float start, float end, bool invert)
+{
+    ui->select_from_linear->setChecked(false);
+    int istart=std::max(0,static_cast<int>(start));
+    int iend=std::min(model_->rowCount()-1,static_cast<int>(end));
+    if(invert){
+        for(unsigned int i=istart;i<=iend;++i){
+            DataPtr data=model_->image(i);
+            data->insert("export","0");
+            onDataChanged(data);
+        }
+    }else{
+        for(unsigned int i=0;i<istart;++i){
+            DataPtr data=model_->image(i);
+            data->insert("export","0");
+            onDataChanged(data);
+        }
+        for(unsigned int i=iend+1;i<model_->rowCount();++i){
+            DataPtr data=model_->image(i);
+            data->insert("export","0");
+            onDataChanged(data);
+        }
+    }
+}
+
+void MainWindow::selectFromHistogramChart(float start, float end, bool invert)
+{
+    ui->select_from_histogram->setChecked(false);
+    int column=sort_proxy_->mapToSource(ui->image_list->currentIndex()).column();
+    if(invert){
+        for(unsigned int i=0;i<model_->rowCount();++i){
+            QVariant val=model_->data(model_->index(i,column),ImageTableModel::SortRole);
+            DataPtr data=model_->image(i);
+            if(val.canConvert<float>() && val.toString()!=QString("")){
+                float fval=val.toFloat();
+                if(fval>=start && fval<=end){
+                    data->insert("export","0");
+                    onDataChanged(data);
+                }
+            }
+        }
+    }else{
+        for(unsigned int i=0;i<model_->rowCount();++i){
+            QVariant val=model_->data(model_->index(i,column),ImageTableModel::SortRole);
+            DataPtr data=model_->image(i);
+            if(val.canConvert<float>() && val.toString()!=QString("")){
+                float fval=val.toFloat();
+                if(fval<start || fval>end){
+                    data->insert("export","0");
+                    onDataChanged(data);
+                }
+            }
+        }
+    }
+}
+
+void MainWindow::onStartStopButton(bool start)
+{
+    if(start){
+        model_->clearData();
+    }
+    emit startStop(start);
+}
+
+
+void MainWindow::on_actionAbout_triggered()
+{
+    AboutDialog dialog;
+    dialog.exec();
+}

@@ -103,7 +103,7 @@ ImageProcessor::ImageProcessor():
     running_state_(false)
 
 {
-    loadSettings();
+    QTimer::singleShot(0, this, SLOT(loadSettings()));
     connect(watcher_, SIGNAL(directoryChanged(const QString &)), this, SLOT(onDirChange(const QString &)));
 }
 
@@ -121,26 +121,6 @@ void ImageProcessor::startStop(bool start)
 {
     if(start){
         Settings settings;
-        int num_cpu=settings.value("num_cpu",10).toInt();
-        int num_gpu=settings.value("num_gpu",2).toInt();
-        int timeout=settings.value("timeout",300).toInt();
-        QStringList gpu_ids=settings.value("gpu_ids","0").toString().split(",", QString::SkipEmptyParts);
-        if(gpu_ids.empty()){
-            for(int i=0;i<num_gpu;++i) {
-                gpu_ids << QString("%1").arg(i);
-            }
-        }
-        for(int i=0;i<num_cpu;++i) {
-            ProcessWrapper* wrapper=new ProcessWrapper(this,timeout,-1);
-            connect(wrapper,SIGNAL(finished(TaskPtr,bool)),this,SLOT(onTaskFinished(TaskPtr,bool)));
-            cpu_processes_.append(wrapper);
-
-        }
-        for(int i=0;i<num_gpu;++i) {
-            ProcessWrapper* wrapper=new ProcessWrapper(this,timeout,gpu_ids.at(i%gpu_ids.size()).toInt());
-            connect(wrapper,SIGNAL(finished(TaskPtr,bool)),this,SLOT(onTaskFinished(TaskPtr,bool)));
-            gpu_processes_.append(wrapper);
-        }
         running_state_=true;
         avg_source_path_=settings.value("avg_source_dir").toString();
         stack_source_path_=settings.value("stack_source_dir").toString();
@@ -158,13 +138,11 @@ void ImageProcessor::startStop(bool start)
         foreach(ProcessWrapper* process, gpu_processes_){
             process->terminate();
         }
+        grid_squares_.clear();
         images_.clear();
-        while(!cpu_processes_.empty()){
-            cpu_processes_.takeLast()->deleteLater();
-        }
-        while(!gpu_processes_.empty()){
-            gpu_processes_.takeLast()->deleteLater();
-        }
+        raw_files_.clear();
+        output_files_.clear();
+        shared_output_files_.clear();
     }
 }
 
@@ -238,8 +216,39 @@ void ImageProcessor::onTaskFinished(const TaskPtr &task, bool gpu)
 
 void ImageProcessor::loadSettings()
 {
+     emit processesDeleted();
+     Settings *settings=new Settings;
+     while(!cpu_processes_.empty()){
+         cpu_processes_.takeLast()->deleteLater();
+     }
+     while(!gpu_processes_.empty()){
+         gpu_processes_.takeLast()->deleteLater();
+     }
+     int num_cpu=settings->value("num_cpu",10).toInt();
+     int num_gpu=settings->value("num_gpu",2).toInt();
+     int timeout=settings->value("timeout",300).toInt();
+     QStringList gpu_ids=settings->value("gpu_ids","0").toString().split(",", QString::SkipEmptyParts);
+     if(gpu_ids.empty()){
+         for(int i=0;i<num_gpu;++i) {
+             gpu_ids << QString("%1").arg(i);
+         }
+     }
+     for(int i=0;i<num_cpu;++i) {
+         ProcessWrapper* wrapper=new ProcessWrapper(this,timeout,-1);
+         emit processCreated(wrapper,-1);
+         connect(wrapper,SIGNAL(finished(TaskPtr,bool)),this,SLOT(onTaskFinished(TaskPtr,bool)));
+         cpu_processes_.append(wrapper);
+
+     }
+     for(int i=0;i<num_gpu;++i) {
+         int gpu_id=gpu_ids.at(i%gpu_ids.size()).toInt();
+         ProcessWrapper* wrapper=new ProcessWrapper(this,timeout,gpu_id);
+         emit processCreated(wrapper,gpu_id);
+         connect(wrapper,SIGNAL(finished(TaskPtr,bool)),this,SLOT(onTaskFinished(TaskPtr,bool)));
+         gpu_processes_.append(wrapper);
+     }
+
     root_task_->children.clear();
-    Settings *settings=new Settings;
     settings->beginGroup("Tasks");
     loadTask_(settings,root_task_);
     settings->endGroup();

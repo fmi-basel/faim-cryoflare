@@ -23,7 +23,7 @@ Q_IMPORT_PLUGIN(MRCIOPlugin)
 int main(int argc, char* argv[])
 {
     if(-1==mlockall(MCL_CURRENT|MCL_FUTURE)){
-        qWarning() << "failed to lock virtual address space into RAM";
+        //qWarning() << "failed to lock virtual address space into RAM";
     }
     QScopedPointer<QCoreApplication> app(createApplication(argc, argv));
     QCoreApplication::setOrganizationName("Friedrich Miescher Institute");
@@ -56,6 +56,8 @@ int main(int argc, char* argv[])
         QObject::connect(&processor, SIGNAL(dataChanged(DataPtr)), &w, SLOT(onDataChanged(DataPtr)));
         QObject::connect(&w,SIGNAL(settingsChanged()),&processor,SLOT(loadSettings()));
         QObject::connect(&processor,SIGNAL(queueCountChanged(int,int)),&w,SLOT(updateQueueCounts(int,int)));
+        QObject::connect(&processor,SIGNAL(processCreated(ProcessWrapper*,int)),&w,SLOT(createProcessIndicator(ProcessWrapper*,int)));
+        QObject::connect(&processor,SIGNAL(processesDeleted()),&w,SLOT(deleteProcessIndicators()));
         w.init();
         w.show();
         //next line within if to avoid MainWindow going out of scope

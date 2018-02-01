@@ -1,0 +1,14 @@
+<RCC>
+    <qresource prefix="/">
+        <file>icons/gpu.png</file>
+        <file>icons/cpu.png</file>
+        <file>icons/document-open-folder.png</file>
+        <file>icons/media-playback-start.png</file>
+        <file>icons/media-playback-stop.png</file>
+        <file>icons/document-export-table.png</file>
+        <file>icons/applications-system.png</file>
+        <file>icons/view-filter.png</file>
+        <file>icons/select-rectangular.png</file>
+        <file>icons/FMI_logo_rgb_def.jpg</file>
+    </qresource>
+</RCC>

@@ -27,6 +27,7 @@ public:
     void addColumn(const InputOutputVariable  &column);
     void clearColumns();
     void onDataChanged(const DataPtr &data);
+    void clearData();
 private:
     QList<DataPtr> data_;
     QList<InputOutputVariable>  columns_;

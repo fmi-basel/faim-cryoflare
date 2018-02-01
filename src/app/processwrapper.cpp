@@ -8,14 +8,15 @@
 
 ProcessWrapper::ProcessWrapper(QObject *parent, int timeout, int gpu_id) :
     QObject(parent),
-    process_(new QProcess),
+    process_(new QProcess(this)),
     task_(),
     timeout_(timeout),
     terminated_(false),
     gpu_id_(gpu_id),
-    timeout_timer_(new QTimer)
+    timeout_timer_(new QTimer(this))
 {
     connect(process_,SIGNAL(finished(int)),this,SLOT(onFinished(int)));
+    connect(process_,SIGNAL(started()),this,SLOT(onStarted()));
     QProcessEnvironment env=QProcessEnvironment::systemEnvironment();
     QString path=env.value("PATH");
     env.insert("PATH",QCoreApplication::applicationDirPath()+"/scripts:"+path);
@@ -57,6 +58,7 @@ void ProcessWrapper::start(const TaskPtr &task)
 
 void ProcessWrapper::onFinished(int exitcode)
 {
+    emit stopped();
     timeout_timer_->stop();
     if(terminated_){
         process_->readAllStandardError();
@@ -95,6 +97,11 @@ void ProcessWrapper::onFinished(int exitcode)
     TaskPtr task=task_;
     task_.clear();
     emit finished(task,-1!=gpu_id_);
+}
+
+void ProcessWrapper::onStarted()
+{
+    emit started(task_->name,task_->data->value("short_name"),process_->processId());
 }
 
 void ProcessWrapper::kill()
