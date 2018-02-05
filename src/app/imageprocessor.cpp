@@ -120,6 +120,9 @@ ImageProcessor::~ImageProcessor()
 void ImageProcessor::startStop(bool start)
 {
     if(start){
+        raw_files_.clear();
+        output_files_.clear();
+        shared_output_files_.clear();
         Settings settings;
         running_state_=true;
         avg_source_path_=settings.value("avg_source_dir").toString();
@@ -140,9 +143,6 @@ void ImageProcessor::startStop(bool start)
         }
         grid_squares_.clear();
         images_.clear();
-        raw_files_.clear();
-        output_files_.clear();
-        shared_output_files_.clear();
     }
 }
 
@@ -279,13 +279,14 @@ void ImageProcessor::exportImages(const QString &export_path, const QStringList 
         process_->start(custom_script,arguments);
         process_->waitForStarted(-1);
         foreach(QString image,image_list){
-	    qDebug() << "gui writing: " << QStringList(raw_files_[image].toList()).join(",") << "\n";
-	    qDebug() << "gui writing: " << QStringList(output_files_[image].toList()).join(",") << "\n";
+            qDebug() << "gui writing: " << QStringList(raw_files_[image].toList()).join(",") << "\n";
+            qDebug() << "gui writing: " << QStringList(output_files_[image].toList()).join(",") << "\n";
             process_->write(QString("raw_%1=%2\n").arg(image).arg(QStringList(raw_files_[image].toList()).join(",")).toLatin1());
             process_->write(QString("%1=%2\n").arg(image).arg(QStringList(output_files_[image].toList()).join(",")).toLatin1());
         }
+        process_->write(QString("%1=%2\n").arg("shared").arg(QStringList(shared_output_files_.toList()).join(",")).toLatin1());
         qDebug() << "gui data written\n";
-	process_->closeWriteChannel();
+        process_->closeWriteChannel();
         //process.waitForFinished(-1);
 
     }else{
