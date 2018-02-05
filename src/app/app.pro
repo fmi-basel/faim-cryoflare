@@ -7,7 +7,7 @@
 QT       += core gui xml charts printsupport
 greaterThan(QT_MAJOR_VERSION, 5): QT += widgets
 
-TARGET = StackGUI
+TARGET = cryoflare
 TEMPLATE = app
 PRE_TARGETDEPS += ../mrcio/libmrcio.a
 
