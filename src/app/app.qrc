@@ -10,5 +10,6 @@
         <file>icons/view-filter.png</file>
         <file>icons/select-rectangular.png</file>
         <file>icons/FMI_logo_rgb_def.jpg</file>
+        <file>icons/FMI_logo_rgb_def.png</file>
     </qresource>
 </RCC>
