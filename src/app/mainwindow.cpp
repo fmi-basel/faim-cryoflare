@@ -63,6 +63,16 @@ MainWindow::MainWindow(QWidget *parent) :
     statusBar()->addPermanentWidget(statusbar_queue_count_);
     chart_update_timer_.setSingleShot(true);
     connect(&chart_update_timer_, &QTimer::timeout, this, &MainWindow::updateChart);
+    QMenu *window_menu=new QMenu("Window",this);
+    window_menu->addAction(ui->linear_chart_dock->toggleViewAction());
+    window_menu->addAction(ui->histogram_chart_dock->toggleViewAction());
+    window_menu->addAction(ui->phase_plate_dock->toggleViewAction());
+    window_menu->addAction(ui->details_dock->toggleViewAction());
+    menuBar()->addMenu(window_menu);
+    QMenu *help_menu=new QMenu("Help",this);
+    QAction* about_action=help_menu->addAction("About");
+    connect(about_action,&QAction::triggered,this, &MainWindow::showAbout);
+    menuBar()->addMenu(help_menu);
 }
 
 MainWindow::~MainWindow()
@@ -599,9 +609,12 @@ void MainWindow::onStartStopButton(bool start)
     emit startStop(start);
 }
 
-
-void MainWindow::on_actionAbout_triggered()
+void MainWindow::showAbout()
 {
     AboutDialog dialog;
     dialog.exec();
 }
+
+
+
+

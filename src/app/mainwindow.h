@@ -57,6 +57,7 @@ public slots:
     void selectFromLinearChart(float start, float end, bool invert);
     void selectFromHistogramChart(float start, float end, bool invert);
     void onStartStopButton(bool start);
+    void showAbout();
 
 signals:
     void startStop(bool start);
@@ -64,7 +65,6 @@ signals:
     void exportImages(const QString& path,const QStringList& images);
 
 private slots:
-    void on_actionAbout_triggered();
 
 private:
     void updateTaskWidget_(Settings *settings, QFormLayout *parent_input_layout, QFormLayout *parent_output_layout);

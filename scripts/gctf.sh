@@ -57,6 +57,7 @@ if [ "$camera" == "EF-CCD" ]; then
 else
     dstep=14
 fi
+magnification=`CALCULATE "1e4*$dstep/$pixel_size"`
 
 ######################## run processing if files are missing ###################
 
@@ -83,7 +84,7 @@ if FILES_MISSING; then
   gctf_defocus_params+=" --defH `CALCULATE -2.5*$defocus`"
   gctf_defocus_params+=" --defS 500"
 
-  ln -s $gautomatch_star_file $relion_job_micrographs_dir
+  ln -s ../../../$micrographs_dir/${gautomatch_star_file##*/} $relion_job_micrographs_dir
   ln -s ../../../$micrographs_dir/${!average_var##*/} $relion_job_micrographs_dir
   if [ $phase_plate == "true" ] ; then
     RUN gctf $gctf_params $gctf_defocus_params $gctf_phase_plate_params $gctf_avg_link &>> $gctf_log
@@ -99,7 +100,7 @@ if FILES_MISSING; then
   gctf_defocus_params+=" --defH `CALCULATE 1.1*$average_defocus`"
   gctf_defocus_params+=" --defS 100"
   gctf_params+=" --do_local_refine 1"
-  gctf_params+=" --boxsuffix _automatch.star"
+  gctf_params+=" --boxsuffix _DW_automatch.star"
   gctf_params+=" --do_EPA 1"
   gctf_params+=" --refine_after_EPA 0"
   gctf_params+=" --do_Hres_ref 1"
@@ -118,7 +119,7 @@ if FILES_MISSING; then
     RUN gctf $gctf_params $gctf_defocus_params  $gctf_avg_link  &>> $gctf_log
   fi
 
-  ln -s $gctf_diag_file $gctf_diag_file_mrc
+  ln -s ${gctf_diag_file##*/} $gctf_diag_file_mrc
   RUN e2proc2d.py  --meanshrink 2  $gctf_diag_file_mrc  $gctf_diag_file_png
 fi
 
@@ -171,13 +172,13 @@ if [ -n "$defocus_u" ] ; then
 
     gctf_phase_shift=`echo $measured_defocus|cut -f4 -d" "`
     rln_header+=(PhaseShift)
-    RELION_WRITE $destination_path $rln_jobtype $rln_jobid $rln_alias $rln_nodetype $rln_starname $rln_inputstar $rln_header $micrographs_dir/${short_name}.mrc $rln_jobtype/$jobfolder/$micrographs_dir/${short_name}.ctf:mrc \
-                                                                                                                             $defocus_u $defocus_v $gctf_defocus_angle 300 0.001 0.07 $nominal_magnification $dstep \
+    RELION_WRITE $destination_path $rln_jobtype $rln_jobid $rln_alias $rln_nodetype $rln_starname $rln_inputstar rln_header[@] $micrographs_dir/${short_name}_DW.mrc $rln_jobtype/$jobfolder/$micrographs_dir/${short_name}.ctf:mrc \
+                                                                                                                             $defocus_u $defocus_v $gctf_defocus_angle 300 0.001 0.07 $magnification $dstep \
 															     $gctf_epa_cc $gctf_epa_limit $gctf_phase_shift
   else
     gctf_phase_shift=0
-    RELION_WRITE $destination_path $rln_jobtype $rln_jobid $rln_alias $rln_nodetype $rln_starname $rln_inputstar $rln_header $micrographs_dir/${short_name}.mrc $rln_jobtype/$jobfolder/$micrographs_dir/${short_name}.ctf:mrc \
-                                                                                                                             $defocus_u $defocus_v $gctf_defocus_angle 300 0.001 0.07 $nominal_magnification $dstep \
+    RELION_WRITE $destination_path $rln_jobtype $rln_jobid $rln_alias $rln_nodetype $rln_starname $rln_inputstar rln_header[@] $micrographs_dir/${short_name}_DW.mrc $rln_jobtype/$jobfolder/$micrographs_dir/${short_name}.ctf:mrc \
+                                                                                                                             $defocus_u $defocus_v $gctf_defocus_angle 300 0.001 0.07 $magnification $dstep \
 															     $gctf_epa_cc $gctf_epa_limit 
 
   fi

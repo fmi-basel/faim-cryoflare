@@ -96,8 +96,8 @@ rln_alias=micrographs_mc2
 rln_nodetype=1
 rln_starname=micrographs.star
 rln_inputstar=""
-rln_header+=(micrographs)
-RELION_WRITE $destination_path $rln_jobtype $rln_jobid $rln_alias $rln_nodetype $rln_starname $rln_inputstar $rln_header micrographs_mc2/${short_name}.mrc
+rln_header=(MicrographName)
+RELION_WRITE "$destination_path" "$rln_jobtype" "$rln_jobid" "$rln_alias" "$rln_nodetype" "$rln_starname" "$rln_inputstar" "rln_header[@]" "micrographs_mc2/${short_name}_DW.mrc"
 
 
 ######################## export result parameters ##############################

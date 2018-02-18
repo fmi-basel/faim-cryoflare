@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>About CryoFlare</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -40,14 +40,14 @@
     </widget>
    </item>
    <item>
-    <widget class="QLabel" name="label_3">
+    <widget class="QLabel" name="version">
      <property name="font">
       <font>
        <pointsize>14</pointsize>
       </font>
      </property>
      <property name="text">
-      <string>Version: 1.4</string>
+      <string>Version:</string>
      </property>
      <property name="textFormat">
       <enum>Qt::PlainText</enum>

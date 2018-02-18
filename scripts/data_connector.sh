@@ -18,7 +18,7 @@ RELION_WRITE(){
 	local nodetype=$5
 	local starname=$6
 	local inputstar=$7
-	local header=$8
+        declare -a header=("${!8}")
 	local datastart=9
 	local jobfolder
 	printf -v jobfolder "job%03d" $jobid
@@ -27,7 +27,6 @@ RELION_WRITE(){
 	local default_pipeline="$destination/default_pipeline.star"
 	local gui_projectdir="$destination_path/.gui_projectdir"
 	local jobalias_link=$destination/$jobtype/$jobalias
-	
 	### create folders and aliases ###
 	mkdir -p $destination/$jobtype/$jobfolder
         [ -e $jobalias_link ] || ln -s ../$jobtype/$jobfolder $jobalias_link
@@ -46,9 +45,11 @@ RELION_WRITE(){
      		if [[ -s $starpath ]]; then
        			cp $starpath $tmpfile
      		else
-       			echo -e "\ndata_\n\nloop_\n" > $tmpfile
+       			echo -e "\ndata_\n\nloop_" > $tmpfile
+                        i=1
 			for headeritem in ${header[@]}; do
-				echo -e "$headeritem\n" >> $tmpfile
+				echo -e "_rln$headeritem #  $i" >> $tmpfile
+                                let i++
 			done
      		fi
 		local imagename=${!datastart##*/}
@@ -62,7 +63,7 @@ RELION_WRITE(){
   	(
     		flock -n 9 || exit 1
     		touch $destination/.gui_projectdir
-    		add_to_pipeline.py $default_pipeline  $jobtype $jobid $jobalias $inputstar "$jobtype/$jobfolder/$starname:$nodetype"
+    		add_to_pipeline.py "$default_pipeline"  "$jobtype" "$jobid" "$jobalias" "$inputstar" "$jobtype/$jobfolder/$starname:$nodetype"
     		SHARED_FILES default_pipeline gui_projectdir
   	) 9>> $default_pipeline
 }

@@ -84,8 +84,8 @@ rln_alias=movies_raw
 rln_nodetype=0
 rln_starname=movies.star
 rln_inputstar=""
-rln_header+=(MicrographMovieName)
-RELION_WRITE $destination_path $rln_jobtype $rln_jobid $rln_alias $rln_nodetype $rln_starname $rln_inputstar $rln_header movies_raw/${short_name}_movie.mrcs
+rln_header=(MicrographMovieName)
+RELION_WRITE "$destination_path" "$rln_jobtype" "$rln_jobid" "$rln_alias"  "$rln_nodetype" "$rln_starname" "$rln_inputstar" "rln_header[@]" "movies_raw/${short_name}_movie.mrcs"
 
 
 ######################## export result parameters ##############################

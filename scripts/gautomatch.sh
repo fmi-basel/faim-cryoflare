@@ -27,7 +27,8 @@ fi
 gautomatch_log=${!average_var/.mrc/_gautomatch.log}
 gautomatch_box_file=${!average_var/.mrc/_automatch.box}
 gautomatch_rejected_box_file=${!average_var/.mrc/_rejected.box}
-gautomatch_star_file=${!average_var/.mrc/_automatch.star}
+gautomatch_star_file_no_DW=${!average_var/.mrc/_automatch.star}
+gautomatch_star_file=${!average_var/.mrc/_DW_automatch.star}
 FILES gautomatch_log gautomatch_box_file gautomatch_rejected_box_file gautomatch_star_file
 
 
@@ -52,6 +53,7 @@ if FILES_MISSING; then
   fi
   
   RUN gautomatch $gautomach_params ${!average_var} >> $gautomatch_log 
+  mv $gautomatch_star_file_no_DW $gautomatch_star_file
 fi
 
 

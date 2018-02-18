@@ -6,6 +6,7 @@ AboutDialog::AboutDialog(QWidget *parent) :
     ui(new Ui::AboutDialog)
 {
     ui->setupUi(this);
+    ui->version->setText("Version: "+QString(GIT_VERSION));
 }
 
 AboutDialog::~AboutDialog()

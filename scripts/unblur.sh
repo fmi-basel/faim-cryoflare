@@ -158,18 +158,18 @@ rln_header=(MicrographName)
 
 rln_jobid=1
 rln_alias=micrographs_unblur
-RELION_WRITE $destination_path $rln_jobtype $rln_jobid $rln_alias $rln_nodetype $rln_starname $rln_inputstar $rln_header micrographs_unblur/${short_name}.mrc
+RELION_WRITE $destination_path $rln_jobtype $rln_jobid $rln_alias $rln_nodetype $rln_starname $rln_inputstar rln_header[@] micrographs_unblur/${short_name}.mrc
 
 rln_jobid=2
 rln_alias=micrographs_unblur_dw
-RELION_WRITE $destination_path $rln_jobtype $rln_jobid $rln_alias $rln_nodetype $rln_starname $rln_inputstar $rln_header micrographs_unblur_dw/${short_name}.mrc
+RELION_WRITE $destination_path $rln_jobtype $rln_jobid $rln_alias $rln_nodetype $rln_starname $rln_inputstar rln_header[@] micrographs_unblur_dw/${short_name}.mrc
 
 rln_nodetype=0
 rln_starname=movies.star
 rln_header=(MicrographMovieName)
 rln_jobid=3
 rln_alias=movies_unblur
-RELION_WRITE $destination_path $rln_jobtype $rln_jobid $rln_alias $rln_nodetype $rln_starname $rln_inputstar $rln_header movies_unblur/${short_name}_movie.mrcs
+RELION_WRITE $destination_path $rln_jobtype $rln_jobid $rln_alias $rln_nodetype $rln_starname $rln_inputstar rln_header[@] movies_unblur/${short_name}_movie.mrcs
 
 
 ######################## export result parameters ##############################

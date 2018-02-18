@@ -1,7 +1,9 @@
+#!/usr/prog/sb/em/sw/EMAN2/2.2/bin/python
 import sys
 from PyQt4.QtGui import *
 from PyQt4.QtCore import *
 import os
+from itertools import chain
 
 class RSyncProcess(QObject):
 	progress = pyqtSignal()
@@ -15,12 +17,16 @@ class RSyncProcess(QObject):
 		self.process.finished.connect(self.onProcessFinished)
 		self.process.readyReadStandardOutput.connect(self.onProcessStandardOutput)
 		self.process.readyReadStandardError.connect(self.onProcessStandardError)
+		self.percentage=0
 
 	def start(self,username,password,items,destination_host,destination):
 		filelist=list(chain.from_iterable(items))
+                if len(filelist)==0:
+                        self.onProcessFinished()
+                        return
                 arguments=QStringList()
-		if username:
-			programm="sshpass"
+		if password:
+			program="sshpass"
 			arguments.append("-e")
 			arguments.append(os.path.join(sys.path[0],"rsync"))
 			env = QProcessEnvironment.systemEnvironment()
@@ -28,6 +34,7 @@ class RSyncProcess(QObject):
 			self.process.setProcessEnvironment(env)
 		else:
 			program=os.path.join(sys.path[0],"rsync")
+		arguments.append("-R")
 		arguments.append("--info=progress2")
 		arguments.append("-rltuv")
 		arguments.append("--perms")
@@ -56,19 +63,16 @@ class RSyncProcess(QObject):
 		if output:
 			lines=output.split('\n')
 			for line in lines:
-				fields=QString(line).split(' ',QString.SkipEmptyParts)
-				if len(fields)>2:
-					percentage=fields[2]
-					percentage.chop(1)
+                                f=line.indexOf("%")
+                                if f!=-1:
+					percentage=float(line[:f].split(" ")[-1])
 					if percentage>self.percentage:
 						self.percentage=percentage
 						self.progress.emit()
 
 
 	def onProcessStandardError(self):
-		print "An error occured"
 		print self.process.readAllStandardError()
-		self.process.terminate()
 
 	def terminate(self):
 		self.process.terminate()
@@ -91,12 +95,13 @@ class RSyncTransfer(QObject):
 			p.error.connect(self.error)
 
 	def processFinished(self):
+                print "process finished"
 		self.num_finished+=1
-		if self.num_finished>=len(self.processes):
+		if self.num_finished>=len(self.process):
 			self.finished.emit()
 
 	def percentDone(self):
-		return sum([p.percentageDone() for p in self.process])/len(self.process)
+		return sum([p.percentDone() for p in self.process])/len(self.process)
 
 	def start(self,username,password,items,destination_host,destination):
 		self.num_finished=0
@@ -104,7 +109,7 @@ class RSyncTransfer(QObject):
 		for i in range(self.num_processes):
 			self.process[i].start(username,password,chunk[i],destination_host,destination)
 	def cancel(self):
-		for p in self.processes:
+		for p in self.process:
 			p.terminate()
 
 class LoginDialog(QDialog):
@@ -150,6 +155,7 @@ class Exporter(QObject):
 		self.password=None
 		self.source=source
 		self.rsync_transfer=RSyncTransfer(num_processes)
+		self.rsync_transfer.progress.connect(self.updateProgress)
 		self.machine=QStateMachine()
 		get_login=QState()
 		read_data=QState()
@@ -169,6 +175,7 @@ class Exporter(QObject):
 
 		self.machine.addState(get_login)
 		self.machine.setInitialState(get_login)
+		self.machine.addState(read_data)
 		self.machine.addState(copy_intermediate)
 		self.machine.addState(copy_raw)
 		self.machine.addState(cleanup)
@@ -176,14 +183,17 @@ class Exporter(QObject):
 		QTimer.singleShot(0,self.machine.start)
 	
 	def getLogin(self):
-		login_dialog=LoginDialog("chbscl-9-2.nibr.novartis.net")
+                print "start get login"
+		login_dialog=LoginDialog("moria.nibr.novartis.net")
 		self.username,self.password=login_dialog.getLogin()
 		if self.username:
+                        print "login success"
 			self.loginSuccess.emit()
 		else:
 			QApplication.exit()
 
 	def readData(self):
+                print "start reading data"
 		in_data=sys.stdin.readlines()
 		self.raw_data={}
 		self.data={}
@@ -193,30 +203,34 @@ class Exporter(QObject):
 				self.raw_data[key]=line_data.rstrip("\n").split(",")
 			else:
 				self.data[key]=line_data.rstrip("\n").split(",")
+                print "data read"
 		self.dataRead.emit()
 
-	def copyIntermediate(self):
+	def copyIntermediate(self): 
+                print "starting copy of intermediate data\n"
 		project_dir=os.path.split(self.source.rstrip("/"))[1]
 		self.progress_dialog=QProgressDialog("Copying intermediate files to lustre...", "Abort Copy", 0, 100)
 		self.progress_dialog.setMinimumDuration(0)
 		self.progress_dialog.setWindowModality(Qt.WindowModal)
 		self.progress_dialog.canceled.connect(self.onCancel)
 		self.progress_dialog.setValue(0)
-		self.rsync_transfer.start(self.username,self.password,data.values(),"chbscl-9-2","/flock/dlab/em/users/"+self.username+"/"+project_dir+"/")
+		self.rsync_transfer.start(self.username,self.password,self.data.values(),"moria","/flock/dlab/em/users/"+self.username+"/"+project_dir+"/")
+                print "copy of intermediate data finished\n"
 
 	def copyRaw(self):
+                print "starting copy of raw data"
 		self.progress_dialog.reset()
 		project_dir=os.path.split(self.source.rstrip("/"))[1]
 		if "FMI" in source:
 			title="Copying raw files to FMI ..."
 			destination_host="172.27.28.12"
 			destination="gmicro_krios/"+project_dir+"/"
-			username=""
+			username="scheandr"
 			password=""
 		else:
 			import time
 			title="Copying raw files to dlab ..."
-			destination_host="chbscl-9-2"
+			destination_host="moria"
 			destination="/dlab/em/krios/"+time.strftime("%Y")+"/"+project_dir+"/"
 			username=self.username
 			password=self.password
@@ -225,7 +239,8 @@ class Exporter(QObject):
 		self.progress_dialog.setWindowModality(Qt.WindowModal)
 		self.progress_dialog.canceled.connect(self.onCancel)
 		self.progress_dialog.setValue(0)
-		self.rsync_transfer.start(username,password,data.values(),destination_host,destination)
+		self.rsync_transfer.start(username,password,self.raw_data.values(),destination_host,destination)
+                print "copy of raw data finished"
 
 	def cleanup(self):
 		self.progress_dialog.reset()		
@@ -236,8 +251,7 @@ class Exporter(QObject):
 		QApplication.exit()
 
 	def updateProgress(self):
-		percentage=sum([p.percentageDone() for p in self.rsync_processes])/len(self.rsync_processes)
-		self.progress_dialog.setValue(percentage)
+		self.progress_dialog.setValue(self.rsync_transfer.percentDone())
 
 
 

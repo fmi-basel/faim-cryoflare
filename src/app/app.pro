@@ -11,6 +11,12 @@ TARGET = cryoflare
 TEMPLATE = app
 PRE_TARGETDEPS += ../mrcio/libmrcio.a
 
+GIT_VERSION = $$system(git --git-dir $$PWD/../../.git --work-tree $$PWD/../.. describe --always --tags)
+GIT_VERSION ~= s/-/"."
+GIT_VERSION ~= s/g/""
+
+DEFINES += GIT_VERSION=\\\"$$GIT_VERSION\\\"
+
 SOURCES += \
     main.cpp\
     mainwindow.cpp \
@@ -69,3 +75,4 @@ static {
 
 RESOURCES += \
     app.qrc
+
