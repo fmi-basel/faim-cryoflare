@@ -11,5 +11,7 @@
         <file>icons/select-rectangular.png</file>
         <file>icons/FMI_logo_rgb_def.jpg</file>
         <file>icons/FMI_logo_rgb_def.png</file>
+        <file>icons/cryoflare128.png</file>
+        <file>icons/draw-arrow-back.png</file>
     </qresource>
 </RCC>

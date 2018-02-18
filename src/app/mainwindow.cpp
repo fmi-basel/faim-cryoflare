@@ -40,7 +40,17 @@ MainWindow::MainWindow(QWidget *parent) :
     process_indicators_(),
     histogram_min_(0),
     histogram_bucket_size_(1),
-    histogram_()
+    histogram_(),
+    phase_plate_chart_(new PositionChart(this)),
+    phase_plate_position_chart_(new PositionChart(this)),
+    phase_plate_content_chart_(new PositionChart(this)),
+    phase_plate_level_(0),
+    grid_square_chart_(new PositionChart(this)),
+    grid_square_position_chart_(new PositionChart(this)),
+    grid_square_content_chart_(new PositionChart(this)),
+    grid_square_level_(0)
+
+
 {
     ui->setupUi(this);
     //ui->chart->setRenderHint(QPainter::Antialiasing,false);
@@ -62,11 +72,57 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->image_list->selectionModel(),SIGNAL(currentChanged(QModelIndex,QModelIndex)),this,SLOT(updateDetailsfromView(QModelIndex,QModelIndex)));
     statusBar()->addPermanentWidget(statusbar_queue_count_);
     chart_update_timer_.setSingleShot(true);
+
+    QPainterPath phase_plate_path;
+    phase_plate_path.moveTo(-80,-40);
+    phase_plate_path.arcTo(-120,-40,80,80,90,180);
+    phase_plate_path.arcTo(40,-40,80,80,270,180);
+    phase_plate_path.closeSubpath();
+    QList<QPointF> phase_plate_xy_list;
+    phase_plate_xy_list  << QPointF(0,-150) << QPointF(-150,-50) << QPointF(150,-50) << QPointF(-150,50) << QPointF(150,50)  << QPointF(0,150);
+    phase_plate_chart_->addPositions(phase_plate_path,phase_plate_xy_list);
+    ui->phase_plate->setScene(phase_plate_chart_);
+
+    QPainterPath phase_plate_pos_path;
+    phase_plate_pos_path.moveTo(40,0);
+    phase_plate_pos_path.arcTo(-40,-40,80,80,0,360);
+    QList<QPointF> phase_plate_pos_xy_list;
+    for(int y=0;y<4;++y){
+        for(int x=0;x<16;++x){
+            phase_plate_pos_xy_list << QPointF(100*x,100*y);
+        }
+    }
+    phase_plate_position_chart_->addPositions(phase_plate_pos_path,phase_plate_pos_xy_list);
+
+    QPainterPath grid_square_path;
+    grid_square_path.moveTo(40,-40);
+    grid_square_path.lineTo(40,40);
+    grid_square_path.lineTo(-40,40);
+    grid_square_path.lineTo(-40,-40);
+    grid_square_path.closeSubpath();
+    QList<QPointF> grid_square_xy_list;
+    for(int y=0;y<10;++y){
+        for(int x=0;x<10;++x){
+            grid_square_xy_list << QPointF(100*x,100*y);
+        }
+    }
+    grid_square_chart_->addPositions(grid_square_path,grid_square_xy_list);
+    ui->grid_square->setScene(grid_square_chart_);
+
+    QList<QPointF> grid_square_pos_xy_list;
+    for(int y=0;y<8;++y){
+        for(int x=0;x<8;++x){
+            grid_square_pos_xy_list << QPointF(100*x,100*y);
+        }
+    }
+    grid_square_position_chart_->addPositions(phase_plate_pos_path,grid_square_pos_xy_list);
+
     connect(&chart_update_timer_, &QTimer::timeout, this, &MainWindow::updateChart);
     QMenu *window_menu=new QMenu("Window",this);
     window_menu->addAction(ui->linear_chart_dock->toggleViewAction());
     window_menu->addAction(ui->histogram_chart_dock->toggleViewAction());
     window_menu->addAction(ui->phase_plate_dock->toggleViewAction());
+    window_menu->addAction(ui->grid_dock->toggleViewAction());
     window_menu->addAction(ui->details_dock->toggleViewAction());
     menuBar()->addMenu(window_menu);
     QMenu *help_menu=new QMenu("Help",this);
@@ -477,6 +533,18 @@ void MainWindow::updateChart()
     chart->legend()->hide();
     chart->createDefaultAxes();
     chart->setTitle(model_->headerData(column,Qt::Horizontal,Qt::DisplayRole).toString());
+    updatePhasePlateChart();
+    updateGridSquareChart();
+}
+
+void MainWindow::updatePhasePlateChart()
+{
+
+}
+
+void MainWindow::updateGridSquareChart()
+{
+
 }
 
 void MainWindow::createProcessIndicator(ProcessWrapper *wrapper, int gpu_id)
@@ -613,6 +681,88 @@ void MainWindow::showAbout()
 {
     AboutDialog dialog;
     dialog.exec();
+}
+
+void MainWindow::phasePlateClicked(int n)
+{
+    switch(phase_plate_level_){
+    case 0:
+        ui->phase_plate->setScene(phase_plate_position_chart_);
+        ++phase_plate_level_;
+        ui->back_phase_plate->setEnabled(true);
+        updatePhasePlateChart();
+        break;
+    case 1:
+        ui->phase_plate->setScene(phase_plate_content_chart_);
+        ++phase_plate_level_;
+        updatePhasePlateChart();
+        break;
+    default:
+    case 2:
+        break;
+    }
+
+}
+
+void MainWindow::phasePlateBack()
+{
+    switch(phase_plate_level_){
+    case 0:
+    default:
+        break;
+    case 1:
+        ui->phase_plate->setScene(phase_plate_chart_);
+        --phase_plate_level_;
+        ui->back_phase_plate->setEnabled(false);
+        updatePhasePlateChart();
+        break;
+    case 2:
+        ui->phase_plate->setScene(phase_plate_position_chart_);
+        --phase_plate_level_;
+        updatePhasePlateChart();
+        break;
+    }
+}
+
+void MainWindow::gridSquareClicked(int n)
+{
+    switch(grid_square_level_){
+    case 0:
+        ui->grid_square->setScene(grid_square_position_chart_);
+        ++grid_square_level_;
+        ui->back_grid_square->setEnabled(true);
+        updateGridSquareChart();
+        break;
+    case 1:
+        ui->grid_square->setScene(grid_square_content_chart_);
+        ++grid_square_level_;
+        updateGridSquareChart();
+        break;
+    default:
+    case 2:
+        break;
+    }
+
+}
+
+void MainWindow::gridSquareBack()
+{
+    switch(grid_square_level_){
+    case 0:
+    default:
+        break;
+    case 1:
+        ui->grid_square->setScene(grid_square_chart_);
+        --grid_square_level_;
+        ui->back_phase_plate->setEnabled(false);
+        updateGridSquareChart();
+        break;
+    case 2:
+        ui->grid_square->setScene(grid_square_position_chart_);
+        --grid_square_level_;
+        updateGridSquareChart();
+        break;
+    }
 }
 
 

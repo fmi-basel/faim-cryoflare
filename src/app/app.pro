@@ -36,7 +36,9 @@ SOURCES += \
     filelocker.cpp \ 
     processindicator.cpp \
     chartview.cpp \
-    aboutdialog.cpp
+    aboutdialog.cpp \
+    positionchart.cpp \
+    positionchartview.cpp
 
 
 
@@ -59,7 +61,9 @@ HEADERS  += \
     filelocker.h \ 
     processindicator.h \
     chartview.h \
-    aboutdialog.h
+    aboutdialog.h \
+    positionchart.h \
+    positionchartview.h
 
 
 FORMS    += \

@@ -11,6 +11,7 @@
 #include <QTimer>
 #include <imageprocessor.h>
 #include <imagetablemodel.h>
+#include "positionchart.h"
 
 namespace Ui {
 class MainWindow;
@@ -48,6 +49,8 @@ public slots:
     void updateQueueCounts(int cpu_queue, int gpu_queue);
     void updateDetails();
     void updateChart();
+    void updatePhasePlateChart();
+    void updateGridSquareChart();
     void createProcessIndicator(ProcessWrapper * wrapper, int gpu_id);
     void deleteProcessIndicators();
     void displayLinearChartDetails(const QPointF &point, bool state);
@@ -58,6 +61,10 @@ public slots:
     void selectFromHistogramChart(float start, float end, bool invert);
     void onStartStopButton(bool start);
     void showAbout();
+    void phasePlateClicked(int n);
+    void phasePlateBack();
+    void gridSquareClicked(int n);
+    void gridSquareBack();
 
 signals:
     void startStop(bool start);
@@ -77,6 +84,14 @@ private:
     float histogram_min_;
     float histogram_bucket_size_;
     QVector<float> histogram_;
+    PositionChart* phase_plate_chart_;
+    PositionChart* phase_plate_position_chart_;
+    PositionChart* phase_plate_content_chart_;
+    int phase_plate_level_;
+    PositionChart* grid_square_chart_;
+    PositionChart* grid_square_position_chart_;
+    PositionChart* grid_square_content_chart_;
+    int grid_square_level_;
 };
 
 #endif // MAINWINDOW_H

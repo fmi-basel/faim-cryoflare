@@ -35,7 +35,21 @@ DataPtr parse_xml_data(const QString& xml_path){
         return result;
     }
     file.close();
-
+    //create fake phase plate and grid square positions for testing, until acces to real data from xml is available
+    static int n=0;
+    int phase_plate=n/2000;
+    int phase_plate_pos=(n-phase_plate*2000)/50;
+    int phase_plate_count=n-phase_plate*2000-phase_plate_pos*50;
+    result->insert("phase_plate",QString("%1").arg(phase_plate));
+    result->insert("phase_plate_pos",QString("%1").arg(phase_plate_pos));
+    result->insert("phase_plate_count",QString("%1").arg(phase_plate_count));
+    ++n;
+    static int grid_n=0;
+    int grid_square=grid_n/64;
+    int grid_square_pos=grid_n-grid_square*64;
+    result->insert("grid_square",QString("%1").arg(grid_square));
+    result->insert("grid_square_pos",QString("%1").arg(grid_square_pos));
+    ++grid_n;
     QDomNode custom_data=dom_document.elementsByTagName("CustomData").at(0);
     QDomNode node = custom_data.firstChild();
     while(!node.isNull()) {
