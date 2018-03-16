@@ -43,12 +43,15 @@ MainWindow::MainWindow(QWidget *parent) :
     histogram_(),
     phase_plate_chart_(new PositionChart(this)),
     phase_plate_position_chart_(new PositionChart(this)),
-    phase_plate_content_chart_(new PositionChart(this)),
     phase_plate_level_(0),
+    current_phase_plate_(-1),
     grid_square_chart_(new PositionChart(this)),
     grid_square_position_chart_(new PositionChart(this)),
-    grid_square_content_chart_(new PositionChart(this)),
-    grid_square_level_(0)
+    grid_square_hole_position_chart_(new PositionChart(this)),
+    grid_square_level_(0),
+    current_grid_square_(-1),
+    current_grid_square_position_(-1),
+    default_columns_()
 
 
 {
@@ -88,7 +91,7 @@ MainWindow::MainWindow(QWidget *parent) :
     phase_plate_pos_path.arcTo(-40,-40,80,80,0,360);
     QList<QPointF> phase_plate_pos_xy_list;
     for(int y=0;y<4;++y){
-        for(int x=0;x<16;++x){
+        for(int x=0;x<19;++x){
             phase_plate_pos_xy_list << QPointF(100*x,100*y);
         }
     }
@@ -117,6 +120,10 @@ MainWindow::MainWindow(QWidget *parent) :
     }
     grid_square_position_chart_->addPositions(phase_plate_pos_path,grid_square_pos_xy_list);
 
+    QList<QPointF> grid_square_hole_pos_xy_list;
+    grid_square_hole_pos_xy_list << QPointF(-100,0)<< QPointF(0,-100)<< QPointF(100,0)<< QPointF(0,100);
+    grid_square_hole_position_chart_->addPositions(phase_plate_pos_path,grid_square_hole_pos_xy_list);
+
     connect(&chart_update_timer_, &QTimer::timeout, this, &MainWindow::updateChart);
     QMenu *window_menu=new QMenu("Window",this);
     window_menu->addAction(ui->linear_chart_dock->toggleViewAction());
@@ -129,6 +136,19 @@ MainWindow::MainWindow(QWidget *parent) :
     QAction* about_action=help_menu->addAction("About");
     connect(about_action,&QAction::triggered,this, &MainWindow::showAbout);
     menuBar()->addMenu(help_menu);
+
+    default_columns_ << InputOutputVariable("Name","short_name",String)
+                     << InputOutputVariable("Timestamp","timestamp",String)
+                     << InputOutputVariable("Nominal Defocus","defocus",Float)
+                     << InputOutputVariable("Exposure time","exposure_time",Float)
+                     << InputOutputVariable("Pixel size","apix_x",Float)
+                     << InputOutputVariable("Number of Frames","num_frames",Int)
+                     << InputOutputVariable("PP","phase_plate_num",Float)
+                     << InputOutputVariable("PP position","phase_plate_pos",Float)
+                     << InputOutputVariable("PP count","phase_plate_count",Float)
+                     << InputOutputVariable("Grid square","grid_square",Float)
+                     << InputOutputVariable("Foil hole","grid_square_pos",Float)
+                     << InputOutputVariable("Foil hole position","grid_square_hole_pos",Float);
 }
 
 MainWindow::~MainWindow()
@@ -180,12 +200,13 @@ void MainWindow::updateTaskWidgets()
     }
     model_->clearColumns();
     Settings *settings=new Settings;
-    model_->addColumn(InputOutputVariable("Name","short_name",String));
-    model_->addColumn(InputOutputVariable("Timestamp","timestamp",String));
-    model_->addColumn(InputOutputVariable("Nominal Defocus","defocus",Float));
-    model_->addColumn(InputOutputVariable("Exposure time","exposure_time",Float));
-    model_->addColumn(InputOutputVariable("Pixel size","apix_x",Float));
-    model_->addColumn(InputOutputVariable("Number of Frames","num_frames",Int));
+    settings->beginGroup("DefaultColumns");
+    Q_FOREACH(InputOutputVariable column, default_columns_){
+        if(settings->value(column.label,true).toBool()){
+            model_->addColumn(column);
+        }
+    }
+    settings->endGroup();
     settings->beginGroup("Tasks");
     updateTaskWidget_(settings,NULL,NULL);
     settings->endGroup();
@@ -334,7 +355,7 @@ void MainWindow::updateDetailsfromView(const QModelIndex &topLeft, const QModelI
 
 void MainWindow::onSettings()
 {
-    SettingsDialog settings_dialog(this);
+    SettingsDialog settings_dialog(default_columns_,this);
     if (QDialog::Accepted==settings_dialog.exec()){
         settings_dialog.saveSettings();
         Settings settings;
@@ -539,11 +560,102 @@ void MainWindow::updateChart()
 
 void MainWindow::updatePhasePlateChart()
 {
+    int column=sort_proxy_->mapToSource(ui->image_list->currentIndex()).column();
+    if(column<0 || column>= model_->columnCount(QModelIndex())){
+        return;
+    }
+
+    QVector<QVector<float> > data_vectors;;
+    for(unsigned int i=0;i<model_->rowCount();++i){
+        QVariant val=model_->data(model_->index(i,column),ImageTableModel::SortRole);
+        DataPtr data=model_->image(i);
+        QString export_val=data->value("export","true");
+        bool phase_plate_export_flag=export_val.compare("true", Qt::CaseInsensitive) == 0 || export_val==QString("1") || ui->filter_phase_plate->isChecked()==false;
+        if(val.canConvert<float>() && val.toString()!=QString("")){
+            float fval=val.toFloat();
+            int phase_plate_num=std::max(1,std::min(6,data->value("phase_plate_num").toInt()));
+            int phase_plate_pos_num=data->value("phase_plate_pos").toInt();
+            if(phase_plate_export_flag && (phase_plate_level_==0 || phase_plate_num==current_phase_plate_)){
+                int index=(phase_plate_level_==0 ? phase_plate_num : phase_plate_pos_num)-1;
+                qDebug() << index;
+                if(index>=data_vectors.size()){
+                    data_vectors.resize(index+1);
+                }
+                data_vectors[index].append(fval);
+            }
+        }
+    }
+    QVector<float> data_vectors_avg(data_vectors.size());
+    for(int i;i<data_vectors.size();++i){
+        if(data_vectors[i].size()>0){
+            int n = 0;
+            double mean = 0.0;
+            for (int j=0;j<data_vectors[i].size();++j) {
+                float delta = data_vectors[i][j] - mean;
+                mean += delta/++n;
+            }
+            data_vectors_avg[i]=mean;
+        }else{
+            data_vectors_avg[i]=NAN;
+
+        }
+    }
+    if(phase_plate_level_==0){
+        phase_plate_chart_->setValues(data_vectors_avg);
+    }else{
+        phase_plate_position_chart_->setValues(data_vectors_avg);
+    }
 
 }
 
 void MainWindow::updateGridSquareChart()
 {
+    int column=sort_proxy_->mapToSource(ui->image_list->currentIndex()).column();
+    if(column<0 || column>= model_->columnCount(QModelIndex())){
+        return;
+    }
+
+    QVector<QVector<float> > data_vectors;;
+    for(unsigned int i=0;i<model_->rowCount();++i){
+        QVariant val=model_->data(model_->index(i,column),ImageTableModel::SortRole);
+        DataPtr data=model_->image(i);
+        QString export_val=data->value("export","true");
+        bool export_flag=export_val.compare("true", Qt::CaseInsensitive) == 0 || export_val==QString("1") || ui->filter_phase_plate->isChecked()==false;
+        if(val.canConvert<float>() && val.toString()!=QString("")){
+            float fval=val.toFloat();
+            int grid_square_num=std::max(0,std::min(5,data->value("grid_square").toInt()));
+            int grid_square_pos_num=data->value("grid_square_pos").toInt();
+            int grid_square_hole_pos_num=data->value("grid_square_hole_pos").toInt();
+            if(export_flag && (grid_square_level_==0 || grid_square_num==current_grid_square_) && (grid_square_level_<2 || grid_square_pos_num==current_grid_square_position_ )){
+                int index=(grid_square_level_==0 ? grid_square_num : (grid_square_level_==1 ?grid_square_pos_num : grid_square_hole_pos_num ))-1;
+                if(index>=data_vectors.size()){
+                    data_vectors.resize(index+1);
+                }
+                data_vectors[index].append(fval);
+            }
+        }
+    }
+    QVector<float> data_vectors_avg(data_vectors.size());
+    for(int i;i<data_vectors.size();++i){
+        if(data_vectors[i].size()>0){
+            int n = 0;
+            double mean = 0.0;
+            for (int j=0;j<data_vectors[i].size();++j) {
+                float delta = data_vectors[i][j] - mean;
+                mean += delta/++n;
+            }
+            data_vectors_avg[i]=mean;
+        }else{
+            data_vectors_avg[i]=NAN;
+        }
+    }
+    if(grid_square_level_==0){
+        grid_square_chart_->setValues(data_vectors_avg);
+    }else if(grid_square_level_==1){
+        grid_square_position_chart_->setValues(data_vectors_avg);
+    }else{
+        grid_square_hole_position_chart_->setValues(data_vectors_avg);
+    }
 
 }
 
@@ -685,42 +797,24 @@ void MainWindow::showAbout()
 
 void MainWindow::phasePlateClicked(int n)
 {
-    switch(phase_plate_level_){
-    case 0:
+   if(phase_plate_level_==0){
         ui->phase_plate->setScene(phase_plate_position_chart_);
         ++phase_plate_level_;
         ui->back_phase_plate->setEnabled(true);
+        current_phase_plate_=n;
         updatePhasePlateChart();
-        break;
-    case 1:
-        ui->phase_plate->setScene(phase_plate_content_chart_);
-        ++phase_plate_level_;
-        updatePhasePlateChart();
-        break;
-    default:
-    case 2:
-        break;
-    }
+   }
 
 }
 
 void MainWindow::phasePlateBack()
 {
-    switch(phase_plate_level_){
-    case 0:
-    default:
-        break;
-    case 1:
+    if(phase_plate_level_==1){
         ui->phase_plate->setScene(phase_plate_chart_);
         --phase_plate_level_;
         ui->back_phase_plate->setEnabled(false);
+        current_phase_plate_=-1;
         updatePhasePlateChart();
-        break;
-    case 2:
-        ui->phase_plate->setScene(phase_plate_position_chart_);
-        --phase_plate_level_;
-        updatePhasePlateChart();
-        break;
     }
 }
 
@@ -731,11 +825,13 @@ void MainWindow::gridSquareClicked(int n)
         ui->grid_square->setScene(grid_square_position_chart_);
         ++grid_square_level_;
         ui->back_grid_square->setEnabled(true);
+        current_grid_square_=n;
         updateGridSquareChart();
         break;
     case 1:
-        ui->grid_square->setScene(grid_square_content_chart_);
+        ui->grid_square->setScene(grid_square_hole_position_chart_);
         ++grid_square_level_;
+        current_grid_square_position_=n;
         updateGridSquareChart();
         break;
     default:
@@ -755,11 +851,13 @@ void MainWindow::gridSquareBack()
         ui->grid_square->setScene(grid_square_chart_);
         --grid_square_level_;
         ui->back_phase_plate->setEnabled(false);
+        current_grid_square_=-1;
         updateGridSquareChart();
         break;
     case 2:
         ui->grid_square->setScene(grid_square_position_chart_);
         --grid_square_level_;
+        current_grid_square_position_=-1;
         updateGridSquareChart();
         break;
     }

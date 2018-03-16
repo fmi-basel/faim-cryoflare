@@ -86,12 +86,15 @@ private:
     QVector<float> histogram_;
     PositionChart* phase_plate_chart_;
     PositionChart* phase_plate_position_chart_;
-    PositionChart* phase_plate_content_chart_;
     int phase_plate_level_;
+    int current_phase_plate_;
     PositionChart* grid_square_chart_;
     PositionChart* grid_square_position_chart_;
-    PositionChart* grid_square_content_chart_;
+    PositionChart* grid_square_hole_position_chart_;
     int grid_square_level_;
+    int current_grid_square_;
+    int current_grid_square_position_;
+    QList<InputOutputVariable> default_columns_;
 };
 
 #endif // MAINWINDOW_H

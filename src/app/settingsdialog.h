@@ -19,7 +19,7 @@ class SettingsDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit SettingsDialog(QWidget *parent = 0);
+    explicit SettingsDialog(QList<InputOutputVariable> default_columns, QWidget *parent = 0);
     void saveSettings();
     void loadSettings();
     ~SettingsDialog();

@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <QGraphicsEllipseItem>
 #include "positionchart.h"
 #include <QtDebug>
@@ -49,7 +50,20 @@ void PositionChart::setMinMaxValue(float minval, float maxval)
 
 void PositionChart::setValues(const QVector<float>& values)
 {
+    float minval=std::numeric_limits<float>::max();
+    float maxval=std::numeric_limits<float>::lowest();
+    Q_FOREACH(float val, values){
+        if(! qIsNaN(val)){
+            minval=minval>val?val:minval;
+            maxval=maxval<val?val:maxval;
+        }
+    }
+    setMinMaxValue(minval,maxval);
     int imax=std::min(values.size(),items_.size());
+    Q_FOREACH(QGraphicsPathItem* item,items_){
+        item->setBrush(QColor(255,255,255));
+    }
+
     for(int i=0;i<imax;++i){
        items_[i]->setBrush(QBrush(colorAt(values[i])));
     }
@@ -57,6 +71,9 @@ void PositionChart::setValues(const QVector<float>& values)
 
 QColor PositionChart::colorAt(float value)
 {
+    if(qIsNaN(value)){
+        return QColor::fromRgbF(1.0,1.0,1.0,1.0);
+    }
     float relval=std::max(0.0f,std::min(1.0f,(value-minval_)/valrange_));
     if(relval==1.0f){
         return gradient_stops_.last().second;

@@ -35,20 +35,15 @@ DataPtr parse_xml_data(const QString& xml_path){
         return result;
     }
     file.close();
-    //create fake phase plate and grid square positions for testing, until acces to real data from xml is available
-    static int n=0;
-    int phase_plate=n/2000;
-    int phase_plate_pos=(n-phase_plate*2000)/50;
-    int phase_plate_count=n-phase_plate*2000-phase_plate_pos*50;
-    result->insert("phase_plate",QString("%1").arg(phase_plate));
-    result->insert("phase_plate_pos",QString("%1").arg(phase_plate_pos));
-    result->insert("phase_plate_count",QString("%1").arg(phase_plate_count));
-    ++n;
+    //create fake grid square positions for testing, until acces to real data from xml is available
+    result->insert("phase_plate_count","0");
     static int grid_n=0;
-    int grid_square=grid_n/64;
-    int grid_square_pos=grid_n-grid_square*64;
+    int grid_square=grid_n/(64*4)+1;
+    int grid_square_pos=(grid_n-(grid_square-1)*64*4)/4+1;
+    int grid_square_hole_pos=grid_n-(grid_square-1)*64*4-(grid_square_pos-1)*4+1;
     result->insert("grid_square",QString("%1").arg(grid_square));
     result->insert("grid_square_pos",QString("%1").arg(grid_square_pos));
+    result->insert("grid_square_hole_pos",QString("%1").arg(grid_square_hole_pos));
     ++grid_n;
     QDomNode custom_data=dom_document.elementsByTagName("CustomData").at(0);
     QDomNode node = custom_data.firstChild();
@@ -59,6 +54,11 @@ DataPtr parse_xml_data(const QString& xml_path){
             result->insert("phase_plate",node.lastChild().toElement().text());
         }    else if(node.firstChild().toElement().text()=="Dose"){
             result->insert("dose",node.lastChild().toElement().text());
+        }    else if(node.firstChild().toElement().text()=="PhasePlateApertureName"){
+            QString phase_plate_str=node.lastChild().toElement().text().split(" ").last();
+            result->insert("phase_plate_num",phase_plate_str.right(phase_plate_str.size()-1));
+        }    else if(node.firstChild().toElement().text()=="PhasePlatePosition"){
+            result->insert("phase_plate_pos",node.lastChild().toElement().text());
         }
 
 
@@ -89,8 +89,8 @@ DataPtr parse_xml_data(const QString& xml_path){
     result->insert("nominal_magnification",nominal_magnification.toElement().text());
     QDomNode datetime=dom_document.elementsByTagName("acquisitionDateTime").at(0);
     QString timestamp=datetime.toElement().text();
-    result->insert("timestamp",timestamp);
     QDateTime time=QDateTime::fromString(timestamp,Qt::ISODate);
+    result->insert("timestamp",time.toString("yyyy-MM-dd hh:mm:ss"));
     result->insert("short_name",time.toString("yyyyMMdd_hhmmss"));
     return result;
 }

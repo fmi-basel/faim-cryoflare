@@ -66,6 +66,12 @@ void load_task(SETTINGS *settings, QTreeWidgetItem *parent)
 
 template<typename SETTINGS>
 void save_to_settings(SETTINGS* settings, Ui::SettingsDialog* ui){
+    QList<QCheckBox*> check_boxes= ui->default_columns->findChildren<QCheckBox*>();
+    settings->beginGroup("DefaultColumns");
+    Q_FOREACH(QCheckBox *cb, check_boxes){
+        settings->setValue(cb->objectName(), cb->isChecked());
+    }
+    settings->endGroup();
     settings->setValue("num_cpu", ui->num_cpu->value());
     settings->setValue("num_gpu", ui->num_gpu->value());
     settings->setValue("gpu_ids", ui->gpu_ids->text());
@@ -97,6 +103,11 @@ void save_to_settings(SETTINGS* settings, Ui::SettingsDialog* ui){
 
 template<typename SETTINGS>
 void load_from_settings(SETTINGS* settings, Ui::SettingsDialog* ui){
+    settings->beginGroup("DefaultColumns");
+    Q_FOREACH( QCheckBox* cb, ui->default_columns->findChildren<QCheckBox*>()){
+        cb->setChecked(settings->value(cb->objectName(),true).toBool());
+    }
+    settings->endGroup();
     ui->num_cpu->setValue(settings->value("num_cpu").toInt());
     ui->num_gpu->setValue(settings->value("num_gpu").toInt());
     ui->gpu_ids->setText(settings->value("gpu_ids").toString());
@@ -130,7 +141,7 @@ void load_from_settings(SETTINGS* settings, Ui::SettingsDialog* ui){
 
 }
 
-SettingsDialog::SettingsDialog(QWidget *parent) :
+SettingsDialog::SettingsDialog(QList<InputOutputVariable> default_columns, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::SettingsDialog),
     task_tree_menu_(new QMenu(this)),
@@ -174,6 +185,15 @@ SettingsDialog::SettingsDialog(QWidget *parent) :
         ui->output_variable_table->horizontalHeader()->setResizeMode(QHeaderView::Stretch);
         ui->input_variable_table->horizontalHeader()->setResizeMode(QHeaderView::Stretch);
     #endif
+    QVBoxLayout *vbox = new QVBoxLayout;
+    Q_FOREACH(InputOutputVariable column, default_columns){
+        QCheckBox *cb=new QCheckBox(column.key,ui->default_columns);
+        cb->setObjectName(column.label);
+        vbox->addWidget(cb);
+    }
+    vbox->addStretch(1);
+    ui->default_columns->setLayout(vbox);
+
     loadSettings();
 }
 

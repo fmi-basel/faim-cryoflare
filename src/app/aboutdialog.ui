@@ -68,7 +68,7 @@
       </font>
      </property>
      <property name="text">
-      <string>FMI Live Analyzer and Reconstruction Engine</string>
+      <string>FMI Live Analysis and Reconstruction Engine</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
