@@ -38,7 +38,8 @@ SOURCES += \
     chartview.cpp \
     aboutdialog.cpp \
     positionchart.cpp \
-    positionchartview.cpp
+    positionchartview.cpp \
+    imagetablesortfilterproxymodel.cpp
 
 
 
@@ -63,7 +64,8 @@ HEADERS  += \
     chartview.h \
     aboutdialog.h \
     positionchart.h \
-    positionchartview.h
+    positionchartview.h \
+    imagetablesortfilterproxymodel.h
 
 
 FORMS    += \

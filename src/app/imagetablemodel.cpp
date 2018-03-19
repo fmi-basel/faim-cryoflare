@@ -1,8 +1,12 @@
+#include <QBrush>
 #include <QtDebug>
 #include "imagetablemodel.h"
 
 ImageTableModel::ImageTableModel(QObject *parent):
-    QAbstractTableModel(parent)
+    QAbstractTableModel(parent),
+    data_(),
+    columns_(),
+    colors_()
 {
 
 }
@@ -19,8 +23,14 @@ int ImageTableModel::columnCount(const QModelIndex &parent) const
 
 QVariant ImageTableModel::data(const QModelIndex &index, int role) const
 {
+    if(!index.isValid()){
+        return QVariant();
+    }
     // handle export check box
     if(0==index.column()){
+        if(role==Qt::BackgroundRole){
+            return QBrush(QColor(255,255,255));
+        }
         if(role!=Qt::CheckStateRole){
             return QVariant();
         }
@@ -31,6 +41,15 @@ QVariant ImageTableModel::data(const QModelIndex &index, int role) const
         }else{
             return Qt::Unchecked;
         }
+    }
+    if(role==Qt::BackgroundRole){
+        int col=index.column();
+        if(col>colors_.size()){
+            return QBrush(QColor(255,255,255));
+        }else{
+            return QBrush(colors_[col-1]);
+        }
+
     }
     // handle other columns
     if(role==SortRole){
@@ -119,10 +138,11 @@ void ImageTableModel::addImage(const DataPtr &data)
     endInsertRows();
 }
 
-void ImageTableModel::addColumn(const InputOutputVariable &column)
+void ImageTableModel::addColumn(const InputOutputVariable &column, const QColor &color)
 {
     beginResetModel();
     columns_.append(column);
+    colors_.append(color);
     endResetModel();
 }
 
@@ -131,6 +151,7 @@ void ImageTableModel::clearColumns()
     if(! columns_.empty()){
         beginResetModel();
         columns_.clear();
+        colors_.clear();
         endResetModel();
     }
 }

@@ -34,7 +34,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
     model_(new ImageTableModel(this)),
-    sort_proxy_(new QSortFilterProxyModel(this)),
+    sort_proxy_(new ImageTableSortFilterProxyModel(this)),
     statusbar_queue_count_(new QLabel("CPU queue: 0 / GPU queue: 0")),
     chart_update_timer_(),
     process_indicators_(),
@@ -215,7 +215,9 @@ void MainWindow::updateTaskWidgets()
 
 void MainWindow::updateTaskWidget_(Settings *settings, QFormLayout *parent_input_layout,QFormLayout *parent_output_layout)
 {
-
+    QList<QColor> colors;
+    colors << QColor(255,240,240)<< QColor(240,255,240)<< QColor(240,255,255)<< QColor(240,240,255)<< QColor(255,255,240)<< QColor(255,240,255);
+    static int color_idx=5;
     foreach(QString child_name, settings->childGroups()){
         QFormLayout *input_layout;
         QFormLayout *output_layout;
@@ -271,10 +273,16 @@ void MainWindow::updateTaskWidget_(Settings *settings, QFormLayout *parent_input
 
         }
         variant_list=settings->value("output_variables").toList();
+        bool color_set=false;
         foreach(QVariant v,variant_list){
             InputOutputVariable iov(v);
             if(iov.in_column){
-                model_->addColumn(iov);
+                if(!color_set){
+                    color_set=true;
+                    color_idx+=1;
+                    color_idx%=colors.size();
+                }
+                model_->addColumn(iov,colors[color_idx]);
             }else{
                 QLabel *label=new QLabel();
                 label->setProperty("type",iov.type);

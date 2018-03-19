@@ -3,6 +3,7 @@
 
 #include <QAbstractTableModel>
 #include <QList>
+#include <QColor>
 #include <QMap>
 #include <QStringList>
 #include <QPair>
@@ -24,13 +25,14 @@ public:
     virtual Qt::ItemFlags flags(const QModelIndex &index) const;
     DataPtr image(int row);
     void addImage(const DataPtr & data);
-    void addColumn(const InputOutputVariable  &column);
+    void addColumn(const InputOutputVariable  &column, const QColor& color=QColor(255,255,255));
     void clearColumns();
     void onDataChanged(const DataPtr &data);
     void clearData();
 private:
     QList<DataPtr> data_;
     QList<InputOutputVariable>  columns_;
+    QList<QColor> colors_;
 
 };
 

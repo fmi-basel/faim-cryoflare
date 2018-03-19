@@ -3,7 +3,7 @@
 
 #include <QHash>
 #include <QMainWindow>
-#include <QSortFilterProxyModel>
+#include "imagetablesortfilterproxymodel.h"
 #include <QFuture>
 #include <QFutureWatcher>
 #include <QPair>
@@ -77,7 +77,7 @@ private:
     void updateTaskWidget_(Settings *settings, QFormLayout *parent_input_layout, QFormLayout *parent_output_layout);
     Ui::MainWindow *ui;
     ImageTableModel *model_;
-    QSortFilterProxyModel *sort_proxy_;
+    ImageTableSortFilterProxyModel *sort_proxy_;
     QLabel *statusbar_queue_count_;
     QTimer chart_update_timer_;
     QList<ProcessIndicator*> process_indicators_;
