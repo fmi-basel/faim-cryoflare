@@ -1,3 +1,25 @@
+//------------------------------------------------------------------------------
+//
+// Author: Andreas Schenk
+// Friedrich Miescher Institute, Basel, Switzerland
+//
+// This file is part of CryoFlare
+//
+// Copyright (C) 2017-2018 by the CryoFlare Authors
+//
+// This program is free software; you can redistribute it and/or modify it under
+// the terms of the GNU General Public License as published by the Free
+// Software Foundation; either version 3.0 of the License.
+// This program is distributed in the hope that it will be useful, but WITHOUT
+// ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+// details.
+//
+// You should have received a copy of the GNU General Public License
+// along with CryoFlare.  If not, see <http://www.gnu.org/licenses/>.
+//
+//------------------------------------------------------------------------------
+
 #include <iostream>
 #include <QApplication>
 #include <QDir>
@@ -316,7 +338,9 @@ void ImageProcessor::startTasks()
     }
     bool count_changed=false;
     foreach (ProcessWrapper* proc, cpu_processes_) {
+       qDebug() << "cpu_process";
        if(! proc->running() &&  ! cpu_task_stack_.empty()){
+           qDebug() << "cpu_process start";
            proc->start(cpu_task_stack_.pop());
            count_changed=true;
        }
