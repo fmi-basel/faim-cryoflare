@@ -595,7 +595,7 @@ void MainWindow::updatePhasePlateChart()
         return;
     }
 
-    QVector<QVector<float> > data_vectors;;
+    QVector<QVector<float> > data_vectors;
     for(unsigned int i=0;i<model_->rowCount();++i){
         QVariant val=model_->data(model_->index(i,column),ImageTableModel::SortRole);
         DataPtr data=model_->image(i);
@@ -606,10 +606,9 @@ void MainWindow::updatePhasePlateChart()
             int phase_plate_num=std::max(1,std::min(6,data->value("phase_plate_num").toInt()));
             int phase_plate_pos_num=data->value("phase_plate_pos").toInt();
             if(phase_plate_export_flag && (phase_plate_level_==0 || phase_plate_num==current_phase_plate_)){
-                int index=(phase_plate_level_==0 ? phase_plate_num : phase_plate_pos_num)-1;
-                qDebug() << index;
-                if(index>=data_vectors.size()){
-                    data_vectors.resize(index+1);
+                int index=(phase_plate_level_==0 ? phase_plate_num -1: phase_plate_pos_num);
+                while(index>=data_vectors.size()){
+                    data_vectors.append(QVector<float>());
                 }
                 data_vectors[index].append(fval);
             }
