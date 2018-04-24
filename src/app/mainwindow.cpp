@@ -548,7 +548,7 @@ void MainWindow::updateChart()
     }
     while (!histo_datalist.isEmpty()){
         float datapoint=histo_datalist.takeFirst();
-        int bucket_id=std::min(histogram_bins-1,static_cast<int>(floor((datapoint-histogram_min_)/histogram_bucket_size_)));
+        int bucket_id=std::max(0,std::min(histogram_bins-1,static_cast<int>(floor((datapoint-histogram_min_)/histogram_bucket_size_))));
         buckets[bucket_id]+=1.0;
     }
     histogram_=buckets;

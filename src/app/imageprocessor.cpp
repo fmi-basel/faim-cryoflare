@@ -78,7 +78,7 @@ DataPtr parse_xml_data(const QString& xml_path){
             result->insert("dose",node.lastChild().toElement().text());
         }    else if(node.firstChild().toElement().text()=="PhasePlateApertureName"){
             QString phase_plate_str=node.lastChild().toElement().text().split(" ").last();
-            result->insert("phase_plate_num",phase_plate_str.right(phase_plate_str.size()));
+            result->insert("phase_plate_num",phase_plate_str.right(phase_plate_str.size()-1));
         }    else if(node.firstChild().toElement().text()=="PhasePlatePosition"){
             result->insert("phase_plate_pos",node.lastChild().toElement().text());
         }
