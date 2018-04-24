@@ -87,6 +87,7 @@ public slots:
     void phasePlateBack();
     void gridSquareClicked(int n);
     void gridSquareBack();
+    void displayScatterPlot();
 
 signals:
     void startStop(bool start);
@@ -117,6 +118,7 @@ private:
     int current_grid_square_;
     int current_grid_square_position_;
     QList<InputOutputVariable> default_columns_;
+    QAction* scatter_plot_action_;
 };
 
 #endif // MAINWINDOW_H

@@ -50,6 +50,7 @@
 #include <QElapsedTimer>
 #include <QPrinter>
 #include <QPrintDialog>
+#include "scatterplotdialog.h"
 #include "aboutdialog.h"
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -73,7 +74,8 @@ MainWindow::MainWindow(QWidget *parent) :
     grid_square_level_(0),
     current_grid_square_(-1),
     current_grid_square_position_(-1),
-    default_columns_()
+    default_columns_(),
+    scatter_plot_action_(new QAction("Scatter Plot",this))
 
 
 {
@@ -147,6 +149,10 @@ MainWindow::MainWindow(QWidget *parent) :
     grid_square_hole_position_chart_->addPositions(phase_plate_pos_path,grid_square_hole_pos_xy_list);
 
     connect(&chart_update_timer_, &QTimer::timeout, this, &MainWindow::updateChart);
+    QMenu *tools_menu=new QMenu("Tools",this);
+    tools_menu->addAction(scatter_plot_action_);
+    connect(scatter_plot_action_, &QAction::triggered, this, &MainWindow::displayScatterPlot);
+     menuBar()->addMenu(tools_menu);
     QMenu *window_menu=new QMenu("Window",this);
     window_menu->addAction(ui->linear_chart_dock->toggleViewAction());
     window_menu->addAction(ui->histogram_chart_dock->toggleViewAction());
@@ -890,6 +896,12 @@ void MainWindow::gridSquareBack()
         updateGridSquareChart();
         break;
     }
+}
+
+void MainWindow::displayScatterPlot()
+{
+    ScatterPlotDialog dialog(model_);
+    dialog.exec();
 }
 
 

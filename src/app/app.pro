@@ -55,7 +55,8 @@ SOURCES += \
     aboutdialog.cpp \
     positionchart.cpp \
     positionchartview.cpp \
-    imagetablesortfilterproxymodel.cpp
+    imagetablesortfilterproxymodel.cpp \
+    scatterplotdialog.cpp
 
 
 
@@ -81,13 +82,15 @@ HEADERS  += \
     aboutdialog.h \
     positionchart.h \
     positionchartview.h \
-    imagetablesortfilterproxymodel.h
+    imagetablesortfilterproxymodel.h \
+    scatterplotdialog.h
 
 
 FORMS    += \
     mainwindow.ui \
     settingsdialog.ui \
-    aboutdialog.ui
+    aboutdialog.ui \
+    scatterplotdialog.ui
 
 LIBS     += ../mrcio/libmrcio.a 
 CONFIG += static
