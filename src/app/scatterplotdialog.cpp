@@ -31,7 +31,7 @@ void ScatterPlotDialog::updateChart()
     QtCharts::QScatterSeries *series = new QtCharts::QScatterSeries();
     for(unsigned int i=0;i<model_->rowCount();++i){
         QVariant val_x=model_->data(model_->index(i,ui->list_x->currentRow()),ImageTableModel::SortRole);
-        QVariant val_y=model_->data(model_->index(i,ui->list_x->currentRow()),ImageTableModel::SortRole);
+        QVariant val_y=model_->data(model_->index(i,ui->list_y->currentRow()),ImageTableModel::SortRole);
         DataPtr data=model_->image(i);
         QString export_val=data->value("export","true");
         bool export_flag=export_val.compare("true", Qt::CaseInsensitive) == 0 || export_val==QString("1") || ui->filter_chart->isChecked()==false;
