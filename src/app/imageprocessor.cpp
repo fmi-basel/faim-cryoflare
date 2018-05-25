@@ -99,6 +99,17 @@ DataPtr parse_xml_data(const QString& xml_path){
 
     QDomNode pixel_size=dom_document.elementsByTagName("pixelSize").at(0);
     QDomNodeList pixel_size_values=pixel_size.toElement().elementsByTagName("numericValue");
+    QDomNode cam_specific_input=dom_document.elementsByTagName("CameraSpecificInput").at(0);
+    QDomNodeList inputs=cam_specific_input.childNodes();
+    result->insert("super_resolution_factor","1");
+    for(int i=0;i<inputs.size();++i){
+        QDomNode input=inputs.at(i);
+        QString key=input.firstChild().toElement().text();
+        QString value=input.lastChild().toElement().text();
+        if(key=="SuperResolutionFactor"){
+            result->insert("super_resolution_factor",value);
+        }
+    } 
     result->insert("apix_x",pixel_size_values.at(0).toElement().text());
     result->insert("apix_y",pixel_size_values.at(1).toElement().text());
 
