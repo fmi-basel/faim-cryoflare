@@ -110,8 +110,8 @@ DataPtr parse_xml_data(const QString& xml_path){
             result->insert("super_resolution_factor",value);
         }
     } 
-    result->insert("apix_x",QString("%1").arg(pixel_size_values.at(0).toElement().text().toFloat()*1e-10/result->value("super_resolution_factor").toFloat()));
-    result->insert("apix_y",QString("%1").arg(pixel_size_values.at(1).toElement().text().toFloat()*1e-10/result->value("super_resolution_factor").toFloat()));
+    result->insert("apix_x",QString("%1").arg(pixel_size_values.at(0).toElement().text().toFloat()*1e10/result->value("super_resolution_factor").toFloat()));
+    result->insert("apix_y",QString("%1").arg(pixel_size_values.at(1).toElement().text().toFloat()*1e10/result->value("super_resolution_factor").toFloat()));
 
     QDomNode stage=dom_document.elementsByTagName("stage").at(0);
     result->insert("x",stage.toElement().elementsByTagName("X").at(0).toElement().text());
