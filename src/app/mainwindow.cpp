@@ -159,6 +159,7 @@ MainWindow::MainWindow(QWidget *parent) :
     window_menu->addAction(ui->phase_plate_dock->toggleViewAction());
     window_menu->addAction(ui->grid_dock->toggleViewAction());
     window_menu->addAction(ui->details_dock->toggleViewAction());
+    ui->grid_dock->hide();
     menuBar()->addMenu(window_menu);
     QMenu *help_menu=new QMenu("Help",this);
     QAction* about_action=help_menu->addAction("About");
