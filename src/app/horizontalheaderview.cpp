@@ -1,5 +1,6 @@
 #include "horizontalheaderview.h"
 #include <QDebug>
+#include <QScrollBar>
 HorizontalHeaderView::HorizontalHeaderView( QWidget * parent):
     QHeaderView(Qt::Horizontal,parent),
     sibling_()
@@ -7,17 +8,22 @@ HorizontalHeaderView::HorizontalHeaderView( QWidget * parent):
     setSectionResizeMode (QHeaderView::Fixed);
 }
 
-void HorizontalHeaderView::setSibling(QHeaderView *sibling)
+void HorizontalHeaderView::setSibling(QTableView *sibling)
 {
-    connect(sibling,&QHeaderView::sectionResized,this,&HorizontalHeaderView::resizeSection);
-    connect(sibling,&QHeaderView::geometriesChanged,this,&HorizontalHeaderView::changeGeometry);
+    connect(sibling->horizontalHeader(),&QHeaderView::sectionResized,this,&HorizontalHeaderView::siblingSectionResized);
+    connect(sibling->horizontalScrollBar(),&QAbstractSlider::valueChanged,this,&HorizontalHeaderView::scrolled);
     sibling_=sibling;
 }
 
-void HorizontalHeaderView::changeGeometry()
+void HorizontalHeaderView::siblingSectionResized(int logicalIndex, int oldSize, int newSize)
 {
-    if(sibling_){
-        qDebug() << sibling_->offset();
-        setOffset(sibling_->offset());
-    }
+    reset();
+    QHeaderView::resizeSection(logicalIndex,newSize);
+    scrolled(sibling_->horizontalScrollBar()->value());
 }
+
+void HorizontalHeaderView::scrolled(int logical_index)
+{
+    setOffset(-1-sibling_->verticalHeader()->geometry().width()-sibling_->horizontalHeader()->sectionViewportPosition(0));
+}
+

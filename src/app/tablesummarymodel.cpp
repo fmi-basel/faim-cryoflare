@@ -3,9 +3,12 @@
 
 TableSummaryModel::TableSummaryModel(ImageTableModel *model,QObject * parent):
     QAbstractTableModel(parent),
-    model_(model)
+    model_(model),
+    update_timer_()
 {
     connect(model_,&ImageTableModel::dataChanged,this,&TableSummaryModel::sourceDataChanged);
+    update_timer_.setSingleShot(true);
+    connect(&update_timer_, &QTimer::timeout, this, &TableSummaryModel::update);
 }
 
 QVariant TableSummaryModel::data(const QModelIndex &index, int role) const
@@ -32,6 +35,7 @@ QVariant TableSummaryModel::headerData(int section, Qt::Orientation orientation,
                         sum+=fval;
                     }
                 }
+
                 return QString("S:%1").arg(sum);
             }else if(summary_type==InputOutputVariable::AVG_SUMMARY){
                 float sum=0;
@@ -64,5 +68,10 @@ int TableSummaryModel::columnCount(const QModelIndex &parent) const
 
 void TableSummaryModel::sourceDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles)
 {
-    emit headerDataChanged(Qt::Horizontal,topLeft.column(),bottomRight.column());
+    update_timer_.start();
+}
+
+void TableSummaryModel::update()
+{
+    emit headerDataChanged(Qt::Horizontal,0,columnCount()-1);
 }

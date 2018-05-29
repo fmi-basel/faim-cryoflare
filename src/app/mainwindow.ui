@@ -30,7 +30,7 @@
     <x>0</x>
     <y>0</y>
     <width>1522</width>
-    <height>702</height>
+    <height>732</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -51,22 +51,6 @@
        <enum>QFrame::Raised</enum>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_6">
-       <item>
-        <widget class="HorizontalHeaderView" name="image_list_header" native="true">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>0</width>
-           <height>20</height>
-          </size>
-         </property>
-        </widget>
-       </item>
        <item>
         <widget class="ImageTableView" name="image_list">
          <property name="sizePolicy">
@@ -109,13 +93,13 @@
          <property name="minimumSize">
           <size>
            <width>0</width>
-           <height>25</height>
+           <height>18</height>
           </size>
          </property>
          <property name="maximumSize">
           <size>
-           <width>16777215</width>
-           <height>25</height>
+           <width>2000</width>
+           <height>18</height>
           </size>
          </property>
         </widget>
@@ -131,7 +115,7 @@
      <x>0</x>
      <y>0</y>
      <width>1522</width>
-     <height>22</height>
+     <height>29</height>
     </rect>
    </property>
   </widget>

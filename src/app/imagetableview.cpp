@@ -22,6 +22,7 @@
 
 #include <QAction>
 #include <QtDebug>
+#include <QHeaderView>
 #include "imagetableview.h"
 
 ImageTableView::ImageTableView(QWidget *parent) :
@@ -50,6 +51,8 @@ ImageTableView::ImageTableView(QWidget *parent) :
     connect(select_below_,SIGNAL(triggered()),this,SLOT(selectBelow()));
     connect(unselect_below_,SIGNAL(triggered()),this,SLOT(unselectBelow()));
     connect(invert_selection_,SIGNAL(triggered()),this,SLOT(invertSelection()));
+    horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    horizontalHeader()->setResizeContentsPrecision(0);
 }
 
 void ImageTableView::selectEverything()

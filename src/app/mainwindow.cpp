@@ -81,8 +81,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
 {
     ui->setupUi(this);
-    ui->image_list_summary->setSibling(ui->image_list->horizontalHeader());
-    ui->image_list_summary->setStyleSheet("QHeaderView::section { padding-left: 8 px}");
+    ui->image_list_summary->setSibling(ui->image_list);
+    ui->image_list_summary->setStyleSheet("QHeaderView::section { padding-left: 1 px}");
 
     //ui->chart->setRenderHint(QPainter::Antialiasing,false);
     ui->chart->setRenderHints(QPainter::HighQualityAntialiasing|QPainter::TextAntialiasing|QPainter::SmoothPixmapTransform|QPainter::Antialiasing);
@@ -97,7 +97,6 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->image_list->setModel(sort_proxy_);
     ui->image_list_summary->setModel(summary_model_);
     ui->image_list->horizontalHeader()->setStyleSheet("QHeaderView::section { padding-left:  8 px}");
-    ui->image_list->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     connect(ui->avg_source_dir, SIGNAL(textChanged(QString)), this, SLOT(onAvgSourceDirTextChanged(QString)));
     connect(ui->stack_source_dir, SIGNAL(textChanged(QString)), this, SLOT(onStackSourceDirTextChanged(QString)));
     connect(ui->start_stop, SIGNAL(toggled(bool)), this, SLOT(onStartStopButton(bool)));
