@@ -349,9 +349,7 @@ void ImageProcessor::startTasks()
     }
     bool count_changed=false;
     foreach (ProcessWrapper* proc, cpu_processes_) {
-       qDebug() << "cpu_process";
        if(! proc->running() &&  ! cpu_task_stack_.empty()){
-           qDebug() << "cpu_process start";
            proc->start(cpu_task_stack_.pop());
            count_changed=true;
        }

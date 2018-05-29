@@ -29,12 +29,12 @@
 #include <QtDebug>
 
 class InputOutputVariable{
+public:
     enum SummaryType {
         NO_SUMMARY,
         SUM_SUMMARY,
         AVG_SUMMARY
     };
-public:
     InputOutputVariable(const QString& key_="name", const QString &label_="variable",const VariableType& type_=String, bool in_column_=false,SummaryType summary_type_=NO_SUMMARY):
         key(key_),
         label(label_),
@@ -51,11 +51,19 @@ public:
     {
         if(v.type()==QVariant::List){
             QList<QVariant> list=v.toList();
-            if(list.size()==4){
+            if(list.size()>0){
                 key=list[0].toString();
+            }
+            if(list.size()>1){
                 label=list[1].toString();
+            }
+            if(list.size()>2){
                 type=static_cast<VariableType>(list[2].toInt());
+            }
+            if(list.size()>3){
                 in_column=list[3].toBool();
+            }
+            if(list.size()>4){
                 summary_type=static_cast<SummaryType>(list[4].toInt());
             }
         }

@@ -58,6 +58,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow),
     model_(new ImageTableModel(this)),
     sort_proxy_(new ImageTableSortFilterProxyModel(this)),
+    summary_model_(new TableSummaryModel(model_,this)),
     statusbar_queue_count_(new QLabel("CPU queue: 0 / GPU queue: 0")),
     chart_update_timer_(),
     process_indicators_(),
@@ -80,6 +81,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
 {
     ui->setupUi(this);
+    ui->image_list_summary->setSibling(ui->image_list->horizontalHeader());
+    ui->image_list_summary->setStyleSheet("QHeaderView::section { padding-left: 8 px}");
+
     //ui->chart->setRenderHint(QPainter::Antialiasing,false);
     ui->chart->setRenderHints(QPainter::HighQualityAntialiasing|QPainter::TextAntialiasing|QPainter::SmoothPixmapTransform|QPainter::Antialiasing);
     ui->chart->setOptimizationFlag(QGraphicsView::DontSavePainterState);
@@ -91,8 +95,9 @@ MainWindow::MainWindow(QWidget *parent) :
     sort_proxy_->setSourceModel(model_);
     sort_proxy_->setSortRole(ImageTableModel::SortRole);
     ui->image_list->setModel(sort_proxy_);
-    ui->image_list_summary->setModel(sort_proxy_);
-    //ui->image_list->horizontalHeader()->setSectionResizeMode(0,QHeaderView::ResizeToContents);
+    ui->image_list_summary->setModel(summary_model_);
+    ui->image_list->horizontalHeader()->setStyleSheet("QHeaderView::section { padding-left:  8 px}");
+    ui->image_list->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     connect(ui->avg_source_dir, SIGNAL(textChanged(QString)), this, SLOT(onAvgSourceDirTextChanged(QString)));
     connect(ui->stack_source_dir, SIGNAL(textChanged(QString)), this, SLOT(onStackSourceDirTextChanged(QString)));
     connect(ui->start_stop, SIGNAL(toggled(bool)), this, SLOT(onStartStopButton(bool)));
@@ -169,10 +174,10 @@ MainWindow::MainWindow(QWidget *parent) :
 
     default_columns_ << InputOutputVariable("Name","short_name",String)
                      << InputOutputVariable("Timestamp","timestamp",String)
-                     << InputOutputVariable("Nominal Defocus","defocus",Float)
-                     << InputOutputVariable("Exposure time","exposure_time",Float)
+                     << InputOutputVariable("Nom. Defocus","defocus",Float)
+                     << InputOutputVariable("Exp. time","exposure_time",Float)
                      << InputOutputVariable("Pixel size","apix_x",Float)
-                     << InputOutputVariable("Number of Frames","num_frames",Int)
+                     << InputOutputVariable("# Frames","num_frames",Int)
                      << InputOutputVariable("PP","phase_plate_num",Float)
                      << InputOutputVariable("PP position","phase_plate_pos",Float)
                      << InputOutputVariable("PP count","phase_plate_count",Float)

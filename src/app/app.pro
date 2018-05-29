@@ -57,7 +57,8 @@ SOURCES += \
     positionchartview.cpp \
     imagetablesortfilterproxymodel.cpp \
     scatterplotdialog.cpp \
-    horizontalheaderview.cpp
+    horizontalheaderview.cpp \
+    tablesummarymodel.cpp
 
 
 
@@ -85,7 +86,8 @@ HEADERS  += \
     positionchartview.h \
     imagetablesortfilterproxymodel.h \
     scatterplotdialog.h \
-    horizontalheaderview.h
+    horizontalheaderview.h \
+    tablesummarymodel.h
 
 
 FORMS    += \

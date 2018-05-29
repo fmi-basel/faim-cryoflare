@@ -8,6 +8,11 @@ class HorizontalHeaderView : public QHeaderView
 {
 public:
     HorizontalHeaderView(QWidget * parent = 0);
+    void setSibling(QHeaderView* sibling);
+public slots:
+    void changeGeometry();
+protected:
+    QHeaderView* sibling_;
 };
 
 #endif // HORIZONTALHEADERVIEW_H

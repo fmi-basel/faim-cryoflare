@@ -34,6 +34,7 @@
 #include <imageprocessor.h>
 #include <imagetablemodel.h>
 #include "positionchart.h"
+#include "tablesummarymodel.h"
 
 namespace Ui {
 class MainWindow;
@@ -101,6 +102,7 @@ private:
     Ui::MainWindow *ui;
     ImageTableModel *model_;
     ImageTableSortFilterProxyModel *sort_proxy_;
+    TableSummaryModel* summary_model_;
     QLabel *statusbar_queue_count_;
     QTimer chart_update_timer_;
     QList<ProcessIndicator*> process_indicators_;

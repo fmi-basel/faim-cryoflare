@@ -90,8 +90,11 @@
          <property name="sortingEnabled">
           <bool>true</bool>
          </property>
+         <attribute name="horizontalHeaderDefaultSectionSize">
+          <number>20</number>
+         </attribute>
          <attribute name="horizontalHeaderMinimumSectionSize">
-          <number>120</number>
+          <number>20</number>
          </attribute>
         </widget>
        </item>
@@ -128,7 +131,7 @@
      <x>0</x>
      <y>0</y>
      <width>1522</width>
-     <height>29</height>
+     <height>22</height>
     </rect>
    </property>
   </widget>

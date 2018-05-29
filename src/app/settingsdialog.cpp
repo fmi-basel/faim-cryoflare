@@ -272,6 +272,12 @@ void SettingsDialog::newOutputVariable(const InputOutputVariable &variable)
     ui->output_variable_table->setItem(row_count,3,new QTableWidgetItem());
     ui->output_variable_table->item(row_count,3)->setCheckState(variable.in_column ? Qt::Checked: Qt::Unchecked);
     ui->output_variable_table->item(row_count,3)->setFlags(ui->output_variable_table->item(row_count,3)->flags() & ~Qt::ItemIsEditable);
+    combo_box=new QComboBox();
+    combo_box->addItem("None");
+    combo_box->addItem("Sum");
+    combo_box->addItem("Average");
+    combo_box->setCurrentIndex(variable.summary_type);
+    ui->output_variable_table->setCellWidget(row_count,4,combo_box);
 }
 
 void SettingsDialog::deleteOutputVariable()
@@ -350,7 +356,12 @@ void SettingsDialog::updateVariables(QTreeWidgetItem *new_item, QTreeWidgetItem 
                 type=static_cast<VariableType>(combo_box->currentIndex());
             }
             bool is_column=ui->output_variable_table->item(i,3)->checkState()==Qt::Checked;
-            old_tree_item->output_variables.append(InputOutputVariable(name,variable,type,is_column));
+            combo_box=qobject_cast<QComboBox*>(ui->output_variable_table->cellWidget(i,4));
+            InputOutputVariable::SummaryType summary_type;
+            if(combo_box){
+                summary_type=static_cast<InputOutputVariable::SummaryType>(combo_box->currentIndex());
+            }
+            old_tree_item->output_variables.append(InputOutputVariable(name,variable,type,is_column,summary_type));
         }
         old_tree_item->input_variables.clear();
         for(int i=0;i<ui->input_variable_table->rowCount();++i){

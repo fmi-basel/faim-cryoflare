@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
-<comment>
+ <comment>
 ------------------------------------------------------------------------------
 
  Author: Andreas Schenk
@@ -43,7 +43,7 @@
    <item row="0" column="0">
     <widget class="QTabWidget" name="settings">
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="tab">
       <attribute name="title">
@@ -278,6 +278,11 @@
             <column>
              <property name="text">
               <string>Display in column</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>Summary</string>
              </property>
             </column>
            </widget>
