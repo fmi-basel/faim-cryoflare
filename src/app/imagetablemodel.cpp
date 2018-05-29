@@ -53,16 +53,24 @@ QVariant ImageTableModel::data(const QModelIndex &index, int role) const
         if(role==Qt::BackgroundRole){
             return QBrush(QColor(255,255,255));
         }
-        if(role!=Qt::CheckStateRole){
-            return QVariant();
-        }
         QString value=data_.at(index.row())->value("export","true");
-        if (value.compare("true", Qt::CaseInsensitive) == 0 || value==QString("1"))
-        {
-            return Qt::Checked;
-        }else{
-            return Qt::Unchecked;
+        bool state=value.compare("true", Qt::CaseInsensitive) == 0 || value==QString("1");
+        if(role==Qt::CheckStateRole){
+            if (state)
+            {
+                return Qt::Checked;
+            }else{
+                return Qt::Unchecked;
+            }
         }
+        if(role==SortRole){
+            if(state){
+                return 1;
+            }else{
+                return 0;
+            }
+        }
+        return QVariant();
     }
     if(role==Qt::BackgroundRole){
         int col=index.column();
@@ -135,6 +143,19 @@ QVariant ImageTableModel::headerData(int section, Qt::Orientation orientation, i
             }
         }else{
             return section;
+        }
+    } else if(role==Qt::BackgroundRole){
+        if(section>colors_.size() || section<1 ){
+            return QBrush(QColor(255,255,255));
+        }else{
+            return QBrush(colors_[section-1]);
+        }
+
+    }else if (role==SummaryRole){
+        if(section>0 && section <=columns_.size()){
+            return columns_[section-1].summary_type;
+        }else{
+            return QVariant(0);
         }
     }else{
         return QAbstractTableModel::headerData(section,orientation,role);
