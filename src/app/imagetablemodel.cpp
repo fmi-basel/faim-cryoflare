@@ -99,6 +99,8 @@ QVariant ImageTableModel::data(const QModelIndex &index, int role) const
         }
     }else if(role==Qt::DisplayRole){
         return data_.at(index.row())->value(columns_[index.column()-1].label);
+    }else if (role==SummaryRole){
+        return columns_[index.column()-1].summary_type;
     }
     return QVariant();
 }

@@ -91,6 +91,7 @@ MainWindow::MainWindow(QWidget *parent) :
     sort_proxy_->setSourceModel(model_);
     sort_proxy_->setSortRole(ImageTableModel::SortRole);
     ui->image_list->setModel(sort_proxy_);
+    ui->image_list_summary->setModel(sort_proxy_);
     //ui->image_list->horizontalHeader()->setSectionResizeMode(0,QHeaderView::ResizeToContents);
     connect(ui->avg_source_dir, SIGNAL(textChanged(QString)), this, SLOT(onAvgSourceDirTextChanged(QString)));
     connect(ui->stack_source_dir, SIGNAL(textChanged(QString)), this, SLOT(onStackSourceDirTextChanged(QString)));

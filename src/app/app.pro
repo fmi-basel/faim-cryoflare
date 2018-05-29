@@ -56,7 +56,8 @@ SOURCES += \
     positionchart.cpp \
     positionchartview.cpp \
     imagetablesortfilterproxymodel.cpp \
-    scatterplotdialog.cpp
+    scatterplotdialog.cpp \
+    horizontalheaderview.cpp
 
 
 
@@ -83,7 +84,8 @@ HEADERS  += \
     positionchart.h \
     positionchartview.h \
     imagetablesortfilterproxymodel.h \
-    scatterplotdialog.h
+    scatterplotdialog.h \
+    horizontalheaderview.h
 
 
 FORMS    += \
@@ -97,6 +99,7 @@ CONFIG += static
 static {
     DEFINES += STATIC
 }
+
 
 RESOURCES += \
     app.qrc

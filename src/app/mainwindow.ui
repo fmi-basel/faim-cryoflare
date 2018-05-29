@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
-<comment>
+ <comment>
 ------------------------------------------------------------------------------
 
  Author: Andreas Schenk
@@ -50,9 +50,31 @@
       <property name="frameShadow">
        <enum>QFrame::Raised</enum>
       </property>
-      <layout class="QHBoxLayout" name="horizontalLayout_5">
+      <layout class="QVBoxLayout" name="verticalLayout_6">
+       <item>
+        <widget class="HorizontalHeaderView" name="image_list_header" native="true">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>20</height>
+          </size>
+         </property>
+        </widget>
+       </item>
        <item>
         <widget class="ImageTableView" name="image_list">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+           <horstretch>0</horstretch>
+           <verstretch>1</verstretch>
+          </sizepolicy>
+         </property>
          <property name="editTriggers">
           <set>QAbstractItemView::NoEditTriggers</set>
          </property>
@@ -71,6 +93,28 @@
          <attribute name="horizontalHeaderMinimumSectionSize">
           <number>120</number>
          </attribute>
+        </widget>
+       </item>
+       <item>
+        <widget class="HorizontalHeaderView" name="image_list_summary" native="true">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>25</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>25</height>
+          </size>
+         </property>
         </widget>
        </item>
       </layout>
@@ -684,6 +728,12 @@
    <slots>
     <signal>clicked(int)</signal>
    </slots>
+  </customwidget>
+  <customwidget>
+   <class>HorizontalHeaderView</class>
+   <extends>QWidget</extends>
+   <header>horizontalheaderview.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources>
