@@ -102,6 +102,10 @@
            <height>18</height>
           </size>
          </property>
+         <property name="toolTip">
+          <string>S: Column sum
+A: Column average</string>
+         </property>
         </widget>
        </item>
       </layout>
@@ -115,7 +119,7 @@
      <x>0</x>
      <y>0</y>
      <width>1522</width>
-     <height>29</height>
+     <height>22</height>
     </rect>
    </property>
   </widget>
@@ -184,7 +188,11 @@
         </widget>
        </item>
        <item>
-        <widget class="QLineEdit" name="avg_source_dir"/>
+        <widget class="QLineEdit" name="avg_source_dir">
+         <property name="toolTip">
+          <string>EPU project directory</string>
+         </property>
+        </widget>
        </item>
        <item>
         <widget class="QPushButton" name="avg_source_dir_browse">
@@ -212,7 +220,11 @@
         </widget>
        </item>
        <item>
-        <widget class="QLineEdit" name="stack_source_dir"/>
+        <widget class="QLineEdit" name="stack_source_dir">
+         <property name="toolTip">
+          <string>Directory where EPU saves raw stacks</string>
+         </property>
+        </widget>
        </item>
        <item>
         <widget class="QPushButton" name="stack_source_dir_browse">
@@ -258,7 +270,7 @@
        <item>
         <widget class="QPushButton" name="export_2">
          <property name="toolTip">
-          <string>Export</string>
+          <string>Export processed images</string>
          </property>
          <property name="text">
           <string/>
@@ -329,7 +341,7 @@
           </sizepolicy>
          </property>
          <property name="toolTip">
-          <string>Filter Charts</string>
+          <string>Only show data for images selected for export</string>
          </property>
          <property name="text">
           <string/>
@@ -354,6 +366,9 @@
        </item>
        <item>
         <widget class="QToolButton" name="export_linear">
+         <property name="toolTip">
+          <string>Save pdf of plot</string>
+         </property>
          <property name="text">
           <string>...</string>
          </property>
@@ -365,6 +380,9 @@
        </item>
        <item>
         <widget class="QToolButton" name="select_from_linear">
+         <property name="toolTip">
+          <string>Select images to export in plot (use Shift to deselect images)</string>
+         </property>
          <property name="text">
           <string>...</string>
          </property>
@@ -443,6 +461,9 @@
       <layout class="QHBoxLayout" name="horizontalLayout_6">
        <item>
         <widget class="QToolButton" name="filter_histogram_chart">
+         <property name="toolTip">
+          <string>Only show data for images selected for export</string>
+         </property>
          <property name="text">
           <string>...</string>
          </property>
@@ -460,6 +481,9 @@
        </item>
        <item>
         <widget class="QToolButton" name="export_histogram">
+         <property name="toolTip">
+          <string>Save pdf of plot</string>
+         </property>
          <property name="text">
           <string>...</string>
          </property>
@@ -471,6 +495,9 @@
        </item>
        <item>
         <widget class="QToolButton" name="select_from_histogram">
+         <property name="toolTip">
+          <string>Select images to export in plot (use Shift to deselect images)</string>
+         </property>
          <property name="text">
           <string>...</string>
          </property>
@@ -542,6 +569,9 @@
       <layout class="QHBoxLayout" name="horizontalLayout_7">
        <item>
         <widget class="QToolButton" name="filter_phase_plate">
+         <property name="toolTip">
+          <string>Only show data for images selected for export</string>
+         </property>
          <property name="text">
           <string>...</string>
          </property>
@@ -553,6 +583,9 @@
        </item>
        <item>
         <widget class="QToolButton" name="export_phase_plate">
+         <property name="toolTip">
+          <string>Save pdf of plot</string>
+         </property>
          <property name="text">
           <string>...</string>
          </property>
@@ -564,6 +597,9 @@
        </item>
        <item>
         <widget class="QToolButton" name="select_phase_plate">
+         <property name="toolTip">
+          <string>Select images to export in plot (use Shift to deselect images)</string>
+         </property>
          <property name="text">
           <string>...</string>
          </property>
@@ -577,6 +613,9 @@
         <widget class="QPushButton" name="back_phase_plate">
          <property name="enabled">
           <bool>false</bool>
+         </property>
+         <property name="toolTip">
+          <string>Go one level up in plot</string>
          </property>
          <property name="text">
           <string/>
@@ -621,6 +660,9 @@
       <layout class="QHBoxLayout" name="horizontalLayout_8">
        <item>
         <widget class="QToolButton" name="filter_grid_square">
+         <property name="toolTip">
+          <string>Only show data for images selected for export</string>
+         </property>
          <property name="text">
           <string>...</string>
          </property>
@@ -632,6 +674,9 @@
        </item>
        <item>
         <widget class="QToolButton" name="export_grid_square">
+         <property name="toolTip">
+          <string>Save pdf of plot</string>
+         </property>
          <property name="text">
           <string>...</string>
          </property>
@@ -643,6 +688,9 @@
        </item>
        <item>
         <widget class="QToolButton" name="select_grid_square">
+         <property name="toolTip">
+          <string>Select images to export in plot (use Shift to deselect images)</string>
+         </property>
          <property name="text">
           <string>...</string>
          </property>
@@ -656,6 +704,40 @@
         <widget class="QToolButton" name="back_grid_square">
          <property name="enabled">
           <bool>false</bool>
+         </property>
+         <property name="toolTip">
+          <string>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
+&lt;ui version=&quot;4.0&quot;&gt;
+ &lt;widget name=&quot;__qt_fake_top_level&quot;&gt;
+  &lt;widget class=&quot;QPushButton&quot; name=&quot;back_phase_plate&quot;&gt;
+   &lt;property name=&quot;enabled&quot;&gt;
+    &lt;bool&gt;false&lt;/bool&gt;
+   &lt;/property&gt;
+   &lt;property name=&quot;geometry&quot;&gt;
+    &lt;rect&gt;
+     &lt;x&gt;91&lt;/x&gt;
+     &lt;y&gt;1&lt;/y&gt;
+     &lt;width&gt;28&lt;/width&gt;
+     &lt;height&gt;24&lt;/height&gt;
+    &lt;/rect&gt;
+   &lt;/property&gt;
+   &lt;property name=&quot;toolTip&quot;&gt;
+    &lt;string&gt;Go one level up in plot&lt;/string&gt;
+   &lt;/property&gt;
+   &lt;property name=&quot;text&quot;&gt;
+    &lt;string/&gt;
+   &lt;/property&gt;
+   &lt;property name=&quot;icon&quot;&gt;
+    &lt;iconset resource=&quot;app.qrc&quot;&gt;
+     &lt;normaloff&gt;:/icons/draw-arrow-back.png&lt;/normaloff&gt;:/icons/draw-arrow-back.png&lt;/iconset&gt;
+   &lt;/property&gt;
+  &lt;/widget&gt;
+ &lt;/widget&gt;
+ &lt;resources&gt;
+  &lt;include location=&quot;/home_fmi/01/scheandr/sft/cryoflare/src/app/app.qrc&quot;/&gt;
+ &lt;/resources&gt;
+&lt;/ui&gt;
+</string>
          </property>
          <property name="text">
           <string>...</string>

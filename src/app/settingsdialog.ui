@@ -43,7 +43,7 @@
    <item row="0" column="0">
     <widget class="QTabWidget" name="settings">
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="tab">
       <attribute name="title">
@@ -59,6 +59,9 @@
        </item>
        <item row="0" column="1">
         <widget class="QSpinBox" name="num_cpu">
+         <property name="toolTip">
+          <string>Number of CPU processes run in parallel</string>
+         </property>
          <property name="minimum">
           <number>1</number>
          </property>
@@ -79,6 +82,9 @@
        </item>
        <item row="1" column="1">
         <widget class="QSpinBox" name="num_gpu">
+         <property name="toolTip">
+          <string>Number of CPU processes run in parallel</string>
+         </property>
          <property name="minimum">
           <number>1</number>
          </property>
@@ -99,6 +105,9 @@
        </item>
        <item row="2" column="1">
         <widget class="QLineEdit" name="gpu_ids">
+         <property name="toolTip">
+          <string>Comma separated list of GPU ids to use</string>
+         </property>
          <property name="text">
           <string>0,1</string>
          </property>
@@ -113,6 +122,9 @@
        </item>
        <item row="3" column="1">
         <widget class="QSpinBox" name="timeout">
+         <property name="toolTip">
+          <string>Timeout after which processes are killed</string>
+         </property>
          <property name="suffix">
           <string>s</string>
          </property>
@@ -133,6 +145,9 @@
        </item>
        <item row="4" column="1">
         <widget class="QSpinBox" name="histogram_bins">
+         <property name="toolTip">
+          <string>Number of bins in histogram plot</string>
+         </property>
          <property name="minimum">
           <number>1</number>
          </property>
@@ -146,6 +161,9 @@
        </item>
        <item row="5" column="0" colspan="2">
         <widget class="QGroupBox" name="default_columns">
+         <property name="toolTip">
+          <string>Show or hide default columns in image table</string>
+         </property>
          <property name="title">
           <string>Default columns</string>
          </property>
@@ -166,6 +184,9 @@
          <layout class="QVBoxLayout" name="verticalLayout_2">
           <item>
            <widget class="QTreeWidget" name="task_tree">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Tasks to run for each image&lt;/p&gt;&lt;p&gt;Right click to add or remove tasks&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="dragEnabled">
              <bool>true</bool>
             </property>
@@ -226,6 +247,9 @@
          <layout class="QHBoxLayout" name="horizontalLayout_2">
           <item>
            <widget class="QTableWidget" name="input_variable_table">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Variables that can be changed in the GUI for the selected task&lt;/p&gt;&lt;p&gt;Display name: name as shown in GUI&lt;/p&gt;&lt;p&gt;Variable: variable name as seen by the script&lt;/p&gt;&lt;p&gt;Type: data type (mainly deterining the type of GUI input widget used for editing)&lt;/p&gt;&lt;p&gt;Right click to add or remove variable&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <column>
              <property name="text">
               <string>Display name</string>
@@ -254,6 +278,9 @@
          <layout class="QHBoxLayout" name="horizontalLayout">
           <item>
            <widget class="QTableWidget" name="output_variable_table">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Variables that are read from the output of the script&lt;/p&gt;&lt;p&gt;Display name: name as shown in GUI&lt;/p&gt;&lt;p&gt;Variable: variable name as seen by the script&lt;/p&gt;&lt;p&gt;Type: data type (mainly determining sorting)&lt;/p&gt;&lt;p&gt;Display in column: Shows value in image table as a column&lt;/p&gt;&lt;p&gt;Summary: Calculate a sum of average of the displayed column&lt;/p&gt;&lt;p&gt;Right click to add or remove variable&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
             <property name="selectionMode">
              <enum>QAbstractItemView::SingleSelection</enum>
             </property>
