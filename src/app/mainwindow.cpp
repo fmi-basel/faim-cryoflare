@@ -175,6 +175,7 @@ MainWindow::MainWindow(QWidget *parent) :
                      << InputOutputVariable("Timestamp","timestamp",String)
                      << InputOutputVariable("Nom. Defocus","defocus",Float)
                      << InputOutputVariable("Exp. time","exposure_time",Float)
+                     << InputOutputVariable("Total Dose","dose",Float)
                      << InputOutputVariable("Pixel size","apix_x",Float)
                      << InputOutputVariable("# Frames","num_frames",Int)
                      << InputOutputVariable("PP","phase_plate_num",Float)
