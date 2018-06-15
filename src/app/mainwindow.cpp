@@ -286,6 +286,7 @@ void MainWindow::updateTaskWidget_(Settings *settings, QFormLayout *parent_input
                 }
                 QSpinBox *sp_widget=new QSpinBox();
                 sp_widget->setMaximum(9999999);
+                sp_widget->setMinimum(-9999999);
                 local_widget=sp_widget;
                 connect(local_widget,SIGNAL(valueChanged(int)),this,SLOT(inputDataChanged()));
                 sp_widget->setValue(script_input_settings.value(settings_key).toInt());
@@ -295,6 +296,7 @@ void MainWindow::updateTaskWidget_(Settings *settings, QFormLayout *parent_input
                 }
                 QDoubleSpinBox *sp_widget=new QDoubleSpinBox();
                 sp_widget->setMaximum(9999999);
+                sp_widget->setMinimum(-9999999);
                 local_widget=sp_widget;
                 connect(local_widget,SIGNAL(valueChanged(double)),this,SLOT(inputDataChanged()));
                 sp_widget->setValue(script_input_settings.value(settings_key).toFloat());
@@ -628,7 +630,7 @@ void MainWindow::updatePhasePlateChart()
         }
     }
     QVector<float> data_vectors_avg(data_vectors.size());
-    for(int i;i<data_vectors.size();++i){
+    for(int i=0;i<data_vectors.size();++i){
         if(data_vectors[i].size()>0){
             int n = 0;
             double mean = 0.0;
@@ -678,7 +680,7 @@ void MainWindow::updateGridSquareChart()
         }
     }
     QVector<float> data_vectors_avg(data_vectors.size());
-    for(int i;i<data_vectors.size();++i){
+    for(int i=0;i<data_vectors.size();++i){
         if(data_vectors[i].size()>0){
             int n = 0;
             double mean = 0.0;
