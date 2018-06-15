@@ -33,6 +33,13 @@ GIT_VERSION ~= s/g/""
 
 DEFINES += GIT_VERSION=\\\"$$GIT_VERSION\\\"
 
+version_target.target = aboutdialog.hh
+version_target.depends = FORCE
+version_target.commands = rm aboutdialog.o 2> /dev/null
+QMAKE_EXTRA_TARGETS += version_target
+PRE_TARGETDEPS += $$version_target.target
+
+
 SOURCES += \
     main.cpp\
     mainwindow.cpp \
