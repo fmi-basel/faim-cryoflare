@@ -257,6 +257,7 @@ void ImageProcessor::onTaskFinished(const TaskPtr &task, bool gpu)
         QTextStream stream( &f );
         stream << task->error << endl;
     }
+    task->data->insert("tasks_unfinished",QString("%1").arg(task->data->value("tasks_unfinished","1").toInt()-1));
     emit dataChanged(task->data);
 }
 
