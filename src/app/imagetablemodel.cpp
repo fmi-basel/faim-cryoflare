@@ -51,7 +51,8 @@ QVariant ImageTableModel::data(const QModelIndex &index, int role) const
     // handle export check box
     if(0==index.column()){
         if(role==Qt::BackgroundRole){
-            return QBrush(QColor(255,255,255));
+//            return QBrush(QColor(255,255,255));
+            return QBrush(QColor(136, 138, 133));
         }
         QString value=data_.at(index.row())->value("export","true");
         bool state=value.compare("true", Qt::CaseInsensitive) == 0 || value==QString("1");
@@ -75,7 +76,8 @@ QVariant ImageTableModel::data(const QModelIndex &index, int role) const
     if(role==Qt::BackgroundRole){
         int col=index.column();
         if(col>colors_.size()){
-            return QBrush(QColor(255,255,255));
+//            return QBrush(QColor(255,255,255));
+            return QBrush(QColor(136, 138, 133));
         }else{
             return QBrush(colors_[col-1]);
         }
@@ -145,8 +147,9 @@ QVariant ImageTableModel::headerData(int section, Qt::Orientation orientation, i
             return section;
         }
     } else if(role==Qt::BackgroundRole){
-        if(section>colors_.size() || section<1 ){
-            return QBrush(QColor(255,255,255));
+        if(section>colors_.size() || section<1 || orientation==Qt::Vertical){
+//            return QBrush(QColor(255,255,255));
+            return QBrush(QColor(136, 138, 133));
         }else{
             return QBrush(colors_[section-1]);
         }

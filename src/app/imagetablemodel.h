@@ -48,7 +48,7 @@ public:
     virtual Qt::ItemFlags flags(const QModelIndex &index) const;
     DataPtr image(int row);
     void addImage(const DataPtr & data);
-    void addColumn(const InputOutputVariable  &column, const QColor& color=QColor(255,255,255));
+    void addColumn(const InputOutputVariable  &column, const QColor& color=QColor(136, 138, 133));
     void clearColumns();
     void onDataChanged(const DataPtr &data);
     void clearData();

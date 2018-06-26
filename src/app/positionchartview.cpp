@@ -30,6 +30,11 @@ PositionChartView::PositionChartView(QWidget *parent):
     QGraphicsView(parent)
 {
     setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform | QPainter::HighQualityAntialiasing);
+    QLinearGradient linear_gradient(QPointF(0, 0), QPointF(0, 1));
+    linear_gradient.setColorAt(0, QColor(5,97,137));
+    linear_gradient.setColorAt(1, QColor(16,27,50));
+    linear_gradient.setCoordinateMode(QGradient::ObjectBoundingMode);
+    setBackgroundBrush(QBrush(linear_gradient));
 }
 
 void PositionChartView::setScene(QGraphicsScene *s)

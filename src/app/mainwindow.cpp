@@ -37,7 +37,6 @@
 #include <QDoubleSpinBox>
 #include <QLabel>
 #include <QScrollArea>
-#include <QChart>
 #include <QBarSet>
 #include <QBarCategoryAxis>
 #include <QtConcurrent/QtConcurrentRun>
@@ -50,8 +49,10 @@
 #include <QElapsedTimer>
 #include <QPrinter>
 #include <QPrintDialog>
+#include <QGraphicsLayout>
 #include "scatterplotdialog.h"
 #include "aboutdialog.h"
+
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -76,19 +77,24 @@ MainWindow::MainWindow(QWidget *parent) :
     current_grid_square_(-1),
     current_grid_square_position_(-1),
     default_columns_(),
-    scatter_plot_action_(new QAction("Scatter Plot",this))
+    scatter_plot_action_(new QAction("Scatter Plot",this)),
+    run_script_action_(new QAction("Run script",this))
 
 
 {
     ui->setupUi(this);
+    qApp->setStyleSheet("* {color: #e6e6e6; background-color: #40434a} QScrollBar::handle {background-color: rgb(5,97,137) }  QLineEdit{background-color: rgb(136, 138, 133)} QGraphicsView {padding:0px;margin:0px; border: 1px; border-radius: 5px;} ");
+    ui->chart->chart()->setTheme(QtCharts::QChart::ChartThemeBlueCerulean);
+    ui->chart->chart()->layout()->setContentsMargins(0,0,0,0);
+    ui->histogram->chart()->setTheme(QtCharts::QChart::ChartThemeBlueCerulean);
+    ui->histogram->chart()->layout()->setContentsMargins(0,0,0,0);
     ui->image_list_summary->setSibling(ui->image_list);
     ui->image_list_summary->setStyleSheet("QHeaderView::section { padding-left: 1 px}");
+    ui->image_list->horizontalHeader()->setStyleSheet("QHeaderView::section { padding-left:  8 px}");
 
-    //ui->chart->setRenderHint(QPainter::Antialiasing,false);
     ui->chart->setRenderHints(QPainter::HighQualityAntialiasing|QPainter::TextAntialiasing|QPainter::SmoothPixmapTransform|QPainter::Antialiasing);
     ui->chart->setOptimizationFlag(QGraphicsView::DontSavePainterState);
     ui->chart->setOptimizationFlag(QGraphicsView::DontAdjustForAntialiasing);
-    //ui->histogram->setRenderHint(QPainter::Antialiasing,false);
     ui->histogram->setRenderHints(QPainter::HighQualityAntialiasing|QPainter::TextAntialiasing|QPainter::SmoothPixmapTransform|QPainter::Antialiasing);
     ui->histogram->setOptimizationFlag(QGraphicsView::DontSavePainterState);
     ui->histogram->setOptimizationFlag(QGraphicsView::DontAdjustForAntialiasing);
@@ -96,7 +102,6 @@ MainWindow::MainWindow(QWidget *parent) :
     sort_proxy_->setSortRole(ImageTableModel::SortRole);
     ui->image_list->setModel(sort_proxy_);
     ui->image_list_summary->setModel(summary_model_);
-    ui->image_list->horizontalHeader()->setStyleSheet("QHeaderView::section { padding-left:  8 px}");
     connect(ui->avg_source_dir, SIGNAL(textChanged(QString)), this, SLOT(onAvgSourceDirTextChanged(QString)));
     connect(ui->stack_source_dir, SIGNAL(textChanged(QString)), this, SLOT(onStackSourceDirTextChanged(QString)));
     connect(ui->start_stop, SIGNAL(toggled(bool)), this, SLOT(onStartStopButton(bool)));
@@ -156,6 +161,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(&chart_update_timer_, &QTimer::timeout, this, &MainWindow::updateChart);
     QMenu *tools_menu=new QMenu("Tools",this);
     tools_menu->addAction(scatter_plot_action_);
+    tools_menu->addAction(run_script_action_);
     connect(scatter_plot_action_, &QAction::triggered, this, &MainWindow::displayScatterPlot);
      menuBar()->addMenu(tools_menu);
     QMenu *window_menu=new QMenu("Window",this);
@@ -251,7 +257,8 @@ void MainWindow::updateTaskWidgets()
 void MainWindow::updateTaskWidget_(Settings *settings, QFormLayout *parent_input_layout,QFormLayout *parent_output_layout)
 {
     QList<QColor> colors;
-    colors << QColor(255,240,240)<< QColor(240,255,240)<< QColor(240,255,255)<< QColor(240,240,255)<< QColor(255,255,240)<< QColor(255,240,255);
+    //colors << QColor(255,240,240)<< QColor(240,255,240)<< QColor(240,255,255)<< QColor(240,240,255)<< QColor(255,255,240)<< QColor(255,240,255);
+    colors << QColor(155,140,140)<< QColor(140,155,140)<< QColor(140,155,155)<< QColor(140,140,155)<< QColor(155,155,140)<< QColor(155,140,155);
     static int color_idx=5;
     foreach(QString child_name, settings->childGroups()){
         QFormLayout *input_layout;
@@ -303,6 +310,7 @@ void MainWindow::updateTaskWidget_(Settings *settings, QFormLayout *parent_input
             }else{
                 continue;
             }
+            local_widget->setStyleSheet(" * {background-color: rgb(136, 138, 133)}");
             input_layout->addRow(iov.key,local_widget);
             local_widget->setProperty("type",iov.type);
             local_widget->setProperty("label",iov.label);

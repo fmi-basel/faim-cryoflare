@@ -43,7 +43,6 @@ class MainWindow;
 //fw decl
 class QLabel;
 class Settings;
-class QChart;
 class QFormLayout;
 class QVBoxLayout;
 class ProcessIndicator;
@@ -121,6 +120,7 @@ private:
     int current_grid_square_position_;
     QList<InputOutputVariable> default_columns_;
     QAction* scatter_plot_action_;
+    QAction* run_script_action_;
 };
 
 #endif // MAINWINDOW_H
