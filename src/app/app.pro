@@ -35,7 +35,7 @@ DEFINES += GIT_VERSION=\\\"$$GIT_VERSION\\\"
 
 version_target.target = aboutdialog.hh
 version_target.depends = FORCE
-version_target.commands = rm aboutdialog.o 2> /dev/null
+version_target.commands = if [ -e aboutdialog.o ];then rm aboutdialog.o 2> /dev/null;fi
 QMAKE_EXTRA_TARGETS += version_target
 PRE_TARGETDEPS += $$version_target.target
 
