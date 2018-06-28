@@ -345,6 +345,20 @@ void MainWindow::updateTaskWidget_(Settings *settings, QFormLayout *parent_input
     }
 }
 
+void MainWindow::exportChart_(const QString &name, QGraphicsView *view) const
+{
+    QPrinter printer;
+    printer.setOrientation(QPrinter::Landscape);
+    QPrintDialog dialog(&printer);
+    dialog.setWindowTitle("Print "+name);
+    if (dialog.exec() == QDialog::Accepted){
+        QPainter painter;
+        painter.begin(&printer);
+        view->render(&painter, printer.pageRect());
+        painter.end();
+    }
+}
+
 void MainWindow::onAvgSourceDirTextChanged(const QString &dir)
 {
     Settings settings;
@@ -481,10 +495,14 @@ void MainWindow::updateDetails()
                 QPicture p;
                 if(QFileInfo(path).exists()){
                     QImageReader reader(path);
-                    reader.setScaledSize(QSize(512,512));
+                    QSize image_size=reader.size();
+                    float scalefactor=std::min(512.0/image_size.width(),512.0/image_size.height());
+                    int reduced_x=static_cast<int>(scalefactor*image_size.width());
+                    int reduced_y=static_cast<int>(scalefactor*image_size.height());
+                    reader.setScaledSize(QSize(reduced_x,reduced_y));
                     QImage image=reader.read();
                     QPainter painter(&p);
-                    painter.drawImage(QRect(QPoint(0,0),QSize(512,512)), image, QRect(QPoint(0,0),QSize(512,512)));
+                    painter.drawImage(QRect(QPoint((512-reduced_x)/2,(512-reduced_x/2)),QSize(reduced_x,reduced_y)), image, QRect(QPoint(0,0),QSize(reduced_x,reduced_y)));
                 }
                 qlabel->setPicture(p);
             }else if(static_cast<VariableType>(type.toInt())==String || static_cast<VariableType>(type.toInt())==Float || static_cast<VariableType>(type.toInt())==Int){
@@ -732,30 +750,22 @@ void MainWindow::displayHistogramChartDetails(const QPointF &point, bool state)
 
 void MainWindow::exportLinearChart()
 {
-    QPrinter printer;
-    printer.setOrientation(QPrinter::Landscape);
-    QPrintDialog dialog(&printer);
-    dialog.setWindowTitle("Print Linear Chart");
-    if (dialog.exec() == QDialog::Accepted){
-        QPainter painter;
-        painter.begin(&printer);
-        ui->chart->render(&painter, printer.pageRect());
-        painter.end();
-    }
+    exportChart_("Linear Chart", ui->chart);
 }
 
 void MainWindow::exportHistogramChart()
 {
-    QPrinter printer;
-    printer.setOrientation(QPrinter::Landscape);
-    QPrintDialog dialog(&printer);
-    dialog.setWindowTitle("Print Histogram Chart");
-    if (dialog.exec() == QDialog::Accepted){
-        QPainter painter;
-        painter.begin(&printer);
-        ui->histogram->render(&painter, printer.pageRect());
-        painter.end();
-    }
+    exportChart_("Histogram Chart", ui->histogram);
+}
+
+void MainWindow::exportPhasePlateChart()
+{
+    exportChart_("Phase Plate Chart", ui->phase_plate);
+}
+
+void MainWindow::exportGridSquareChart()
+{
+    exportChart_("Grid Square Chart", ui->grid_square_chart);
 }
 
 void MainWindow::selectFromLinearChart(float start, float end, bool invert)

@@ -579,6 +579,9 @@ A: Column average</string>
           <iconset resource="app.qrc">
            <normaloff>:/icons/view-filter.png</normaloff>:/icons/view-filter.png</iconset>
          </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
         </widget>
        </item>
        <item>
@@ -669,6 +672,9 @@ A: Column average</string>
          <property name="icon">
           <iconset resource="app.qrc">
            <normaloff>:/icons/view-filter.png</normaloff>:/icons/view-filter.png</iconset>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
          </property>
         </widget>
        </item>
@@ -849,7 +855,7 @@ A: Column average</string>
    <slot>onAvgSourceDirBrowse()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>701</x>
+     <x>685</x>
      <y>86</y>
     </hint>
     <hint type="destinationlabel">
@@ -917,7 +923,7 @@ A: Column average</string>
      <y>86</y>
     </hint>
     <hint type="destinationlabel">
-     <x>701</x>
+     <x>685</x>
      <y>86</y>
     </hint>
    </hints>
@@ -1073,7 +1079,7 @@ A: Column average</string>
    <slot>phasePlateBack()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1079</x>
+     <x>1027</x>
      <y>362</y>
     </hint>
     <hint type="destinationlabel">
@@ -1089,7 +1095,7 @@ A: Column average</string>
    <slot>gridSquareBack()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1361</x>
+     <x>1311</x>
      <y>361</y>
     </hint>
     <hint type="destinationlabel">
@@ -1210,6 +1216,70 @@ A: Column average</string>
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>export_phase_plate</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>exportPhasePlateChart()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>965</x>
+     <y>353</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>911</x>
+     <y>700</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>export_grid_square</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>exportGridSquareChart()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1254</x>
+     <y>350</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1191</x>
+     <y>366</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>filter_grid_square</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>updateChart()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1217</x>
+     <y>350</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1193</x>
+     <y>707</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>filter_phase_plate</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>updateChart()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>931</x>
+     <y>357</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>911</x>
+     <y>670</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <signal>avgSourceDirChanged()</signal>
@@ -1232,5 +1302,7 @@ A: Column average</string>
   <slot>gridSquareBack()</slot>
   <slot>phasePlateClicked(int)</slot>
   <slot>gridSquareClicked(int)</slot>
+  <slot>exportGridSquareChart()</slot>
+  <slot>exportPhasePlateChart()</slot>
  </slots>
 </ui>

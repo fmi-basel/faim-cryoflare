@@ -80,7 +80,7 @@ void PositionChart::setValues(const QHash<int, float> &values)
     }
     setMinMaxValue(minval,maxval);
     foreach(QGraphicsPathItem* item,items_){
-        item->setBrush(QColor(255,255,255));
+        item->setBrush(QBrush());
     }
     for(QHash<int,float>::const_iterator i = values.constBegin();i != values.constEnd();++i) {
         if(items_.contains(i.key())){
