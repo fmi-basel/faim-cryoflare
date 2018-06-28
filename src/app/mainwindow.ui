@@ -183,7 +183,7 @@ A: Column average</string>
        <item>
         <widget class="QLabel" name="label">
          <property name="text">
-          <string>Average source</string>
+          <string>EPU folder</string>
          </property>
         </widget>
        </item>
@@ -215,7 +215,7 @@ A: Column average</string>
        <item>
         <widget class="QLabel" name="label_2">
          <property name="text">
-          <string>Stack source</string>
+          <string>Movie folder</string>
          </property>
         </widget>
        </item>
@@ -764,7 +764,7 @@ A: Column average</string>
       </layout>
      </item>
      <item>
-      <widget class="PositionChartView" name="grid_square"/>
+      <widget class="PositionChartView" name="grid_square_chart"/>
      </item>
     </layout>
    </widget>
@@ -1115,7 +1115,7 @@ A: Column average</string>
    </hints>
   </connection>
   <connection>
-   <sender>grid_square</sender>
+   <sender>grid_square_chart</sender>
    <signal>clicked(int)</signal>
    <receiver>MainWindow</receiver>
    <slot>gridSquareClicked(int)</slot>

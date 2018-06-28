@@ -31,12 +31,12 @@ class PositionChart : public QGraphicsScene
 {
 public:
     PositionChart(QObject *parent = Q_NULLPTR);
-    void addPositions(const QPainterPath & path=QPainterPath(), const QList<QPointF>& pos=QList<QPointF>());
+    void addPositions(const QPainterPath & path=QPainterPath(), const QHash<int,QPointF>& pos=QHash<int,QPointF>());
     void setMinMaxValue(float minval, float maxval);
-    void setValues(const QVector<float> &values);
+    void setValues(const QHash<int,float> &values);
     QColor colorAt(float value);
 private:
-    QVector<QGraphicsPathItem*> items_;
+    QHash<int,QGraphicsPathItem*> items_;
     QGradientStops gradient_stops_;
     float minval_;
     float valrange_;

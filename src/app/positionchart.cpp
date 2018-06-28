@@ -37,16 +37,14 @@ PositionChart::PositionChart( QObject *parent):
     gradient_stops_ << QGradientStop(0.0,QColor::fromRgbF(1, 0, 0, 1)) << QGradientStop(0.3333,QColor::fromRgbF(1, 1, 0, 1)) << QGradientStop(0.6666,QColor::fromRgbF(0, 1, 0, 1)) << QGradientStop(1.0,QColor::fromRgbF(0, 0, 1, 1));
 }
 
-void PositionChart::addPositions(const QPainterPath & path, const QList<QPointF>& pos)
+void PositionChart::addPositions(const QPainterPath & path, const QHash<int, QPointF> &pos)
 {
-    int i=1;
-    foreach(QPointF p, pos){
+    for(QHash<int,QPointF>::const_iterator i = pos.constBegin();i != pos.constEnd();++i) {
         QGraphicsPathItem* item=dynamic_cast<QGraphicsPathItem*>(addPath(path));
-        item->setPos(p);
-        item->setToolTip(QString("%1").arg(i));
-        item->setZValue(i);
-        items_.append(item);
-        ++i;
+        item->setPos(i.value());
+        item->setToolTip(QString("%1").arg(i.key()));
+        item->setZValue(i.key());
+        items_[i.key()]=item;
     }
     QRectF rect=itemsBoundingRect();
     QPointF legend_tl=rect.topRight()+QPointF(0.1*rect.height(),0.1*rect.height());
@@ -58,6 +56,8 @@ void PositionChart::addPositions(const QPainterPath & path, const QList<QPointF>
     min_label_->setPos(legend_br+QPointF(0.05*rect.height(),-0.05*rect.height()));
     max_label_=addText(QString("%1").arg(minval_+valrange_));
     max_label_->setPos(legend_tl+QPointF(0.15*rect.height(),-0.05*rect.height()));
+    min_label_->setDefaultTextColor(QColor("#e6e6e6"));
+    max_label_->setDefaultTextColor(QColor("#e6e6e6"));
     setSceneRect(itemsBoundingRect());
 }
 
@@ -70,24 +70,22 @@ void PositionChart::setMinMaxValue(float minval, float maxval)
     setSceneRect(itemsBoundingRect());
 }
 
-void PositionChart::setValues(const QVector<float>& values)
+void PositionChart::setValues(const QHash<int, float> &values)
 {
     float minval=std::numeric_limits<float>::max();
     float maxval=std::numeric_limits<float>::lowest();
-    Q_FOREACH(float val, values){
-        if(! qIsNaN(val)){
-            minval=minval>val?val:minval;
-            maxval=maxval<val?val:maxval;
-        }
+    foreach(float val, values){
+        minval=minval>val?val:minval;
+        maxval=maxval<val?val:maxval;
     }
     setMinMaxValue(minval,maxval);
-    int imax=std::min(values.size(),items_.size());
-    Q_FOREACH(QGraphicsPathItem* item,items_){
+    foreach(QGraphicsPathItem* item,items_){
         item->setBrush(QColor(255,255,255));
     }
-
-    for(int i=0;i<imax;++i){
-       items_[i]->setBrush(QBrush(colorAt(values[i])));
+    for(QHash<int,float>::const_iterator i = values.constBegin();i != values.constEnd();++i) {
+        if(items_.contains(i.key())){
+            items_[i.key()]->setBrush(QBrush(colorAt(i.value())));
+        }
     }
 }
 

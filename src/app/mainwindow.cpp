@@ -70,12 +70,7 @@ MainWindow::MainWindow(QWidget *parent) :
     phase_plate_position_chart_(new PositionChart(this)),
     phase_plate_level_(0),
     current_phase_plate_(-1),
-    grid_square_chart_(new PositionChart(this)),
-    grid_square_position_chart_(new PositionChart(this)),
-    grid_square_hole_position_chart_(new PositionChart(this)),
-    grid_square_level_(0),
-    current_grid_square_(-1),
-    current_grid_square_position_(-1),
+    chart_current_square_(-1),
     default_columns_(),
     scatter_plot_action_(new QAction("Scatter Plot",this)),
     run_script_action_(new QAction("Run script",this))
@@ -115,48 +110,31 @@ MainWindow::MainWindow(QWidget *parent) :
     phase_plate_path.arcTo(-120,-40,80,80,90,180);
     phase_plate_path.arcTo(40,-40,80,80,270,180);
     phase_plate_path.closeSubpath();
-    QList<QPointF> phase_plate_xy_list;
-    phase_plate_xy_list  << QPointF(0,-150) << QPointF(-150,-50) << QPointF(150,-50) << QPointF(-150,50) << QPointF(150,50)  << QPointF(0,150);
+    QHash<int,QPointF> phase_plate_xy_list;
+    phase_plate_xy_list[1]=QPointF(0,-150);
+    phase_plate_xy_list[2]=QPointF(-150,-50);
+    phase_plate_xy_list[3]=QPointF(150,-50);
+    phase_plate_xy_list[4]=QPointF(-150,50);
+    phase_plate_xy_list[5]=QPointF(150,50);
+    phase_plate_xy_list[6]=QPointF(0,150);
     phase_plate_chart_->addPositions(phase_plate_path,phase_plate_xy_list);
     ui->phase_plate->setScene(phase_plate_chart_);
+    ui->grid_square_chart->setScene(new PositionChart(this));
 
     QPainterPath phase_plate_pos_path;
     phase_plate_pos_path.moveTo(40,0);
     phase_plate_pos_path.arcTo(-40,-40,80,80,0,360);
-    QList<QPointF> phase_plate_pos_xy_list;
-    for(int y=0;y<4;++y){
-        for(int x=0;x<19;++x){
-            phase_plate_pos_xy_list << QPointF(100*x,100*y);
+    QHash<int,QPointF> phase_plate_pos_xy_list;
+    int num_rows=4;
+    int num_columns=19;
+    for(int y=0;y<num_rows;++y){
+        for(int x=0;x<num_columns;++x){
+            phase_plate_pos_xy_list[y*num_columns+x]=QPointF(100*x,100*y);
         }
     }
     phase_plate_position_chart_->addPositions(phase_plate_pos_path,phase_plate_pos_xy_list);
 
-    QPainterPath grid_square_path;
-    grid_square_path.moveTo(40,-40);
-    grid_square_path.lineTo(40,40);
-    grid_square_path.lineTo(-40,40);
-    grid_square_path.lineTo(-40,-40);
-    grid_square_path.closeSubpath();
-    QList<QPointF> grid_square_xy_list;
-    for(int y=0;y<10;++y){
-        for(int x=0;x<10;++x){
-            grid_square_xy_list << QPointF(100*x,100*y);
-        }
-    }
-    grid_square_chart_->addPositions(grid_square_path,grid_square_xy_list);
-    ui->grid_square->setScene(grid_square_chart_);
 
-    QList<QPointF> grid_square_pos_xy_list;
-    for(int y=0;y<8;++y){
-        for(int x=0;x<8;++x){
-            grid_square_pos_xy_list << QPointF(100*x,100*y);
-        }
-    }
-    grid_square_position_chart_->addPositions(phase_plate_pos_path,grid_square_pos_xy_list);
-
-    QList<QPointF> grid_square_hole_pos_xy_list;
-    grid_square_hole_pos_xy_list << QPointF(-100,0)<< QPointF(0,-100)<< QPointF(100,0)<< QPointF(0,100);
-    grid_square_hole_position_chart_->addPositions(phase_plate_pos_path,grid_square_hole_pos_xy_list);
 
     connect(&chart_update_timer_, &QTimer::timeout, this, &MainWindow::updateChart);
     QMenu *tools_menu=new QMenu("Tools",this);
@@ -170,7 +148,6 @@ MainWindow::MainWindow(QWidget *parent) :
     window_menu->addAction(ui->phase_plate_dock->toggleViewAction());
     window_menu->addAction(ui->grid_dock->toggleViewAction());
     window_menu->addAction(ui->details_dock->toggleViewAction());
-    ui->grid_dock->hide();
     menuBar()->addMenu(window_menu);
     QMenu *help_menu=new QMenu("Help",this);
     QAction* about_action=help_menu->addAction("About");
@@ -527,7 +504,7 @@ void MainWindow::updateChart()
     }
     QList<QPointF> datalist;
     QList<float> histo_datalist;
-    for(unsigned int i=0;i<model_->rowCount();++i){
+    for(int i=0;i<model_->rowCount();++i){
         QVariant val=model_->data(model_->index(i,column),ImageTableModel::SortRole);
         DataPtr data=model_->image(i);
         QString export_val=data->value("export","true");
@@ -577,7 +554,7 @@ void MainWindow::updateChart()
     histogram_=buckets;
     QList<QPointF> histogram;
     float half_gap=0.05;
-    for(unsigned int i=0;i<histogram_bins;++i){
+    for(int i=0;i<histogram_bins;++i){
         histogram << QPointF(histogram_min_+(i+half_gap)*histogram_bucket_size_,0) << QPointF(histogram_min_+(i+half_gap)*histogram_bucket_size_,buckets[i]) << QPointF(histogram_min_+(i+1.0-half_gap)*histogram_bucket_size_,buckets[i]) << QPointF(histogram_min_+(i+1.0-half_gap)*histogram_bucket_size_,0);
     }
 
@@ -619,7 +596,7 @@ void MainWindow::updatePhasePlateChart()
     }
 
     QVector<QVector<float> > data_vectors;
-    for(unsigned int i=0;i<model_->rowCount();++i){
+    for(int i=0;i<model_->rowCount();++i){
         QVariant val=model_->data(model_->index(i,column),ImageTableModel::SortRole);
         DataPtr data=model_->image(i);
         QString export_val=data->value("export","true");
@@ -637,7 +614,7 @@ void MainWindow::updatePhasePlateChart()
             }
         }
     }
-    QVector<float> data_vectors_avg(data_vectors.size());
+    QHash<int,float> data_vectors_avg;
     for(int i=0;i<data_vectors.size();++i){
         if(data_vectors[i].size()>0){
             int n = 0;
@@ -647,9 +624,6 @@ void MainWindow::updatePhasePlateChart()
                 mean += delta/++n;
             }
             data_vectors_avg[i]=mean;
-        }else{
-            data_vectors_avg[i]=NAN;
-
         }
     }
     if(phase_plate_level_==0){
@@ -666,49 +640,56 @@ void MainWindow::updateGridSquareChart()
     if(column<0 || column>= model_->columnCount(QModelIndex())){
         return;
     }
-
-    QVector<QVector<float> > data_vectors;;
-    for(unsigned int i=0;i<model_->rowCount();++i){
+    QHash<int,QPointF> positions;
+    QHash<int,QVector<float> > data_vectors;
+    for(int i=0;i<model_->rowCount();++i){
         QVariant val=model_->data(model_->index(i,column),ImageTableModel::SortRole);
         DataPtr data=model_->image(i);
         QString export_val=data->value("export","true");
-        bool export_flag=export_val.compare("true", Qt::CaseInsensitive) == 0 || export_val==QString("1") || ui->filter_phase_plate->isChecked()==false;
+        bool export_flag=export_val.compare("true", Qt::CaseInsensitive) == 0 || export_val==QString("1") || ui->filter_grid_square->isChecked()==false;
         if(val.canConvert<float>() && val.toString()!=QString("")){
             float fval=val.toFloat();
-            int grid_square_num=std::max(0,std::min(5,data->value("grid_square").toInt()));
-            int grid_square_pos_num=data->value("grid_square_pos").toInt();
-            int grid_square_hole_pos_num=data->value("grid_square_hole_pos").toInt();
-            if(export_flag && (grid_square_level_==0 || grid_square_num==current_grid_square_) && (grid_square_level_<2 || grid_square_pos_num==current_grid_square_position_ )){
-                int index=(grid_square_level_==0 ? grid_square_num : (grid_square_level_==1 ?grid_square_pos_num : grid_square_hole_pos_num ))-1;
-                if(index>=data_vectors.size()){
-                    data_vectors.resize(index+1);
+            int square_id=data->value("square_id").toInt();
+            if(chart_current_square_==-1){
+                if(export_flag){
+                    if(!data_vectors.contains(square_id)){
+                        data_vectors[square_id]=QVector<float>();
+                    }
+                    data_vectors[square_id].append(fval);
+                    positions[square_id]=QPointF(2e5*data->value("square_X").toFloat(),2e5*data->value("square_Y").toFloat());
                 }
-                data_vectors[index].append(fval);
+            }else{
+                int hole_id=data->value("hole_id").toInt();
+                if(export_flag &&   square_id==chart_current_square_){
+                    if(!data_vectors.contains(hole_id)){
+                        data_vectors[hole_id]=QVector<float>();
+                    }
+                    data_vectors[hole_id].append(fval);
+                    positions[hole_id]=QPointF(10e6*data->value("X").toFloat(),10e6*data->value("Y").toFloat());
+                }
             }
         }
     }
-    QVector<float> data_vectors_avg(data_vectors.size());
-    for(int i=0;i<data_vectors.size();++i){
-        if(data_vectors[i].size()>0){
-            int n = 0;
-            double mean = 0.0;
-            for (int j=0;j<data_vectors[i].size();++j) {
-                float delta = data_vectors[i][j] - mean;
-                mean += delta/++n;
-            }
-            data_vectors_avg[i]=mean;
-        }else{
-            data_vectors_avg[i]=NAN;
+    QHash<int,float> averages;
+    for(QHash<int,QPointF>::const_iterator i = positions.constBegin();i != positions.constEnd();++i) {
+        int n = 0;
+        double avg = 0.0;
+        for (int j=0;j<data_vectors[i.key()].size();++j) {
+            float delta = data_vectors[i.key()][j] - avg;
+            avg += delta/++n;
         }
+        averages[i.key()]=avg;
     }
-    if(grid_square_level_==0){
-        grid_square_chart_->setValues(data_vectors_avg);
-    }else if(grid_square_level_==1){
-        grid_square_position_chart_->setValues(data_vectors_avg);
+    PositionChart* chart=new PositionChart(this);
+    QPainterPath path;
+    if(chart_current_square_==-1){
+        path.addEllipse(QPointF(0,0),5,5);
     }else{
-        grid_square_hole_position_chart_->setValues(data_vectors_avg);
+        path.addEllipse(QPointF(0,0),10,10);
     }
-
+    chart->addPositions(path,positions);
+    chart->setValues(averages);
+    ui->grid_square_chart->setScene(chart);
 }
 
 void MainWindow::createProcessIndicator(ProcessWrapper *wrapper, int gpu_id)
@@ -783,18 +764,18 @@ void MainWindow::selectFromLinearChart(float start, float end, bool invert)
     int istart=std::max(0,static_cast<int>(start));
     int iend=std::min(model_->rowCount()-1,static_cast<int>(end));
     if(invert){
-        for(unsigned int i=istart;i<=iend;++i){
+        for(int i=istart;i<=iend;++i){
             DataPtr data=model_->image(i);
             data->insert("export","0");
             onDataChanged(data);
         }
     }else{
-        for(unsigned int i=0;i<istart;++i){
+        for(int i=0;i<istart;++i){
             DataPtr data=model_->image(i);
             data->insert("export","0");
             onDataChanged(data);
         }
-        for(unsigned int i=iend+1;i<model_->rowCount();++i){
+        for(int i=iend+1;i<model_->rowCount();++i){
             DataPtr data=model_->image(i);
             data->insert("export","0");
             onDataChanged(data);
@@ -807,7 +788,7 @@ void MainWindow::selectFromHistogramChart(float start, float end, bool invert)
     ui->select_from_histogram->setChecked(false);
     int column=sort_proxy_->mapToSource(ui->image_list->currentIndex()).column();
     if(invert){
-        for(unsigned int i=0;i<model_->rowCount();++i){
+        for(int i=0;i<model_->rowCount();++i){
             QVariant val=model_->data(model_->index(i,column),ImageTableModel::SortRole);
             DataPtr data=model_->image(i);
             if(val.canConvert<float>() && val.toString()!=QString("")){
@@ -819,7 +800,7 @@ void MainWindow::selectFromHistogramChart(float start, float end, bool invert)
             }
         }
     }else{
-        for(unsigned int i=0;i<model_->rowCount();++i){
+        for(int i=0;i<model_->rowCount();++i){
             QVariant val=model_->data(model_->index(i,column),ImageTableModel::SortRole);
             DataPtr data=model_->image(i);
             if(val.canConvert<float>() && val.toString()!=QString("")){
@@ -872,46 +853,19 @@ void MainWindow::phasePlateBack()
 
 void MainWindow::gridSquareClicked(int n)
 {
-    switch(grid_square_level_){
-    case 0:
-        ui->grid_square->setScene(grid_square_position_chart_);
-        ++grid_square_level_;
+    if(chart_current_square_==-1){
+        chart_current_square_=n;
         ui->back_grid_square->setEnabled(true);
-        current_grid_square_=n;
         updateGridSquareChart();
-        break;
-    case 1:
-        ui->grid_square->setScene(grid_square_hole_position_chart_);
-        ++grid_square_level_;
-        current_grid_square_position_=n;
-        updateGridSquareChart();
-        break;
-    default:
-    case 2:
-        break;
     }
-
 }
 
 void MainWindow::gridSquareBack()
 {
-    switch(grid_square_level_){
-    case 0:
-    default:
-        break;
-    case 1:
-        ui->grid_square->setScene(grid_square_chart_);
-        --grid_square_level_;
-        ui->back_phase_plate->setEnabled(false);
-        current_grid_square_=-1;
+    if(chart_current_square_!=-1){
+        chart_current_square_=-1;
+        ui->back_grid_square->setEnabled(false);
         updateGridSquareChart();
-        break;
-    case 2:
-        ui->grid_square->setScene(grid_square_position_chart_);
-        --grid_square_level_;
-        current_grid_square_position_=-1;
-        updateGridSquareChart();
-        break;
     }
 }
 

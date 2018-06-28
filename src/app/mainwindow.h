@@ -112,12 +112,7 @@ private:
     PositionChart* phase_plate_position_chart_;
     int phase_plate_level_;
     int current_phase_plate_;
-    PositionChart* grid_square_chart_;
-    PositionChart* grid_square_position_chart_;
-    PositionChart* grid_square_hole_position_chart_;
-    int grid_square_level_;
-    int current_grid_square_;
-    int current_grid_square_position_;
+    int chart_current_square_;
     QList<InputOutputVariable> default_columns_;
     QAction* scatter_plot_action_;
     QAction* run_script_action_;

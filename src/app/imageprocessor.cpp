@@ -35,6 +35,30 @@
 
 namespace  {
 
+DataPtr parse_grid_xml(const QDir& grid_square_dir){
+    DataPtr result(new Data());
+    QDomDocument dom_document;
+    QString xml_path=grid_square_dir.absoluteFilePath(grid_square_dir.entryList(QStringList("GridSquare*.xml"))[0]);
+    QFile file(xml_path);
+    if (!file.open(QIODevice::ReadOnly))
+        return result;
+    if (!dom_document.setContent(&file)) {
+        file.close();
+        return result;
+    }
+    file.close();
+    QDomNode position=dom_document.elementsByTagName("Position").at(0);
+    result->insert("X",position.toElement().elementsByTagName("X").at(0).toElement().text());
+    result->insert("Y",position.toElement().elementsByTagName("Y").at(0).toElement().text());
+    result->insert("Z",position.toElement().elementsByTagName("Z").at(0).toElement().text());
+    result->insert("A",position.toElement().elementsByTagName("A").at(0).toElement().text());
+    result->insert("B",position.toElement().elementsByTagName("B").at(0).toElement().text());
+    QDomNode image_shift=dom_document.elementsByTagName("ImageShift").at(0);
+    result->insert("image_shift_x",image_shift.toElement().elementsByTagName("a:_x").at(0).toElement().text());
+    result->insert("image_shift_y",image_shift.toElement().elementsByTagName("a:_y").at(0).toElement().text());
+    return result;
+}
+
 DataPtr parse_xml_data(const QString& xml_path){
     DataPtr result(new Data());
     QDir xml_dir(xml_path);
@@ -42,10 +66,21 @@ DataPtr parse_xml_data(const QString& xml_path){
     name.truncate(name.lastIndexOf('.'));
     xml_dir.cdUp();
     xml_dir.cdUp();
+    DataPtr square_data=parse_grid_xml(xml_dir);
+    result->insert("square_X",square_data->value("X"));
+    result->insert("square_Y",square_data->value("Y"));
+    result->insert("square_Z",square_data->value("Z"));
+    result->insert("square_A",square_data->value("A"));
+    result->insert("square_B",square_data->value("B"));
+    result->insert("square_image_shift_x",square_data->value("image_shift_x"));
+    result->insert("square_image_shift_y",square_data->value("image_shift_y"));
+
     QString grid_name=xml_dir.dirName();
     result->insert("xml_file",xml_path);
     result->insert("name",name);
+    result->insert("hole_id",name.split("_")[1]);
     result->insert("grid_name",grid_name);
+    result->insert("square_id",grid_name.remove(0,11));
     xml_dir.cdUp();
     result->insert("disc_name",xml_dir.dirName());
     QDomDocument dom_document;
@@ -57,16 +92,6 @@ DataPtr parse_xml_data(const QString& xml_path){
         return result;
     }
     file.close();
-    //create fake grid square positions for testing, until acces to real data from xml is available
-    result->insert("phase_plate_count","0");
-    static int grid_n=0;
-    int grid_square=grid_n/(64*4)+1;
-    int grid_square_pos=(grid_n-(grid_square-1)*64*4)/4+1;
-    int grid_square_hole_pos=grid_n-(grid_square-1)*64*4-(grid_square_pos-1)*4+1;
-    result->insert("grid_square",QString("%1").arg(grid_square));
-    result->insert("grid_square_pos",QString("%1").arg(grid_square_pos));
-    result->insert("grid_square_hole_pos",QString("%1").arg(grid_square_hole_pos));
-    ++grid_n;
     QDomNode custom_data=dom_document.elementsByTagName("CustomData").at(0);
     QDomNode node = custom_data.firstChild();
     while(!node.isNull()) {
@@ -125,6 +150,16 @@ DataPtr parse_xml_data(const QString& xml_path){
     QDateTime time=QDateTime::fromString(timestamp,Qt::ISODate);
     result->insert("timestamp",time.toString("yyyy-MM-dd hh:mm:ss"));
     result->insert("short_name",time.toString("yyyyMMdd_hhmmss"));
+    QDomNode position=dom_document.elementsByTagName("Position").at(0);
+    result->insert("X",position.toElement().elementsByTagName("X").at(0).toElement().text());
+    result->insert("Y",position.toElement().elementsByTagName("Y").at(0).toElement().text());
+    result->insert("Z",position.toElement().elementsByTagName("Z").at(0).toElement().text());
+    result->insert("A",position.toElement().elementsByTagName("A").at(0).toElement().text());
+    result->insert("B",position.toElement().elementsByTagName("B").at(0).toElement().text());
+    QDomNode image_shift=dom_document.elementsByTagName("ImageShift").at(0);
+    result->insert("image_shift_x",image_shift.toElement().elementsByTagName("a:_x").at(0).toElement().text());
+    result->insert("image_shift_y",image_shift.toElement().elementsByTagName("a:_y").at(0).toElement().text());
+
     return result;
 }
 
