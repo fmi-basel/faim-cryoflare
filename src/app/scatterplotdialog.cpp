@@ -29,7 +29,7 @@ ScatterPlotDialog::~ScatterPlotDialog()
 void ScatterPlotDialog::updateChart()
 {
     QtCharts::QScatterSeries *series = new QtCharts::QScatterSeries();
-    for(unsigned int i=0;i<model_->rowCount();++i){
+    for(int i=0;i<model_->rowCount();++i){
         QVariant val_x=model_->data(model_->index(i,ui->list_x->currentRow()),ImageTableModel::SortRole);
         QVariant val_y=model_->data(model_->index(i,ui->list_y->currentRow()),ImageTableModel::SortRole);
         DataPtr data=model_->image(i);

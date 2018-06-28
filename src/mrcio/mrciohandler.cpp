@@ -32,7 +32,7 @@ public:
 
 QDataStream &operator<<(QDataStream& s, const MRCHeader& h)
 {
-
+    return s;
 }
 
 QDataStream &operator>>(QDataStream& s, MRCHeader& h)
@@ -60,6 +60,7 @@ QDataStream &operator>>(QDataStream& s, MRCHeader& h)
     s.readRawData(h.LABEL,200*4);
     h.EXTHEADER.resize(h.NSYMBT);
     s.readRawData(h.EXTHEADER.data(),h.NSYMBT);
+    return s;
 }
 
 std::ostream& operator<<(std::ostream& s, const MRCHeader& h)
@@ -80,6 +81,7 @@ std::ostream& operator<<(std::ostream& s, const MRCHeader& h)
     s <<"MACHST: "<< h.MACHST<<"\n";
     s <<"RMS: "<< h.RMS<<"\n";
     s <<"NLABL: "<< h.NLABL<<"\n";
+    return s;
 }
 
 MRCIOHandler::MRCIOHandler()
@@ -133,7 +135,7 @@ bool MRCIOHandler::read(QImage *image)
 
 bool MRCIOHandler::write(const QImage &image)
 {
-
+    return true;
 }
 
 QByteArray MRCIOHandler::name() const

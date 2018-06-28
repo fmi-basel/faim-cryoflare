@@ -28,7 +28,7 @@ QVariant TableSummaryModel::headerData(int section, Qt::Orientation orientation,
             }
             if(summary_type==InputOutputVariable::SUM_SUMMARY){
                 float sum=0;
-                for(unsigned int i=0;i<model_->rowCount();++i){
+                for(int i=0;i<model_->rowCount();++i){
                     QVariant val=model_->data(model_->index(i,section),ImageTableModel::SortRole);
                     if(val.canConvert<float>() && val.toString()!=QString("")){
                         float fval=val.toFloat();
@@ -40,7 +40,7 @@ QVariant TableSummaryModel::headerData(int section, Qt::Orientation orientation,
             }else if(summary_type==InputOutputVariable::AVG_SUMMARY){
                 float sum=0;
                 int count=0;
-                for(unsigned int i=0;i<model_->rowCount();++i){
+                for(int i=0;i<model_->rowCount();++i){
                     QVariant val=model_->data(model_->index(i,section),ImageTableModel::SortRole);
                     if(val.canConvert<float>() && val.toString()!=QString("")){
                         float fval=val.toFloat();
