@@ -363,14 +363,14 @@ void MainWindow::onAvgSourceDirTextChanged(const QString &dir)
 {
     Settings settings;
     settings.setValue("avg_source_dir",ui->avg_source_dir->text());
-    settings.saveToFile(".stack_gui.ini", QStringList(), QStringList() << "avg_source_dir");
+    settings.saveToFile(".cryoflare.ini", QStringList(), QStringList() << "avg_source_dir");
 }
 
 void MainWindow::onStackSourceDirTextChanged(const QString &dir)
 {
     Settings settings;
     settings.setValue("stack_source_dir",ui->stack_source_dir->text());
-    settings.saveToFile(".stack_gui.ini", QStringList(), QStringList() << "stack_source_dir");
+    settings.saveToFile(".cryoflare.ini", QStringList(), QStringList() << "stack_source_dir");
 }
 
 void MainWindow::updateDetailsfromModel(const QModelIndex &topLeft, const QModelIndex &bottomRight)
@@ -403,7 +403,7 @@ void MainWindow::onSettings()
     if (QDialog::Accepted==settings_dialog.exec()){
         settings_dialog.saveSettings();
         Settings settings;
-        settings.saveToFile(".stack_gui.ini");
+        settings.saveToFile(".cryoflare.ini");
         updateTaskWidgets();
         emit settingsChanged();
     }
@@ -433,7 +433,7 @@ void MainWindow::inputDataChanged()
         }
         settings.endGroup();
         settings.endGroup();
-        settings.saveToFile(".stack_gui.ini", QStringList(), QStringList() << "ScriptInput/"+task.toString()+"/"+label.toString());
+        settings.saveToFile(".cryoflare.ini", QStringList(), QStringList() << "ScriptInput/"+task.toString()+"/"+label.toString());
     }
 }
 

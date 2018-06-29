@@ -53,12 +53,14 @@ int main(int argc, char* argv[])
     QCoreApplication::setApplicationName("StackGUI");
 
     Settings settings;
-    if(!settings.loadFromFile(".stack_gui.ini")){
-        qWarning() << "No settings found in local directory. Using global settings.";
-        settings.loadFromQSettings(QStringList() << "avg_source_dir" << "stack_source_dir");
-        settings.saveToFile(".stack_gui.ini");
+    if(!settings.loadFromFile(".cryoflare.ini")){
+        if(!settings.loadFromFile(".stack_gui.ini")){
+            qWarning() << "No settings found in local directory. Using global settings.";
+            settings.loadFromQSettings(QStringList() << "avg_source_dir" << "stack_source_dir");
+            settings.saveToFile(".cryoflare.ini");
+        }
     }
-    FileLocker file_locker(".stack_gui.ini");
+    FileLocker file_locker(".cryoflare.ini");
     if(!file_locker.tryLock()){
         qWarning() << "Directory is already used by process: " << file_locker.getLockOwner() << ". Please use a differnt directory or stop the other process first." ;
         qWarning() << "Ignore (y/N):";
