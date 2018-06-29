@@ -9,38 +9,41 @@
 module purge
 module load eman2/2.2
 
-
 ######################## define output files ###################################
+
+
+patch_full_log=$destination_path/micrographs_mc2/${short_name}_motioncor2.log0-Patch-Full.log
 
 motioncor2_aligned_avg_dw_png=$destination_path/micrographs_mc2/${short_name}.png
 motioncor2_aligned_avg_dw_fft_thumbnail=$destination_path/micrographs_mc2/${short_name}_fft.png
 motioncor2_shift_plot=$destination_path/micrographs_mc2/${short_name}_shift.png
-FILES motioncor2_aligned_avg_dw_png motioncor2_aligned_avg_dw_fft_thumbnail motioncor2_shift_plot
-
-
-######################## define additional parameters ##########################
-
-pixel_size=`CALCULATE "1e10*$apix_x"`
+motioncor2_shift_amp_plot=$destination_path/micrographs_mc2/${short_name}_shift_amp.png
+FILES motioncor2_aligned_avg_dw_png motioncor2_aligned_avg_dw_fft_thumbnail motioncor2_shift_plot motioncor2_shift_amp_plot
 
 
 ######################## run processing if files are missing ###################
 
 if FILES_MISSING; then
+  # create small image
   RUN e2proc2d.py --process math.realtofft  --meanshrink 7 --process mask.sharp:inner_radius=1 $motioncor2_aligned_avg_dw $motioncor2_aligned_avg_dw_fft_thumbnail  >> $motioncor2_log   2>&1
 
+  # create shift plot
   python <<EOT
 import matplotlib.pyplot as plt
+from math import sqrt
 from matplotlib import cm
 import numpy as np
 x=[]
 y=[]
-
-with open("$motioncor2_log") as f:
-    for line in f.readlines():
-        if line.startswith("...... Frame"):
+amp=[]
+with open("$patch_full_log") as f:
+    for line in f.readlines()[3:]:
             sp=line.split()
-            x.append(float(sp[5])*$pixel_size)
-            y.append(float(sp[6])*$pixel_size)
+            x.append(float(sp[1])*$apix_x)
+            y.append(float(sp[2])*$apix_y)
+	    if len(x)>1:
+	    	amp.append(sqrt((x[-1]-x[-2])**2+(y[-1]-y[-2])**2))
+	    	
 x=np.array(x)
 y=np.array(y)
 x-=x[len(x)/2]
@@ -53,6 +56,13 @@ plt.xlabel('shift x (A)')
 plt.ylabel('shift y (A)')
 plt.tight_layout()
 plt.savefig("$motioncor2_shift_plot",dpi=100)
+plt.figure(figsize=(2,5))
+plt.plot(amp)
+plt.xlabel('frame')
+plt.ylabel('shift (A)')
+plt.tight_layout()
+plt.savefig("$motioncor2_shift_amp_plot",dpi=100)
+
 EOT
 
   RUN e2proc2d.py  --meanshrink 7 ${motioncor2_aligned_avg_dw} ${motioncor2_aligned_avg_dw_png}  >> $motioncor2_log 2>&1
@@ -66,12 +76,11 @@ from math import sqrt
 x=[]
 y=[]
 
-with open("$motioncor2_log") as f:
-    for line in f.readlines():
-        if line.startswith("...... Frame"):
+with open("$patch_full_log") as f:
+    for line in f.readlines()[3:]:
             sp=line.split()
-            x.append(float(sp[5])*$pixel_size)
-            y.append(float(sp[6])*$pixel_size)
+            x.append(float(sp[1])*$apix_x)
+            y.append(float(sp[2])*$apix_y)
 dist2=0
 for i in range(len(x)):
     for j in range(i+1,len(x)):

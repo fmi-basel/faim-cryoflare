@@ -7,7 +7,7 @@
 ######################## load modules ##########################################
 
 module purge
-module load motioncor2/20161019
+module load motioncor2/1.0.5
 
 
 ######################## create destination folders ############################
@@ -25,17 +25,22 @@ FILES motioncor2_log motioncor2_aligned_avg motioncor2_aligned_avg_dw
 
 
 ######################## define additional parameters ##########################
-
-pixel_size=`CALCULATE "1e10*$apix_x"`
-dose_per_frame=`CALCULATE "1e-20*$dose/$pixel_size/$pixel_size/$num_frames"`
-patch="2 2"
+dose_per_frame=`CALCULATE "$dose/$num_frames"`
 bft="300"
+iter=4
 
+if [ "$mc2_input_ft_bin" -eq "0" ]; then
+  mc2_ft_bin=1
+fi
 
 ######################## run processing if files are missing ###################
 
 if FILES_MISSING; then
-  RUN MotionCor2 -InMrc $unpack_raw_stack -Patch $patch -bft $bft -OutMrc $motioncor2_aligned_avg -LogFile $motioncor2_log -FmDose $dose_per_frame -PixSize $pixel_size -kV 300 -Align 1 -Gpu $gpu_id  > $motioncor2_log  2>&1
+  RUN MotionCor2 -InMrc $copyraw_raw_stack  -Gain $copyraw_gain_ref -Iter $iter -Patch $mc2_input_patch -bft $bft -OutMrc $motioncor2_aligned_avg -LogFile $motioncor2_log -FmDose $dose_per_frame -PixSize $apix_x -kV 300 -Align 1 -FtBin $mc2_input_ft_bin -Gpu $gpu_id  > $motioncor2_log  2>&1
 fi
-
+if [ "$mc2_input_ft_bin" -ge "2" ]; then
+  apix_x=`CALCULATE $mc2_input_ft_bin*$apix_x`
+  apix_y=`CALCULATE $mc2_input_ft_bin*$apix_y`
+  RESULTS apix_x apix_y
+fi
 

@@ -8,8 +8,6 @@
 
 module purge
 module load gctf
-module switch gctf/1.06_cuda7
-module unload cuda80
 module load eman2/2.2
 
 
@@ -50,20 +48,18 @@ FILES gctf_diag_file gctf_diag_file_mrc gctf_diag_file_png gctf_log gctf_aligned
 
 ######################## define additional parameters ##########################
 
-gctf_epa_cc_cutoff=0.75
-pixel_size=`CALCULATE "1e10*$apix_x"`
 if [ "$camera" == "EF-CCD" ]; then
     dstep=5
 else
     dstep=14
 fi
-magnification=`CALCULATE "1e4*$dstep/$pixel_size"`
+magnification=`CALCULATE "1e4*$dstep/$apix_x"`
 
 ######################## run processing if files are missing ###################
 
 if FILES_MISSING; then
   gctf_params=" --gid $gpu_id"
-  gctf_params+=" --apix $pixel_size"
+  gctf_params+=" --apix $apix_x"
   gctf_params+=" --kV 300"
   gctf_params+=" --cs 0.001"
   gctf_params+=" --ac 0.07"
@@ -75,6 +71,7 @@ if FILES_MISSING; then
   gctf_params+=" --boxsize 1024"
   gctf_params+=" --convsize 30"
   gctf_params+=" --ctfstar  NONE"
+  gctf_params+=" --ctfout_bfac 50.00"
   gctf_phase_plate_params=" --phase_shift_L 10"
   gctf_phase_plate_params+=" --phase_shift_H 170"
   gctf_phase_plate_params+=" --phase_shift_S 10"
@@ -135,7 +132,7 @@ import sys
 with open(sys.argv[1]) as f:
     for line in f.readlines()[1:]:
         sp=line.split()
-        if float(sp[4])<0.75:
+        if float(sp[4])<$gctf_input_epa_cutoff or sp[4]=="-nan":
             break
         res=sp[0]
         cc=sp[4]

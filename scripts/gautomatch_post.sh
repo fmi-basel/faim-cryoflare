@@ -23,11 +23,6 @@ gautomatch_boxes_png=${!average_var/.mrc/_boxes.png}
 FILES  gautomatch_boxes_png
 
 
-######################## define additional parameters ##########################
-
-pixel_size=`CALCULATE "1e10*$apix_x"`
-
-
 ######################## run processing if files are missing ###################
 
 if FILES_MISSING; then

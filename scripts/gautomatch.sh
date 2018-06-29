@@ -7,7 +7,7 @@
 ######################## load modules ##########################################
 
 module purge
-module load gautomatch/0.53_cuda7
+module load gautomatch
 
 
 ######################## create destination folders ############################
@@ -32,21 +32,17 @@ gautomatch_star_file=${!average_var/.mrc/_DW_automatch.star}
 FILES gautomatch_log gautomatch_box_file gautomatch_rejected_box_file gautomatch_star_file
 
 
-######################## define additional parameters ##########################
-
-pixel_size=`CALCULATE "1e10*$apix_x"`
-
-
 ######################## run processing if files are missing ###################
 
 if FILES_MISSING; then
   gautomach_params=" --gid $gpu_id"
-  gautomach_params+=" --apixM $pixel_size"
+  gautomach_params+=" --apixM $apix_x"
   gautomach_params+=" --lsigma_cutoff ${gautomatch_input_sigma_cutoff:=1.3}"
   gautomach_params+=" --lsigma_D ${gautomatch_input_sigma_d:=200}"
   gautomach_params+=" --speed ${gautomatch_input_speed:=2}"
   gautomach_params+="  --diameter ${gautomatch_input_diameter:=400}"
   gautomach_params+="  --cc_cutoff ${gautomatch_input_cc_cutoff:=0.1}"
+  gautomach_params+="  --min_dist ${gautomatch_input_min_dist:=100}"
   if [ -n "$gautomatch_input_reference" ]; then
     gautomach_params+="  --T $gautomatch_input_reference"
     gautomach_params+="  --apixT $gautomatch_input_reference_pixel_size"
