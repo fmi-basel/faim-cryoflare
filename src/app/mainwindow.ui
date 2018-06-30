@@ -291,6 +291,62 @@ A: Column average</string>
         </widget>
        </item>
        <item>
+        <widget class="QPushButton" name="filter">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="toolTip">
+          <string>Only show data for images selected for export</string>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="icon">
+          <iconset resource="app.qrc">
+           <normaloff>:/icons/view-filter.png</normaloff>
+           <normalon>:/icons/view-no-filter.png</normalon>:/icons/view-filter.png</iconset>
+         </property>
+         <property name="iconSize">
+          <size>
+           <width>32</width>
+           <height>32</height>
+          </size>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+         <property name="checked">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="select">
+         <property name="toolTip">
+          <string>Select images to export in plot (use Shift to deselect images)</string>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="icon">
+          <iconset resource="app.qrc">
+           <normaloff>:/icons/select-rectangular.png</normaloff>:/icons/select-rectangular.png</iconset>
+         </property>
+         <property name="iconSize">
+          <size>
+           <width>32</width>
+           <height>32</height>
+          </size>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QPushButton" name="pushButton_4">
          <property name="toolTip">
           <string>Settings</string>
@@ -334,111 +390,6 @@ A: Column average</string>
    <widget class="QWidget" name="dockWidgetContents_4">
     <layout class="QVBoxLayout" name="verticalLayout_4">
      <item>
-      <layout class="QHBoxLayout" name="horizontalLayout_3">
-       <item>
-        <widget class="QPushButton" name="filter_linear_chart">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="toolTip">
-          <string>Only show data for images selected for export</string>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <property name="icon">
-          <iconset resource="app.qrc">
-           <normaloff>:/icons/view-filter.png</normaloff>:/icons/view-filter.png</iconset>
-         </property>
-         <property name="iconSize">
-          <size>
-           <width>16</width>
-           <height>16</height>
-          </size>
-         </property>
-         <property name="checkable">
-          <bool>true</bool>
-         </property>
-         <property name="checked">
-          <bool>false</bool>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="export_linear">
-         <property name="toolTip">
-          <string>Save pdf of plot</string>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <property name="icon">
-          <iconset resource="app.qrc">
-           <normaloff>:/icons/document-export-table.png</normaloff>:/icons/document-export-table.png</iconset>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="select_from_linear">
-         <property name="toolTip">
-          <string>Select images to export in plot (use Shift to deselect images)</string>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <property name="icon">
-          <iconset resource="app.qrc">
-           <normaloff>:/icons/select-rectangular.png</normaloff>:/icons/select-rectangular.png</iconset>
-         </property>
-         <property name="checkable">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <spacer name="horizontalSpacer">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item>
-        <widget class="QLabel" name="linear_chart_details">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>300</width>
-           <height>0</height>
-          </size>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>300</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
-     <item>
       <widget class="ChartView" name="chart">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
@@ -461,96 +412,6 @@ A: Column average</string>
    <widget class="QWidget" name="dockWidgetContents_5">
     <layout class="QVBoxLayout" name="verticalLayout_3">
      <item>
-      <layout class="QHBoxLayout" name="horizontalLayout_6">
-       <item>
-        <widget class="QPushButton" name="filter_histogram_chart">
-         <property name="toolTip">
-          <string>Only show data for images selected for export</string>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <property name="icon">
-          <iconset resource="app.qrc">
-           <normaloff>:/icons/view-filter.png</normaloff>:/icons/view-filter.png</iconset>
-         </property>
-         <property name="checkable">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="export_histogram">
-         <property name="toolTip">
-          <string>Save pdf of plot</string>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <property name="icon">
-          <iconset resource="app.qrc">
-           <normaloff>:/icons/document-export-table.png</normaloff>:/icons/document-export-table.png</iconset>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="select_from_histogram">
-         <property name="toolTip">
-          <string>Select images to export in plot (use Shift to deselect images)</string>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <property name="icon">
-          <iconset resource="app.qrc">
-           <normaloff>:/icons/select-rectangular.png</normaloff>:/icons/select-rectangular.png</iconset>
-         </property>
-         <property name="checkable">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <spacer name="horizontalSpacer_2">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item>
-        <widget class="QLabel" name="histogram_chart_details">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>300</width>
-           <height>0</height>
-          </size>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>300</width>
-           <height>16777215</height>
-          </size>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
-     <item>
       <widget class="ChartView" name="histogram"/>
      </item>
     </layout>
@@ -566,85 +427,6 @@ A: Column average</string>
    <widget class="QWidget" name="dockWidgetContents_2">
     <layout class="QVBoxLayout" name="verticalLayout">
      <item>
-      <layout class="QHBoxLayout" name="horizontalLayout_7">
-       <item>
-        <widget class="QPushButton" name="filter_phase_plate">
-         <property name="toolTip">
-          <string>Only show data for images selected for export</string>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <property name="icon">
-          <iconset resource="app.qrc">
-           <normaloff>:/icons/view-filter.png</normaloff>:/icons/view-filter.png</iconset>
-         </property>
-         <property name="checkable">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="export_phase_plate">
-         <property name="toolTip">
-          <string>Save pdf of plot</string>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <property name="icon">
-          <iconset resource="app.qrc">
-           <normaloff>:/icons/document-export-table.png</normaloff>:/icons/document-export-table.png</iconset>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="select_phase_plate">
-         <property name="toolTip">
-          <string>Select images to export in plot (use Shift to deselect images)</string>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <property name="icon">
-          <iconset resource="app.qrc">
-           <normaloff>:/icons/select-rectangular.png</normaloff>:/icons/select-rectangular.png</iconset>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="back_phase_plate">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="toolTip">
-          <string>Go one level up in plot</string>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <property name="icon">
-          <iconset resource="app.qrc">
-           <normaloff>:/icons/draw-arrow-back.png</normaloff>:/icons/draw-arrow-back.png</iconset>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <spacer name="horizontalSpacer_3">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-      </layout>
-     </item>
-     <item>
       <widget class="PositionChartView" name="phase_plate"/>
      </item>
     </layout>
@@ -659,116 +441,6 @@ A: Column average</string>
    </attribute>
    <widget class="QWidget" name="dockWidgetContents_6">
     <layout class="QVBoxLayout" name="verticalLayout_5">
-     <item>
-      <layout class="QHBoxLayout" name="horizontalLayout_8">
-       <item>
-        <widget class="QPushButton" name="filter_grid_square">
-         <property name="toolTip">
-          <string>Only show data for images selected for export</string>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <property name="icon">
-          <iconset resource="app.qrc">
-           <normaloff>:/icons/view-filter.png</normaloff>:/icons/view-filter.png</iconset>
-         </property>
-         <property name="checkable">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="export_grid_square">
-         <property name="toolTip">
-          <string>Save pdf of plot</string>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <property name="icon">
-          <iconset resource="app.qrc">
-           <normaloff>:/icons/document-export-table.png</normaloff>:/icons/document-export-table.png</iconset>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="select_grid_square">
-         <property name="toolTip">
-          <string>Select images to export in plot (use Shift to deselect images)</string>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <property name="icon">
-          <iconset resource="app.qrc">
-           <normaloff>:/icons/select-rectangular.png</normaloff>:/icons/select-rectangular.png</iconset>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QToolButton" name="back_grid_square">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="toolTip">
-          <string>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;
-&lt;ui version=&quot;4.0&quot;&gt;
- &lt;widget name=&quot;__qt_fake_top_level&quot;&gt;
-  &lt;widget class=&quot;QPushButton&quot; name=&quot;back_phase_plate&quot;&gt;
-   &lt;property name=&quot;enabled&quot;&gt;
-    &lt;bool&gt;false&lt;/bool&gt;
-   &lt;/property&gt;
-   &lt;property name=&quot;geometry&quot;&gt;
-    &lt;rect&gt;
-     &lt;x&gt;91&lt;/x&gt;
-     &lt;y&gt;1&lt;/y&gt;
-     &lt;width&gt;28&lt;/width&gt;
-     &lt;height&gt;24&lt;/height&gt;
-    &lt;/rect&gt;
-   &lt;/property&gt;
-   &lt;property name=&quot;toolTip&quot;&gt;
-    &lt;string&gt;Go one level up in plot&lt;/string&gt;
-   &lt;/property&gt;
-   &lt;property name=&quot;text&quot;&gt;
-    &lt;string/&gt;
-   &lt;/property&gt;
-   &lt;property name=&quot;icon&quot;&gt;
-    &lt;iconset resource=&quot;app.qrc&quot;&gt;
-     &lt;normaloff&gt;:/icons/draw-arrow-back.png&lt;/normaloff&gt;:/icons/draw-arrow-back.png&lt;/iconset&gt;
-   &lt;/property&gt;
-  &lt;/widget&gt;
- &lt;/widget&gt;
- &lt;resources&gt;
-  &lt;include location=&quot;/home_fmi/01/scheandr/sft/cryoflare/src/app/app.qrc&quot;/&gt;
- &lt;/resources&gt;
-&lt;/ui&gt;
-</string>
-         </property>
-         <property name="text">
-          <string>...</string>
-         </property>
-         <property name="icon">
-          <iconset resource="app.qrc">
-           <normaloff>:/icons/draw-arrow-back.png</normaloff>:/icons/draw-arrow-back.png</iconset>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <spacer name="horizontalSpacer_4">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-      </layout>
-     </item>
      <item>
       <widget class="PositionChartView" name="grid_square_chart"/>
      </item>
@@ -803,6 +475,7 @@ A: Column average</string>
    <header>positionchartview.h</header>
    <slots>
     <signal>clicked(int)</signal>
+    <slot>enableSelection(bool)</slot>
    </slots>
   </customwidget>
   <customwidget>
@@ -823,7 +496,7 @@ A: Column average</string>
    <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1411</x>
+     <x>1311</x>
      <y>86</y>
     </hint>
     <hint type="destinationlabel">
@@ -839,7 +512,7 @@ A: Column average</string>
    <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1411</x>
+     <x>1311</x>
      <y>86</y>
     </hint>
     <hint type="destinationlabel">
@@ -855,7 +528,7 @@ A: Column average</string>
    <slot>onAvgSourceDirBrowse()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>685</x>
+     <x>635</x>
      <y>86</y>
     </hint>
     <hint type="destinationlabel">
@@ -871,7 +544,7 @@ A: Column average</string>
    <slot>onStackSourceDirBrowse()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1361</x>
+     <x>1261</x>
      <y>86</y>
     </hint>
     <hint type="destinationlabel">
@@ -919,11 +592,11 @@ A: Column average</string>
    <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1411</x>
+     <x>1311</x>
      <y>86</y>
     </hint>
     <hint type="destinationlabel">
-     <x>685</x>
+     <x>635</x>
      <y>86</y>
     </hint>
    </hints>
@@ -935,11 +608,11 @@ A: Column average</string>
    <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1411</x>
+     <x>1311</x>
      <y>86</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1361</x>
+     <x>1261</x>
      <y>86</y>
     </hint>
    </hints>
@@ -967,7 +640,7 @@ A: Column average</string>
    <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1411</x>
+     <x>1311</x>
      <y>86</y>
     </hint>
     <hint type="destinationlabel">
@@ -983,11 +656,11 @@ A: Column average</string>
    <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1411</x>
+     <x>1311</x>
      <y>86</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1461</x>
+     <x>1361</x>
      <y>86</y>
     </hint>
    </hints>
@@ -999,7 +672,7 @@ A: Column average</string>
    <slot>onExport()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1461</x>
+     <x>1361</x>
      <y>86</y>
     </hint>
     <hint type="destinationlabel">
@@ -1025,14 +698,14 @@ A: Column average</string>
    </hints>
   </connection>
   <connection>
-   <sender>filter_linear_chart</sender>
+   <sender>filter</sender>
    <signal>clicked()</signal>
    <receiver>MainWindow</receiver>
    <slot>updateChart()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>27</x>
-     <y>362</y>
+     <x>1385</x>
+     <y>72</y>
     </hint>
     <hint type="destinationlabel">
      <x>8</x>
@@ -1073,210 +746,18 @@ A: Column average</string>
    </hints>
   </connection>
   <connection>
-   <sender>back_phase_plate</sender>
-   <signal>clicked()</signal>
+   <sender>select</sender>
+   <signal>toggled(bool)</signal>
    <receiver>MainWindow</receiver>
-   <slot>phasePlateBack()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>1027</x>
-     <y>362</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>933</x>
-     <y>265</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>back_grid_square</sender>
-   <signal>clicked()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>gridSquareBack()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>1311</x>
-     <y>361</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>1312</x>
-     <y>278</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>phase_plate</sender>
-   <signal>clicked(int)</signal>
-   <receiver>MainWindow</receiver>
-   <slot>phasePlateClicked(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>1047</x>
-     <y>494</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>874</x>
-     <y>663</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>grid_square_chart</sender>
-   <signal>clicked(int)</signal>
-   <receiver>MainWindow</receiver>
-   <slot>gridSquareClicked(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>1282</x>
-     <y>607</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>1193</x>
-     <y>673</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>export_linear</sender>
-   <signal>clicked()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>exportLinearChart()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>56</x>
-     <y>348</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>481</x>
-     <y>693</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>select_from_linear</sender>
-   <signal>clicked(bool)</signal>
-   <receiver>chart</receiver>
    <slot>enableSelection(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>85</x>
-     <y>354</y>
+     <x>1437</x>
+     <y>70</y>
     </hint>
     <hint type="destinationlabel">
-     <x>124</x>
-     <y>379</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>filter_histogram_chart</sender>
-   <signal>clicked()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>updateChart()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>505</x>
-     <y>356</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>954</x>
-     <y>411</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>export_histogram</sender>
-   <signal>clicked()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>exportHistogramChart()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>530</x>
-     <y>350</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>958</x>
-     <y>463</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>select_from_histogram</sender>
-   <signal>clicked(bool)</signal>
-   <receiver>histogram</receiver>
-   <slot>enableSelection(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>581</x>
-     <y>348</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>618</x>
-     <y>376</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>export_phase_plate</sender>
-   <signal>clicked()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>exportPhasePlateChart()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>965</x>
-     <y>353</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>911</x>
-     <y>700</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>export_grid_square</sender>
-   <signal>clicked()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>exportGridSquareChart()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>1254</x>
-     <y>350</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>1191</x>
-     <y>366</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>filter_grid_square</sender>
-   <signal>clicked()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>updateChart()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>1217</x>
-     <y>350</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>1193</x>
-     <y>707</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>filter_phase_plate</sender>
-   <signal>clicked()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>updateChart()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>931</x>
-     <y>357</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>911</x>
-     <y>670</y>
+     <x>1446</x>
+     <y>97</y>
     </hint>
    </hints>
   </connection>
@@ -1304,5 +785,6 @@ A: Column average</string>
   <slot>gridSquareClicked(int)</slot>
   <slot>exportGridSquareChart()</slot>
   <slot>exportPhasePlateChart()</slot>
+  <slot>enableSelection(bool)</slot>
  </slots>
 </ui>

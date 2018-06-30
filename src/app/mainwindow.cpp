@@ -78,7 +78,12 @@ MainWindow::MainWindow(QWidget *parent) :
 
 {
     ui->setupUi(this);
-    qApp->setStyleSheet("* {color: #e6e6e6; background-color: #40434a} QScrollBar::handle {background-color: rgb(5,97,137) }  QLineEdit{background-color: rgb(136, 138, 133)} QGraphicsView {padding:0px;margin:0px; border: 1px; border-radius: 5px;} ");
+    QString stylesheet;
+    stylesheet+="* {color: #e6e6e6; background-color: #40434a} ";
+    stylesheet+="QScrollBar::handle {background-color: rgb(5,97,137) }  ";
+    stylesheet+="QLineEdit{background-color: rgb(136, 138, 133)} ";
+    stylesheet+="QGraphicsView {padding:0px;margin:0px; border: 1px; border-radius: 5px; background: qlineargradient(x1:0, y1:0, x2:0, y2:1,stop:0 rgb(5,97,137), stop:1 rgb(16,27,50))} ";
+    qApp->setStyleSheet(stylesheet);
     ui->chart->chart()->setTheme(QtCharts::QChart::ChartThemeBlueCerulean);
     ui->chart->chart()->layout()->setContentsMargins(0,0,0,0);
     ui->histogram->chart()->setTheme(QtCharts::QChart::ChartThemeBlueCerulean);
@@ -118,8 +123,13 @@ MainWindow::MainWindow(QWidget *parent) :
     phase_plate_xy_list[5]=QPointF(150,50);
     phase_plate_xy_list[6]=QPointF(0,150);
     phase_plate_chart_->addPositions(phase_plate_path,phase_plate_xy_list);
+    connect(phase_plate_chart_,&PositionChart::selectionChanged,this,&MainWindow::phasePlateSelectionChanged);
     ui->phase_plate->setScene(phase_plate_chart_);
-    ui->grid_square_chart->setScene(new PositionChart(this));
+    connect(ui->phase_plate,&PositionChartView::rubberBandChanged,this,&MainWindow::phasePlateSelectionFinished);
+    PositionChart* grid_chart(new PositionChart(this));
+    connect(grid_chart,&PositionChart::selectionChanged,this,&MainWindow::gridSquareSelectionChanged,Qt::QueuedConnection);
+    ui->grid_square_chart->setScene(grid_chart);
+    connect(ui->grid_square_chart,&PositionChartView::rubberBandChanged,this,&MainWindow::gridSquareSelectionFinished);
 
     QPainterPath phase_plate_pos_path;
     phase_plate_pos_path.moveTo(40,0);
@@ -132,7 +142,8 @@ MainWindow::MainWindow(QWidget *parent) :
             phase_plate_pos_xy_list[y*num_columns+x]=QPointF(100*x,100*y);
         }
     }
-    phase_plate_position_chart_->addPositions(phase_plate_pos_path,phase_plate_pos_xy_list);
+    phase_plate_position_chart_->addPositions(phase_plate_pos_path,phase_plate_pos_xy_list,true);
+    connect(phase_plate_position_chart_,&PositionChart::selectionChanged,this,&MainWindow::phasePlateSelectionChanged);
 
 
 
@@ -526,8 +537,8 @@ void MainWindow::updateChart()
         QVariant val=model_->data(model_->index(i,column),ImageTableModel::SortRole);
         DataPtr data=model_->image(i);
         QString export_val=data->value("export","true");
-        bool linear_export_flag=export_val.compare("true", Qt::CaseInsensitive) == 0 || export_val==QString("1") || ui->filter_linear_chart->isChecked()==false;
-        bool chart_export_flag=export_val.compare("true", Qt::CaseInsensitive) == 0 || export_val==QString("1") || ui->filter_histogram_chart->isChecked()==false;
+        bool linear_export_flag=export_val.compare("true", Qt::CaseInsensitive) == 0 || export_val==QString("1") || ui->filter->isChecked()==false;
+        bool chart_export_flag=export_val.compare("true", Qt::CaseInsensitive) == 0 || export_val==QString("1") || ui->filter->isChecked()==false;
         if(val.canConvert<float>() && val.toString()!=QString("")){
             float fval=val.toFloat();
             if(linear_export_flag){
@@ -618,7 +629,7 @@ void MainWindow::updatePhasePlateChart()
         QVariant val=model_->data(model_->index(i,column),ImageTableModel::SortRole);
         DataPtr data=model_->image(i);
         QString export_val=data->value("export","true");
-        bool phase_plate_export_flag=export_val.compare("true", Qt::CaseInsensitive) == 0 || export_val==QString("1") || ui->filter_phase_plate->isChecked()==false;
+        bool phase_plate_export_flag=export_val.compare("true", Qt::CaseInsensitive) == 0 || export_val==QString("1") || ui->filter->isChecked()==false;
         if(val.canConvert<float>() && val.toString()!=QString("")){
             float fval=val.toFloat();
             int phase_plate_num=std::max(1,std::min(6,data->value("phase_plate_num").toInt()));
@@ -664,7 +675,7 @@ void MainWindow::updateGridSquareChart()
         QVariant val=model_->data(model_->index(i,column),ImageTableModel::SortRole);
         DataPtr data=model_->image(i);
         QString export_val=data->value("export","true");
-        bool export_flag=export_val.compare("true", Qt::CaseInsensitive) == 0 || export_val==QString("1") || ui->filter_grid_square->isChecked()==false;
+        bool export_flag=export_val.compare("true", Qt::CaseInsensitive) == 0 || export_val==QString("1") || ui->filter->isChecked()==false;
         if(val.canConvert<float>() && val.toString()!=QString("")){
             float fval=val.toFloat();
             int square_id=data->value("square_id").toInt();
@@ -698,16 +709,20 @@ void MainWindow::updateGridSquareChart()
         }
         averages[i.key()]=avg;
     }
-    PositionChart* chart=new PositionChart(this);
+    PositionChart* chart=dynamic_cast<PositionChart*>(ui->grid_square_chart->scene());
+    if(!chart){
+        return;
+    }
+    chart->clear();
     QPainterPath path;
     if(chart_current_square_==-1){
         path.addEllipse(QPointF(0,0),5,5);
+        chart->addPositions(path,positions,false);
     }else{
         path.addEllipse(QPointF(0,0),10,10);
+        chart->addPositions(path,positions,true);
     }
-    chart->addPositions(path,positions);
     chart->setValues(averages);
-    ui->grid_square_chart->setScene(chart);
 }
 
 void MainWindow::createProcessIndicator(ProcessWrapper *wrapper, int gpu_id)
@@ -732,9 +747,9 @@ void MainWindow::deleteProcessIndicators()
 void MainWindow::displayLinearChartDetails(const QPointF &point, bool state)
 {
     if(state){
-        ui->linear_chart_details->setText(QString("Image: %1, Value: %2").arg(static_cast<int>(point.x())).arg(point.y()));
+        //ui->linear_chart_details->setText(QString("Image: %1, Value: %2").arg(static_cast<int>(point.x())).arg(point.y()));
     }else{
-        ui->linear_chart_details->setText("");
+        //ui->linear_chart_details->setText("");
     }
 }
 
@@ -742,9 +757,9 @@ void MainWindow::displayHistogramChartDetails(const QPointF &point, bool state)
 {
     if(state){
         int bucket_id=std::min(histogram_.size()-1,static_cast<int>((point.x()-histogram_min_)/histogram_bucket_size_));
-        ui->histogram_chart_details->setText(QString("Bin: %1-%2, Value: %3").arg(histogram_min_+histogram_bucket_size_*bucket_id).arg(histogram_min_+histogram_bucket_size_*(bucket_id+1)).arg(histogram_[bucket_id]));
+        //ui->histogram_chart_details->setText(QString("Bin: %1-%2, Value: %3").arg(histogram_min_+histogram_bucket_size_*bucket_id).arg(histogram_min_+histogram_bucket_size_*(bucket_id+1)).arg(histogram_[bucket_id]));
     }else{
-        ui->histogram_chart_details->setText("");
+        //ui->histogram_chart_details->setText("");
     }
 }
 
@@ -770,7 +785,7 @@ void MainWindow::exportGridSquareChart()
 
 void MainWindow::selectFromLinearChart(float start, float end, bool invert)
 {
-    ui->select_from_linear->setChecked(false);
+    ui->select->setChecked(false);
     int istart=std::max(0,static_cast<int>(start));
     int iend=std::min(model_->rowCount()-1,static_cast<int>(end));
     if(invert){
@@ -795,7 +810,7 @@ void MainWindow::selectFromLinearChart(float start, float end, bool invert)
 
 void MainWindow::selectFromHistogramChart(float start, float end, bool invert)
 {
-    ui->select_from_histogram->setChecked(false);
+    ui->select->setChecked(false);
     int column=sort_proxy_->mapToSource(ui->image_list->currentIndex()).column();
     if(invert){
         for(int i=0;i<model_->rowCount();++i){
@@ -838,51 +853,147 @@ void MainWindow::showAbout()
     dialog.exec();
 }
 
-void MainWindow::phasePlateClicked(int n)
+void MainWindow::phasePlateSelectionChanged()
 {
-   if(phase_plate_level_==0){
+    if(ui->select->isChecked()){
+        return;
+    }
+    if(phase_plate_level_==0){
+        QList<QGraphicsItem *> items=phase_plate_chart_->selectedItems();
+        if(items.empty()){
+            return;
+        }
+        current_phase_plate_=items[0]->toolTip().toInt();
         ui->phase_plate->setScene(phase_plate_position_chart_);
         ++phase_plate_level_;
-        ui->back_phase_plate->setEnabled(true);
-        current_phase_plate_=n;
         updatePhasePlateChart();
-   }
-
-}
-
-void MainWindow::phasePlateBack()
-{
-    if(phase_plate_level_==1){
-        ui->phase_plate->setScene(phase_plate_chart_);
-        --phase_plate_level_;
-        ui->back_phase_plate->setEnabled(false);
-        current_phase_plate_=-1;
-        updatePhasePlateChart();
+        phase_plate_chart_->clearSelection();
+    }else{
+        QList<QGraphicsItem *> items=phase_plate_position_chart_->selectedItems();
+        if(!items.empty()){
+            if(items[0]->toolTip()==QString("back")){
+                ui->phase_plate->setScene(phase_plate_chart_);
+                --phase_plate_level_;
+                current_phase_plate_=-1;
+                updatePhasePlateChart();
+            }
+            phase_plate_position_chart_->clearSelection();
+        }
     }
 }
 
-void MainWindow::gridSquareClicked(int n)
+void MainWindow::phasePlateSelectionFinished(QRect rubberBandRect, QPointF fromScenePoint, QPointF toScenePoint)
 {
+    if(rubberBandRect==QRect()){
+        bool invert=QGuiApplication::queryKeyboardModifiers()  & Qt::ShiftModifier;
+        PositionChart* chart;
+        QString tag;
+        if(phase_plate_level_==0){
+            chart=phase_plate_chart_;
+            tag="phase_plate_num";
+        }else{
+            chart=phase_plate_position_chart_;
+            tag="phase_plate_pos";
+        }
+        QList<QGraphicsItem *> items=chart->selectedItems();
+        if(items.empty()){
+            return;
+        }
+        ui->select->setChecked(false);
+        chart->clearSelection();
+        QSet<QString> ids;
+        foreach(QGraphicsItem * item,items){
+            ids.insert(item->toolTip());
+        }
+        for(int i=0;i<model_->rowCount();++i){
+            DataPtr data=model_->image(i);
+            if(invert){
+                if(ids.contains(data->value(tag))){
+                    data->insert("export",0);
+                    onDataChanged(data);
+                }
+            }else{
+                if(!ids.contains(data->value(tag))){
+                    data->insert("export",0);
+                    onDataChanged(data);
+                }
+            }
+        }
+    }
+}
+
+void MainWindow::gridSquareSelectionChanged()
+{
+    if(ui->select->isChecked()){
+        return;
+    }
+    QList<QGraphicsItem *> items=ui->grid_square_chart->scene()->selectedItems();
+    if(items.empty()){
+        return;
+    }
     if(chart_current_square_==-1){
-        chart_current_square_=n;
-        ui->back_grid_square->setEnabled(true);
+        chart_current_square_=items[0]->toolTip().toInt();
         updateGridSquareChart();
+    }else{
+        if(items[0]->toolTip()==QString("back")){
+            chart_current_square_=-1;
+            updateGridSquareChart();
+        }else{
+            ui->grid_square_chart->scene()->clearSelection();
+        }
     }
 }
 
-void MainWindow::gridSquareBack()
+void MainWindow::gridSquareSelectionFinished(QRect rubberBandRect, QPointF fromScenePoint, QPointF toScenePoint)
 {
-    if(chart_current_square_!=-1){
-        chart_current_square_=-1;
-        ui->back_grid_square->setEnabled(false);
-        updateGridSquareChart();
+    if(rubberBandRect==QRect()){
+        bool invert=QGuiApplication::queryKeyboardModifiers()  & Qt::ShiftModifier;
+        QString tag;
+        if(chart_current_square_==-1){
+            tag="square_id";
+        }else{
+            tag="hole_id";
+        }
+        QList<QGraphicsItem *> items=ui->grid_square_chart->scene()->selectedItems();
+        if(items.empty()){
+            return;
+        }
+        ui->select->setChecked(false);
+        ui->grid_square_chart->scene()->clearSelection();
+        QSet<QString> ids;
+        foreach(QGraphicsItem * item,items){
+            ids.insert(item->toolTip());
+        }
+        for(int i=0;i<model_->rowCount();++i){
+            DataPtr data=model_->image(i);
+            if(invert){
+                if(ids.contains(data->value(tag))){
+                    data->insert("export",0);
+                    onDataChanged(data);
+                }
+            }else{
+                if(!ids.contains(data->value(tag))){
+                    data->insert("export",0);
+                    onDataChanged(data);
+                }
+            }
+        }
     }
 }
+
 
 void MainWindow::displayScatterPlot()
 {
     ScatterPlotDialog dialog(model_);
     dialog.exec();
+}
+
+void MainWindow::enableSelection(bool selecting)
+{
+    ui->chart->enableSelection(selecting);
+    ui->histogram->enableSelection(selecting);
+    ui->phase_plate->enableSelection(selecting);
+    ui->grid_square_chart->enableSelection(selecting);
 }
 
 

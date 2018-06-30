@@ -37,27 +37,38 @@ PositionChart::PositionChart( QObject *parent):
     gradient_stops_ << QGradientStop(0.0,QColor::fromRgbF(1, 0, 0, 1)) << QGradientStop(0.3333,QColor::fromRgbF(1, 1, 0, 1)) << QGradientStop(0.6666,QColor::fromRgbF(0, 1, 0, 1)) << QGradientStop(1.0,QColor::fromRgbF(0, 0, 1, 1));
 }
 
-void PositionChart::addPositions(const QPainterPath & path, const QHash<int, QPointF> &pos)
+void PositionChart::addPositions(const QPainterPath & path, const QHash<int, QPointF> &pos, bool back)
 {
     for(QHash<int,QPointF>::const_iterator i = pos.constBegin();i != pos.constEnd();++i) {
         QGraphicsPathItem* item=dynamic_cast<QGraphicsPathItem*>(addPath(path));
         item->setPos(i.value());
         item->setToolTip(QString("%1").arg(i.key()));
         item->setZValue(i.key());
+        item->setFlag(QGraphicsItem::ItemIsSelectable,true);
         items_[i.key()]=item;
     }
     QRectF rect=itemsBoundingRect();
-    QPointF legend_tl=rect.topRight()+QPointF(0.1*rect.height(),0.1*rect.height());
+    QPointF legend_tl=rect.topRight()+QPointF(0.1*rect.height(),0.2*rect.height());
     QPointF legend_br=rect.bottomRight()+QPointF(0.2*rect.height(),-0.1*rect.height());
     QLinearGradient gradient(legend_br-QPointF(0.05*rect.height(),0),legend_tl+QPointF(0.05*rect.height(),0));
     gradient.setStops(gradient_stops_);
     addRect(QRectF(legend_tl,legend_br),QPen(),QBrush(gradient));
+    if(back){
+
+        QGraphicsPixmapItem* back=addPixmap(QPixmap(":/icons/draw-arrow-back.png"));
+        back->setToolTip("back");
+        back->setPos(legend_tl+QPointF(0,-0.2*rect.height()));
+        back->setFlag(QGraphicsItem::ItemIgnoresTransformations,true);
+        back->setFlag(QGraphicsItem::ItemIsSelectable,true);
+    }
     min_label_=addText(QString("%1").arg(minval_));
     min_label_->setPos(legend_br+QPointF(0.05*rect.height(),-0.05*rect.height()));
     max_label_=addText(QString("%1").arg(minval_+valrange_));
     max_label_->setPos(legend_tl+QPointF(0.15*rect.height(),-0.05*rect.height()));
     min_label_->setDefaultTextColor(QColor("#e6e6e6"));
     max_label_->setDefaultTextColor(QColor("#e6e6e6"));
+    min_label_->setFlag(QGraphicsItem::ItemIgnoresTransformations,true);
+    max_label_->setFlag(QGraphicsItem::ItemIgnoresTransformations,true);
     setSceneRect(itemsBoundingRect());
 }
 
@@ -87,6 +98,12 @@ void PositionChart::setValues(const QHash<int, float> &values)
             items_[i.key()]->setBrush(QBrush(colorAt(i.value())));
         }
     }
+}
+
+void PositionChart::clear()
+{
+    QGraphicsScene::clear();
+    items_.clear();
 }
 
 QColor PositionChart::colorAt(float value)

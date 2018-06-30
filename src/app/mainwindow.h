@@ -85,11 +85,12 @@ public slots:
     void selectFromHistogramChart(float start, float end, bool invert);
     void onStartStopButton(bool start);
     void showAbout();
-    void phasePlateClicked(int n);
-    void phasePlateBack();
-    void gridSquareClicked(int n);
-    void gridSquareBack();
+    void phasePlateSelectionChanged();
+    void phasePlateSelectionFinished(QRect rubberBandRect, QPointF fromScenePoint, QPointF toScenePoint);
+    void gridSquareSelectionChanged();
+    void gridSquareSelectionFinished(QRect rubberBandRect, QPointF fromScenePoint, QPointF toScenePoint);
     void displayScatterPlot();
+    void enableSelection(bool selecting);
 
 signals:
     void startStop(bool start);

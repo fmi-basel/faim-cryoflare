@@ -32,6 +32,8 @@ class PositionChartView : public QGraphicsView
 public:
     PositionChartView(QWidget* parent);
     virtual void setScene(QGraphicsScene * s);
+public slots:
+    void enableSelection(bool selection);
 signals:
     void clicked(int pos);
 protected:

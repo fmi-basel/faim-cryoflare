@@ -31,9 +31,10 @@ class PositionChart : public QGraphicsScene
 {
 public:
     PositionChart(QObject *parent = Q_NULLPTR);
-    void addPositions(const QPainterPath & path=QPainterPath(), const QHash<int,QPointF>& pos=QHash<int,QPointF>());
+    void addPositions(const QPainterPath & path=QPainterPath(), const QHash<int,QPointF>& pos=QHash<int,QPointF>(), bool back=false);
     void setMinMaxValue(float minval, float maxval);
     void setValues(const QHash<int,float> &values);
+    void clear();
     QColor colorAt(float value);
 private:
     QHash<int,QGraphicsPathItem*> items_;
