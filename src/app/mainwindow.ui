@@ -271,7 +271,27 @@ A: Column average</string>
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="export_2">
+        <widget class="QPushButton" name="export_report">
+         <property name="toolTip">
+          <string>Export report</string>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="icon">
+          <iconset resource="app.qrc">
+           <normaloff>:/icons/export-plots.png</normaloff>:/icons/export-plots.png</iconset>
+         </property>
+         <property name="iconSize">
+          <size>
+           <width>32</width>
+           <height>32</height>
+          </size>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="export_data">
          <property name="toolTip">
           <string>Export processed images</string>
          </property>
@@ -347,7 +367,7 @@ A: Column average</string>
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="pushButton_4">
+        <widget class="QPushButton" name="settings">
          <property name="toolTip">
           <string>Settings</string>
          </property>
@@ -496,7 +516,7 @@ A: Column average</string>
    <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1311</x>
+     <x>1261</x>
      <y>86</y>
     </hint>
     <hint type="destinationlabel">
@@ -512,7 +532,7 @@ A: Column average</string>
    <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1311</x>
+     <x>1261</x>
      <y>86</y>
     </hint>
     <hint type="destinationlabel">
@@ -528,7 +548,7 @@ A: Column average</string>
    <slot>onAvgSourceDirBrowse()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>635</x>
+     <x>610</x>
      <y>86</y>
     </hint>
     <hint type="destinationlabel">
@@ -544,7 +564,7 @@ A: Column average</string>
    <slot>onStackSourceDirBrowse()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1261</x>
+     <x>1211</x>
      <y>86</y>
     </hint>
     <hint type="destinationlabel">
@@ -592,11 +612,11 @@ A: Column average</string>
    <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1311</x>
+     <x>1261</x>
      <y>86</y>
     </hint>
     <hint type="destinationlabel">
-     <x>635</x>
+     <x>610</x>
      <y>86</y>
     </hint>
    </hints>
@@ -608,17 +628,17 @@ A: Column average</string>
    <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1311</x>
+     <x>1261</x>
      <y>86</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1261</x>
+     <x>1211</x>
      <y>86</y>
     </hint>
    </hints>
   </connection>
   <connection>
-   <sender>pushButton_4</sender>
+   <sender>settings</sender>
    <signal>clicked()</signal>
    <receiver>MainWindow</receiver>
    <slot>onSettings()</slot>
@@ -636,11 +656,11 @@ A: Column average</string>
   <connection>
    <sender>start_stop</sender>
    <signal>toggled(bool)</signal>
-   <receiver>pushButton_4</receiver>
+   <receiver>settings</receiver>
    <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1311</x>
+     <x>1261</x>
      <y>86</y>
     </hint>
     <hint type="destinationlabel">
@@ -652,11 +672,11 @@ A: Column average</string>
   <connection>
    <sender>start_stop</sender>
    <signal>toggled(bool)</signal>
-   <receiver>export_2</receiver>
+   <receiver>export_data</receiver>
    <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1311</x>
+     <x>1261</x>
      <y>86</y>
     </hint>
     <hint type="destinationlabel">
@@ -666,7 +686,7 @@ A: Column average</string>
    </hints>
   </connection>
   <connection>
-   <sender>export_2</sender>
+   <sender>export_data</sender>
    <signal>clicked()</signal>
    <receiver>MainWindow</receiver>
    <slot>onExport()</slot>
@@ -761,6 +781,22 @@ A: Column average</string>
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>export_report</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>exportPlots()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1288</x>
+     <y>65</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1180</x>
+     <y>-3</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <signal>avgSourceDirChanged()</signal>
@@ -774,8 +810,6 @@ A: Column average</string>
   <slot>onSettings()</slot>
   <slot>onExport()</slot>
   <slot>updateDetails()</slot>
-  <slot>exportLinearChart()</slot>
-  <slot>exportHistogramChart()</slot>
   <slot>updateChart()</slot>
   <slot>selectFromLinearChart(float,float,bool)</slot>
   <slot>selectFromHistogramChart(float,float,bool)</slot>
@@ -783,8 +817,7 @@ A: Column average</string>
   <slot>gridSquareBack()</slot>
   <slot>phasePlateClicked(int)</slot>
   <slot>gridSquareClicked(int)</slot>
-  <slot>exportGridSquareChart()</slot>
-  <slot>exportPhasePlateChart()</slot>
   <slot>enableSelection(bool)</slot>
+  <slot>exportPlots()</slot>
  </slots>
 </ui>

@@ -27,12 +27,12 @@
 
 PositionChart::PositionChart( QObject *parent):
     QGraphicsScene(parent),
+    min_label(addSimpleText("")),
+    max_label(addSimpleText("")),
     items_(),
     gradient_stops_(),
     minval_(0),
-    valrange_(1),
-    min_label_(),
-    max_label_()
+    valrange_(1)
 {
     gradient_stops_ << QGradientStop(0.0,QColor::fromRgbF(1, 0, 0, 1)) << QGradientStop(0.3333,QColor::fromRgbF(1, 1, 0, 1)) << QGradientStop(0.6666,QColor::fromRgbF(0, 1, 0, 1)) << QGradientStop(1.0,QColor::fromRgbF(0, 0, 1, 1));
 }
@@ -61,22 +61,22 @@ void PositionChart::addPositions(const QPainterPath & path, const QHash<int, QPo
         back->setFlag(QGraphicsItem::ItemIgnoresTransformations,true);
         back->setFlag(QGraphicsItem::ItemIsSelectable,true);
     }
-    min_label_=addText(QString("%1").arg(minval_));
-    min_label_->setPos(legend_br+QPointF(0.05*rect.height(),-0.05*rect.height()));
-    max_label_=addText(QString("%1").arg(minval_+valrange_));
-    max_label_->setPos(legend_tl+QPointF(0.15*rect.height(),-0.05*rect.height()));
-    min_label_->setDefaultTextColor(QColor("#e6e6e6"));
-    max_label_->setDefaultTextColor(QColor("#e6e6e6"));
-    min_label_->setFlag(QGraphicsItem::ItemIgnoresTransformations,true);
-    max_label_->setFlag(QGraphicsItem::ItemIgnoresTransformations,true);
+    min_label=addSimpleText(QString("%1").arg(minval_));
+    min_label->setPos(legend_br+QPointF(0.05*rect.height(),-0.05*rect.height()));
+    max_label=addSimpleText(QString("%1").arg(minval_+valrange_));
+    max_label->setPos(legend_tl+QPointF(0.15*rect.height(),-0.05*rect.height()));
+    min_label->setBrush(QColor("#e6e6e6"));
+    max_label->setBrush(QColor("#e6e6e6"));
+    min_label->setFlag(QGraphicsItem::ItemIgnoresTransformations,true);
+    max_label->setFlag(QGraphicsItem::ItemIgnoresTransformations,true);
     setSceneRect(itemsBoundingRect());
 }
 
 void PositionChart::setMinMaxValue(float minval, float maxval)
 {
     minval_=minval;
-    min_label_->setPlainText(QString("%1").arg(minval));
-    max_label_->setPlainText(QString("%1").arg(maxval));
+    min_label->setText(QString("%1").arg(minval));
+    max_label->setText(QString("%1").arg(maxval));
     valrange_=maxval-minval_;
     setSceneRect(itemsBoundingRect());
 }

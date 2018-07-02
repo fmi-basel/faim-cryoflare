@@ -50,6 +50,9 @@
 #include <QPrinter>
 #include <QPrintDialog>
 #include <QGraphicsLayout>
+#include <QPdfWriter>
+#include <QTextDocument>
+#include <QTextTable>
 #include "scatterplotdialog.h"
 #include "aboutdialog.h"
 
@@ -356,17 +359,83 @@ void MainWindow::updateTaskWidget_(Settings *settings, QFormLayout *parent_input
     }
 }
 
-void MainWindow::exportChart_(const QString &name, QGraphicsView *view) const
+void MainWindow::exportPlots() const
 {
-    QPrinter printer;
-    printer.setOrientation(QPrinter::Landscape);
-    QPrintDialog dialog(&printer);
-    dialog.setWindowTitle("Print "+name);
-    if (dialog.exec() == QDialog::Accepted){
-        QPainter painter;
-        painter.begin(&printer);
-        view->render(&painter, printer.pageRect());
+    QString file_name = QFileDialog::getSaveFileName(0, "Save Plots",".","Pdf files (*.pdf)");
+    if (!file_name.isEmpty()){
+        QPdfWriter writer(file_name);
+        writer.setPageSize(QPagedPaintDevice::A4);
+        writer.setPageOrientation(QPageLayout::Landscape);
+        writer.setResolution(1200);
+        QTextDocument doc;
+        QFont font=doc.defaultFont();
+        font.setPointSize(8);
+        doc.setDefaultFont(font);
+        QTextCursor cursor(&doc);
+        QAbstractItemModel* model=ui->image_list->model();
+        QTextTable* table=cursor.insertTable(model->rowCount()+1,model->columnCount());
+        for(int column=0;column<model->columnCount();++column)
+        {
+            table->cellAt(0,column).firstCursorPosition().insertText(model->headerData(column,Qt::Horizontal).toString());
+        }
+        for(int row=1;row<=model->rowCount();++row)
+        {
+            for(int column=0;column<model->columnCount();++column)
+            {
+                table->cellAt(row,column).firstCursorPosition().insertText(model->data(model->index(row,column)).toString());
+            }
+        }
+        QImage image(writer.pageLayout().paintRectPixels(72).size(),QImage::Format_RGB32);
+        QPainter painter(&image);
+        painter.fillRect(image.rect(),QColor("white"));
+        ui->chart->render(&painter, writer.pageLayout().paintRectPixels(72));
+        cursor.movePosition(QTextCursor::End);
+        cursor.insertImage(image);
         painter.end();
+
+        QImage image_histo(writer.pageLayout().paintRectPixels(72).size(),QImage::Format_RGB32);
+        QPainter painter_histo(&image_histo);
+        painter_histo.fillRect(image_histo.rect(),QColor("white"));
+        ui->histogram->render(&painter_histo, writer.pageLayout().paintRectPixels(72));
+        cursor.movePosition(QTextCursor::End);
+        cursor.insertImage(image_histo);
+        painter_histo.end();
+
+        QImage image_pp(writer.pageLayout().paintRectPixels(72).size(),QImage::Format_RGB32);
+        QPainter painter_pp(&image_pp);
+        painter_pp.fillRect(image_pp.rect(),QColor("white"));
+        PositionChart* chart=dynamic_cast<PositionChart*>(ui->phase_plate->scene());
+        if(!chart){
+            return;
+        }
+        QBrush old_brush=chart->max_label->brush();
+        chart->min_label->setBrush(QColor("black"));
+        chart->max_label->setBrush(QColor("black"));
+        ui->phase_plate->render(&painter_pp, writer.pageLayout().paintRectPixels(72));
+        chart->min_label->setBrush(old_brush);
+        chart->max_label->setBrush(old_brush);
+        cursor.movePosition(QTextCursor::End);
+        cursor.insertImage(image_pp);
+        painter_pp.end();
+
+        QImage image_gs(writer.pageLayout().paintRectPixels(72).size(),QImage::Format_RGB32);
+        QPainter painter_gs(&image_gs);
+        painter_gs.fillRect(image_gs.rect(),QColor("white"));
+        chart=dynamic_cast<PositionChart*>(ui->grid_square_chart->scene());
+        if(!chart){
+            return;
+        }
+        chart->min_label->setBrush(QColor("black"));
+        chart->max_label->setBrush(QColor("black"));
+        ui->grid_square_chart->render(&painter_gs, writer.pageLayout().paintRectPixels(72));
+        chart->min_label->setBrush(old_brush);
+        chart->max_label->setBrush(old_brush);
+        cursor.movePosition(QTextCursor::End);
+        cursor.insertImage(image_gs);
+        painter_gs.end();
+
+        doc.print(&writer);
+
     }
 }
 
@@ -763,25 +832,6 @@ void MainWindow::displayHistogramChartDetails(const QPointF &point, bool state)
     }
 }
 
-void MainWindow::exportLinearChart()
-{
-    exportChart_("Linear Chart", ui->chart);
-}
-
-void MainWindow::exportHistogramChart()
-{
-    exportChart_("Histogram Chart", ui->histogram);
-}
-
-void MainWindow::exportPhasePlateChart()
-{
-    exportChart_("Phase Plate Chart", ui->phase_plate);
-}
-
-void MainWindow::exportGridSquareChart()
-{
-    exportChart_("Grid Square Chart", ui->grid_square_chart);
-}
 
 void MainWindow::selectFromLinearChart(float start, float end, bool invert)
 {

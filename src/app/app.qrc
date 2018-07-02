@@ -14,5 +14,6 @@
         <file>icons/cryoflare128.png</file>
         <file>icons/draw-arrow-back.png</file>
         <file>icons/view-no-filter.png</file>
+        <file>icons/export-plots.png</file>
     </qresource>
 </RCC>

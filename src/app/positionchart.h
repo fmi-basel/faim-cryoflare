@@ -36,13 +36,13 @@ public:
     void setValues(const QHash<int,float> &values);
     void clear();
     QColor colorAt(float value);
+    QGraphicsSimpleTextItem* min_label;
+    QGraphicsSimpleTextItem* max_label;
 private:
     QHash<int,QGraphicsPathItem*> items_;
     QGradientStops gradient_stops_;
     float minval_;
     float valrange_;
-    QGraphicsTextItem* min_label_;
-    QGraphicsTextItem* max_label_;
 };
 
 #endif // POSITIONCHART_H

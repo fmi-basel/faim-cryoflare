@@ -77,10 +77,7 @@ public slots:
     void deleteProcessIndicators();
     void displayLinearChartDetails(const QPointF &point, bool state);
     void displayHistogramChartDetails(const QPointF &point, bool state);
-    void exportLinearChart();
-    void exportHistogramChart();
-    void exportPhasePlateChart();
-    void exportGridSquareChart();
+    void exportPlots() const;
     void selectFromLinearChart(float start, float end, bool invert);
     void selectFromHistogramChart(float start, float end, bool invert);
     void onStartStopButton(bool start);
@@ -101,7 +98,6 @@ private slots:
 
 private:
     void updateTaskWidget_(Settings *settings, QFormLayout *parent_input_layout, QFormLayout *parent_output_layout);
-    void exportChart_(const QString& name, QGraphicsView *view) const;
     Ui::MainWindow *ui;
     ImageTableModel *model_;
     ImageTableSortFilterProxyModel *sort_proxy_;
