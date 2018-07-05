@@ -37,12 +37,27 @@ namespace  {
 
 DataPtr parse_grid_xml(const QDir& grid_square_dir){
     DataPtr result(new Data());
+    result->insert("X","0");
+    result->insert("Y","0");
+    result->insert("Z","0");
+    result->insert("A","0");
+    result->insert("B","0");
+    result->insert("image_shift_x","0");
+    result->insert("image_shift_y","0");
+
     QDomDocument dom_document;
-    QString xml_path=grid_square_dir.absoluteFilePath(grid_square_dir.entryList(QStringList("GridSquare*.xml"))[0]);
+    QStringList grid_sqare_xmls=grid_square_dir.entryList(QStringList("GridSquare*.xml"));
+    if(grid_sqare_xmls.isEmpty()){
+        qDebug() << "Missing grid square xml for : "+grid_square_dir.absolutePath();
+        return result;
+    }
+    QString xml_path=grid_square_dir.absoluteFilePath(grid_sqare_xmls.at(0));
     QFile file(xml_path);
     if (!file.open(QIODevice::ReadOnly))
+        qDebug() << "Could not open : "+xml_path;
         return result;
     if (!dom_document.setContent(&file)) {
+        qDebug() << "Error parsing : "+xml_path;
         file.close();
         return result;
     }
@@ -78,7 +93,12 @@ DataPtr parse_xml_data(const QString& xml_path){
     QString grid_name=xml_dir.dirName();
     result->insert("xml_file",xml_path);
     result->insert("name",name);
-    result->insert("hole_id",name.split("_")[1]);
+    QStringList splitted_name=name.split("_");
+    if(splitted_name.size()<2){
+        qDebug() << "Encountered image name not conforming to EPU conventions: "+name;
+        QCoreApplication::exit(-1);
+    }
+    result->insert("hole_id",splitted_name.at(1));
     result->insert("grid_name",grid_name);
     result->insert("square_id",grid_name.remove(0,11));
     xml_dir.cdUp();
@@ -143,6 +163,7 @@ DataPtr parse_xml_data(const QString& xml_path){
     result->insert("y",stage.toElement().elementsByTagName("Y").at(0).toElement().text());
     result->insert("z",stage.toElement().elementsByTagName("Z").at(0).toElement().text());
     
+    result->insert("acceleration_voltage",QString("%1").arg(dom_document.elementsByTagName("AccelerationVoltage").at(0).toElement().text().toFloat()/1000.0));
     QDomNode nominal_magnification=dom_document.elementsByTagName("NominalMagnification").at(0);
     result->insert("nominal_magnification",nominal_magnification.toElement().text());
     QDomNode datetime=dom_document.elementsByTagName("acquisitionDateTime").at(0);
@@ -362,13 +383,10 @@ void ImageProcessor::exportImages(const QString &export_path, const QStringList 
         process_->start(custom_script,arguments);
         process_->waitForStarted(-1);
         foreach(QString image,image_list){
-            qDebug() << "gui writing: " << QStringList(raw_files_[image].toList()).join(",") << "\n";
-            qDebug() << "gui writing: " << QStringList(output_files_[image].toList()).join(",") << "\n";
             process_->write(QString("raw_%1=%2\n").arg(image).arg(QStringList(raw_files_[image].toList()).join(",")).toLatin1());
             process_->write(QString("%1=%2\n").arg(image).arg(QStringList(output_files_[image].toList()).join(",")).toLatin1());
         }
         process_->write(QString("%1=%2\n").arg("shared").arg(QStringList(shared_output_files_.toList()).join(",")).toLatin1());
-        qDebug() << "gui data written\n";
         process_->closeWriteChannel();
         //process.waitForFinished(-1);
 
@@ -413,7 +431,7 @@ void ImageProcessor::updateGridSquare_(const QString &grid_square)
 {
     QString grid_square_data=QDir(grid_square).absoluteFilePath("Data");
     if(! grid_squares_.contains(grid_square_data)){
-        if(QFileInfo(grid_square_data).exists()){
+        if(QFileInfo::exists(grid_square_data)){
             watcher_->addPath(grid_square_data);
             grid_squares_.append(grid_square_data);
             updateImages_(grid_square_data);
@@ -457,8 +475,8 @@ void ImageProcessor::createTaskTree_(const QString &path)
     TaskPtr root_task=root_task_->clone();
     root_task->setData(data);
     for(int i=0;i<root_task->children.size();++i){
-        QStack<TaskPtr>& stack=root_task->children[i]->gpu?gpu_task_stack_:cpu_task_stack_;
-        stack.append(root_task->children[i]);
+        QStack<TaskPtr>& stack=root_task->children.at(i)->gpu?gpu_task_stack_:cpu_task_stack_;
+        stack.append(root_task->children.at(i));
     }
     emit queueCountChanged(cpu_task_stack_.size(),gpu_task_stack_.size());
     startTasks();

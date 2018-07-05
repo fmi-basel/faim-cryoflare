@@ -26,6 +26,7 @@
 #include <QQueue>
 #include <QPair>
 #include <QFile>
+#include <QFileInfo>
 #include <QCoreApplication>
 #include <QStringList>
 
@@ -83,7 +84,7 @@ Settings::Settings(QObject *parent):
 
 bool Settings::loadFromFile(const QString &path, const QStringList &excludes, const QStringList &includes)
 {
-    if(!QFile(path).exists()){
+    if(!QFileInfo::exists(path)){
         return false;
     }
     foreach( QString key, allKeys()){

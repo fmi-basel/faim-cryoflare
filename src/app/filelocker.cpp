@@ -26,6 +26,7 @@
 #include <sys/file.h>
 #include <unistd.h>
 #include <QFile>
+#include <QFileInfo>
 #include <QTextStream>
 #include <QStringList>
 #include <QDebug>
@@ -36,6 +37,9 @@ FileLocker::FileLocker(const QString &filename):
     fd_(-1),
     filename_(filename)
 {
+    if(filename_.isEmpty()){
+        qDebug() << "No filename given for FileLocker";
+    }
 }
 
 FileLocker::~FileLocker()
@@ -47,6 +51,9 @@ bool FileLocker::tryLock()
 {
     if(fd_>=0){
         return true;
+    }
+    if(filename_.isEmpty()){
+        return false;
     }
     int fd = open( filename_.toLatin1(), O_RDWR|O_CREAT, 0666 );
     if(fd >= 0 && flock( fd, LOCK_EX | LOCK_NB ) < 0)
@@ -74,7 +81,11 @@ bool FileLocker::isLocked() const
 
 int FileLocker::getLockOwner()
 {
-    if(!QFile(filename_).exists()){
+    if(filename_.isEmpty()){
+        qDebug() << "No filename given for FileLocker";
+        return -1;
+    }
+    if(!QFileInfo::exists(filename_)){
         qDebug() <<filename_<< " doesn't exist";
         return -1;
     }

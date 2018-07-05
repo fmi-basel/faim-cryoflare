@@ -198,7 +198,7 @@ void MainWindow::init()
 
 void MainWindow::onAvgSourceDirBrowse()
 {
-    QString dir_name = QFileDialog::getExistingDirectory(this, tr("Open Directory"),ui->avg_source_dir->text(),QFileDialog::ShowDirsOnly| QFileDialog::DontResolveSymlinks);
+    QString dir_name = QFileDialog::getExistingDirectory(this, "Open Directory",ui->avg_source_dir->text(),QFileDialog::ShowDirsOnly| QFileDialog::DontResolveSymlinks);
     if(!dir_name.isEmpty()){
         ui->avg_source_dir->setText(dir_name);
     }
@@ -206,7 +206,7 @@ void MainWindow::onAvgSourceDirBrowse()
 
 void MainWindow::onStackSourceDirBrowse()
 {
-    QString dir_name = QFileDialog::getExistingDirectory(this, tr("Open Directory"),ui->stack_source_dir->text(),QFileDialog::ShowDirsOnly| QFileDialog::DontResolveSymlinks);
+    QString dir_name = QFileDialog::getExistingDirectory(this, "Open Directory",ui->stack_source_dir->text(),QFileDialog::ShowDirsOnly| QFileDialog::DontResolveSymlinks);
     if(!dir_name.isEmpty()){
         ui->stack_source_dir->setText(dir_name);
     }
@@ -573,7 +573,7 @@ void MainWindow::updateDetails()
             if(static_cast<VariableType>(type.toInt())==Image){
                 QString path=data->value(label.toString());
                 QPicture p;
-                if(QFileInfo(path).exists()){
+                if(QFileInfo::exists(path)){
                     QImageReader reader(path);
                     QSize image_size=reader.size();
                     float scalefactor=std::min(512.0/image_size.width(),512.0/image_size.height());

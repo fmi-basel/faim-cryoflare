@@ -31,6 +31,7 @@
 #include <QtPlugin>
 #include  "settings.h"
 #include "filelocker.h"
+#include <../external/qssh/sshconnection.h>
 
 QCoreApplication* createApplication(int &argc, char *argv[])
 {
@@ -42,8 +43,34 @@ QCoreApplication* createApplication(int &argc, char *argv[])
 
 Q_IMPORT_PLUGIN(MRCIOPlugin)
 
+void crash_message_handler(QtMsgType type, const QMessageLogContext &context, const QString &msg)
+{
+    QByteArray localMsg = msg.toLocal8Bit();
+    switch (type) {
+    case QtDebugMsg:
+        fprintf(stderr, "Debug: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+        break;
+    case QtInfoMsg:
+        fprintf(stderr, "Info: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+        break;
+    case QtWarningMsg:
+        fprintf(stderr, "Warning: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+        break;
+    case QtCriticalMsg:
+        fprintf(stderr, "Critical: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+        break;
+    case QtFatalMsg:
+        fprintf(stderr, "Fatal: %s (%s:%u, %s)\n", localMsg.constData(), context.file, context.line, context.function);
+        __asm("int3");
+        abort();
+        break;
+    }
+}
+
+
 int main(int argc, char* argv[])
 {
+    //qInstallMessageHandler(crash_message_handler);
     if(-1==mlockall(MCL_CURRENT|MCL_FUTURE)){
         //qWarning() << "failed to lock virtual address space into RAM";
     }
@@ -62,7 +89,12 @@ int main(int argc, char* argv[])
     }
     FileLocker file_locker(".cryoflare.ini");
     if(!file_locker.tryLock()){
-        qWarning() << "Directory is already used by process: " << file_locker.getLockOwner() << ". Please use a differnt directory or stop the other process first." ;
+        int owner=file_locker.getLockOwner();
+        if(owner==-1){
+            qWarning() << "Can't get lock on .cryoflare.ini. The directory might already be used by a different process. Please use a differnt directory or stop the other process first.";
+        }else{
+            qWarning() << "Directory is already used by process: " << owner << ". Please use a differnt directory or stop the other process first." ;
+        }
         qWarning() << "Ignore (y/N):";
         int c=getchar();
         if(c!='y' && c!='Y'){
