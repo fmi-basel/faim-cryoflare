@@ -36,7 +36,24 @@ fi
 ######################## run processing if files are missing ###################
 
 if FILES_MISSING; then
-  RUN MotionCor2 -InMrc $copyraw_raw_stack  -Gain $copyraw_gain_ref -Iter $iter -Patch $mc2_input_patch -bft $bft -OutMrc $motioncor2_aligned_avg -LogFile $motioncor2_log -FmDose $dose_per_frame -PixSize $apix_x -kV 300 -Align 1 -FtBin $mc2_input_ft_bin -Gpu $gpu_id  > $motioncor2_log  2>&1
+  mc2_params="-InMrc $copyraw_raw_stack "
+  mc2_params+="-Iter $iter "
+  mc2_params+="-Patch $mc2_input_patch "
+  mc2_params+="-Bft $bft "
+  mc2_params+="-OutMrc $motioncor2_aligned_avg "
+  mc2_params+="-LogFile $motioncor2_log "
+  mc2_params+="-FmDose $dose_per_frame "
+  mc2_params+="-PixSize $apix_x "
+  mc2_params+="-kV 300 "
+  mc2_params+="-Align 1 "
+  mc2_params+="-FtBin $mc2_input_ft_bin "
+  mc2_params+="-Gpu $gpu_id  "
+  mc2_gain_params=""
+  if [ -z ${copyraw_gain_ref+x} ] && [ -e $copyraw_gain_ref ]; then
+    mc2_gain_params="-Gain $copyraw_gain_ref "
+  fi
+  
+  RUN MotionCor2 $mc2_params $mc2_gain_params  > $motioncor2_log  2>&1
 fi
 if [ "$mc2_input_ft_bin" -ge "2" ]; then
   apix_x=`CALCULATE $mc2_input_ft_bin*$apix_x`
