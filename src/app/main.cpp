@@ -31,7 +31,6 @@
 #include <QtPlugin>
 #include  "settings.h"
 #include "filelocker.h"
-#include <../external/qssh/sshconnection.h>
 
 QCoreApplication* createApplication(int &argc, char *argv[])
 {
