@@ -1,11 +1,4 @@
-#TARGET = limereport
-
-
-CONFIG(debug, debug|release) {
-    TARGET = limereportd
-} else {
-    TARGET = limereport
-}
+TARGET = limereport
 
 
 TEMPLATE = lib
@@ -30,7 +23,7 @@ contains(CONFIG, staticlib){
     DEFINES += HAVE_STATIC_BUILD
     DEFINES -= LIMEREPORT_EXPORTS
 }
-
+QT += sql script
 EXTRA_FILES += \
     $$PWD/lrglobal.cpp \
     $$PWD/lrglobal.h \
@@ -48,11 +41,6 @@ contains(CONFIG,zint){
     INCLUDEPATH += $$ZINT_PATH/backend $$ZINT_PATH/backend_qt4
     DEPENDPATH += $$ZINT_PATH/backend $$ZINT_PATH/backend_qt4
 
-#    CONFIG(debug, debug|release) {
-#       LIBS += ../3rdparty/libQtZintd.a
-#    } else {
-#        LIBS += ../3rdparty/libQtZint.a
-#    }
 
 }
 

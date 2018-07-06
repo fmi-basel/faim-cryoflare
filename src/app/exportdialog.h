@@ -16,8 +16,8 @@ public:
     explicit ExportDialog(QWidget *parent = 0);
     ~ExportDialog();
 public slots:
-    browseRemoteData(const QString& message="");
-    browseRemoteRawData(const QString& message="");
+    void browseRemoteData();
+    void browseRemoteRawData();
 
 private:
     Ui::ExportDialog *ui;

@@ -1,6 +1,6 @@
 #include "exportdialog.h"
 #include "ui_exportdialog.h"
-#include "sshconnectiondialog.h"
+#include "remotefiledialog.h"
 
 ExportDialog::ExportDialog(QWidget *parent) :
     QDialog(parent),
@@ -15,27 +15,18 @@ ExportDialog::~ExportDialog()
     delete ui;
 }
 
-ExportDialog::browseRemoteData(const QString &message)
+void ExportDialog::browseRemoteData()
 {
-    SShConnectionDialog dialog;
-    dialog.setMessage(message);
-    if(dialog.exec()==QDialog::Accepted){
-
-        QSsh::SshConnectionParameters parameters;
-        parameters.host=dialog.host();
-        parameters.userName=dialog.user();
-        parameters.password=dialog.password();
-        QSsh::SshConnection connection(parameters);
-        connection.connectToHost();
-        progress_dialog_->show();
-
+    QPair<QSsh::SshConnectionParameters,QString> pair=RemoteFileDialog::getRemotePath();
+    if(pair.second!=QString()){
+        ui->data_path->setPath(pair.second);
     }
-    return QSsh::SshConnectionParameters();
-
-
 }
 
-ExportDialog::browseRemoteRawData(const QString &message)
+void ExportDialog::browseRemoteRawData()
 {
-
+    QPair<QSsh::SshConnectionParameters,QString> pair=RemoteFileDialog::getRemotePath();
+    if(pair.second!=QString()){
+        ui->data_path->setPath(pair.second);
+    }
 }

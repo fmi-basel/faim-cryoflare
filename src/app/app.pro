@@ -20,7 +20,7 @@
 #
 #------------------------------------------------------------------------------
 
-QT       += core gui xml charts printsupport network
+QT       += core gui xml charts printsupport network script sql
 greaterThan(QT_MAJOR_VERSION, 5): QT += widgets
 
 TARGET = cryoflare
@@ -116,7 +116,6 @@ FORMS    += \
     settingsdialog.ui \
     aboutdialog.ui \
     scatterplotdialog.ui \
-    reportdialog.ui \
     exportdialog.ui \
     sshconnectiondialog.ui \
     remotefiledialog.ui
