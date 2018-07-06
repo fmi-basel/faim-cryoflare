@@ -104,6 +104,7 @@ void save_to_settings(SETTINGS* settings, Ui::SettingsDialog* ui){
     settings->setValue("export_custom_script", ui->export_custom_script->path());
     settings->setValue("export_num_processes", ui->export_num_processes->value());
     settings->setValue("ask_destination",ui->ask_destination->isChecked());
+    settings->setValue("report_template",ui->report_template->path());
     if(ui->export_copy->isChecked()){
         settings->setValue("export","copy");
     }
@@ -137,9 +138,9 @@ void load_from_settings(SETTINGS* settings, Ui::SettingsDialog* ui){
     ui->histogram_bins->setValue(settings->value("histogram_bins").toInt());
     ui->export_pre_script->setPath(settings->value("export_pre_script").toString());
     ui->export_post_script->setPath(settings->value("export_post_script").toString());
-    ui->export_custom_script->setPath(settings->value("export_custom_script").toString());
     ui->export_num_processes->setValue(settings->value("export_num_processes").toInt());
     ui->ask_destination->setChecked(settings->value("ask_destination").toBool());
+    ui->report_template->setPath(settings->value("report_template").toString());
     QString export_mode=settings->value("export").toString();
     if(export_mode=="copy"){
         ui->export_copy->setChecked(true);
@@ -163,7 +164,7 @@ void load_from_settings(SETTINGS* settings, Ui::SettingsDialog* ui){
 
 }
 
-SettingsDialog::SettingsDialog(QList<InputOutputVariable> default_columns, QWidget *parent) :
+SettingsDialog::SettingsDialog(QList<InputOutputVariable> default_columns, LimeReport::ReportEngine *report_engine, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::SettingsDialog),
     task_tree_menu_(new QMenu(this)),
@@ -172,7 +173,8 @@ SettingsDialog::SettingsDialog(QList<InputOutputVariable> default_columns, QWidg
     output_variable_new_(new QAction("New",this)),
     output_variable_delete_(new QAction("Delete",this)),
     input_variable_new_(new QAction("New",this)),
-    input_variable_delete_(new QAction("Delete",this))
+    input_variable_delete_(new QAction("Delete",this)),
+    report_engine_(report_engine)
 {
     ui->setupUi(this);
     ui->task_tree->setHeaderHidden(false);
@@ -215,7 +217,6 @@ SettingsDialog::SettingsDialog(QList<InputOutputVariable> default_columns, QWidg
     }
     vbox->addStretch(1);
     ui->default_columns->setLayout(vbox);
-
     loadSettings();
 }
 
@@ -391,5 +392,11 @@ void SettingsDialog::updateVariables(QTreeWidgetItem *new_item, QTreeWidgetItem 
         ui->output_variable_table->setDisabled(true);
 
     }
+}
+
+void SettingsDialog::designReport()
+{
+    report_engine_->designReport();
+    ui->report_template->setPath(report_engine_->reportFileName());
 }
 

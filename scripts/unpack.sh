@@ -1,4 +1,4 @@
-#!/bin/sh --noprofile
+#!/bin/bash --noprofile
 
 
 ######################## get parameters from GUI ###############################

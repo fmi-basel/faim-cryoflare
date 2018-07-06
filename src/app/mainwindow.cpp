@@ -61,6 +61,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
     model_(new ImageTableModel(this)),
+    full_model_(new ImageTableModel(this)),
     sort_proxy_(new ImageTableSortFilterProxyModel(this)),
     summary_model_(new TableSummaryModel(model_,this)),
     statusbar_queue_count_(new QLabel("CPU queue: 0 / GPU queue: 0")),
@@ -76,7 +77,8 @@ MainWindow::MainWindow(QWidget *parent) :
     chart_current_square_(-1),
     default_columns_(),
     scatter_plot_action_(new QAction("Scatter Plot",this)),
-    run_script_action_(new QAction("Run script",this))
+    run_script_action_(new QAction("Run script",this)),
+    report_()
 
 
 {
@@ -181,6 +183,8 @@ MainWindow::MainWindow(QWidget *parent) :
                      << InputOutputVariable("Grid square","grid_square",Float)
                      << InputOutputVariable("Foil hole","grid_square_pos",Float)
                      << InputOutputVariable("Foil hole position","grid_square_hole_pos",Float);
+    report_.dataManager()->addModel("Images",full_model_,false);
+
 }
 
 MainWindow::~MainWindow()
@@ -193,6 +197,9 @@ void MainWindow::init()
     Settings settings;
     ui->avg_source_dir->setText(settings.value("avg_source_dir").toString());
     ui->stack_source_dir->setText(settings.value("stack_source_dir").toString());
+    if(QFileInfo::exists(settings.value("report_template").toString())){
+      report_.loadFromFile(settings.value("report_template").toString());
+    }
     updateTaskWidgets();
 }
 
@@ -216,6 +223,7 @@ void MainWindow::onStackSourceDirBrowse()
 void MainWindow::addImage(const DataPtr &data)
 {
     model_->addImage(data);
+    full_model_->addImage(data);
 }
 
 void MainWindow::onDataChanged(const DataPtr &data)
@@ -231,9 +239,11 @@ void MainWindow::updateTaskWidgets()
         delete widget_ptr;
     }
     model_->clearColumns();
+    full_model_->clearColumns();
     Settings *settings=new Settings;
     settings->beginGroup("DefaultColumns");
     Q_FOREACH(InputOutputVariable column, default_columns_){
+        full_model_->addColumn(column);
         if(settings->value(column.label,true).toBool()){
             model_->addColumn(column);
         }
@@ -312,6 +322,7 @@ void MainWindow::updateTaskWidget_(Settings *settings, QFormLayout *parent_input
         bool color_set=false;
         foreach(QVariant v,variant_list){
             InputOutputVariable iov(v);
+            full_model_->addColumn(iov);
             if(iov.in_column){
                 if(!color_set){
                     color_set=true;
@@ -359,9 +370,13 @@ void MainWindow::updateTaskWidget_(Settings *settings, QFormLayout *parent_input
     }
 }
 
-void MainWindow::exportPlots() const
+void MainWindow::writeReport()
 {
     QString file_name = QFileDialog::getSaveFileName(0, "Save Plots",".","Pdf files (*.pdf)");
+    if (!file_name.isEmpty()){
+        report_.printToPDF(file_name);
+    }
+/*    QString file_name = QFileDialog::getSaveFileName(0, "Save Plots",".","Pdf files (*.pdf)");
     if (!file_name.isEmpty()){
         QPdfWriter writer(file_name);
         writer.setPageSize(QPagedPaintDevice::A4);
@@ -436,7 +451,7 @@ void MainWindow::exportPlots() const
 
         doc.print(&writer);
 
-    }
+    }*/
 }
 
 void MainWindow::onAvgSourceDirTextChanged(const QString &dir)
@@ -479,11 +494,14 @@ void MainWindow::updateDetailsfromView(const QModelIndex &topLeft, const QModelI
 
 void MainWindow::onSettings()
 {
-    SettingsDialog settings_dialog(default_columns_,this);
+    SettingsDialog settings_dialog(default_columns_,&report_,this);
     if (QDialog::Accepted==settings_dialog.exec()){
         settings_dialog.saveSettings();
         Settings settings;
         settings.saveToFile(".cryoflare.ini");
+        if(QFileInfo::exists(settings.value("report_template").toString())){
+          report_.loadFromFile(settings.value("report_template").toString());
+        }
         updateTaskWidgets();
         emit settingsChanged();
     }
@@ -892,6 +910,7 @@ void MainWindow::selectFromHistogramChart(float start, float end, bool invert)
 void MainWindow::onStartStopButton(bool start)
 {
     if(start){
+        full_model_->clearData();
         model_->clearData();
     }
     emit startStop(start);
@@ -1045,7 +1064,4 @@ void MainWindow::enableSelection(bool selecting)
     ui->phase_plate->enableSelection(selecting);
     ui->grid_square_chart->enableSelection(selecting);
 }
-
-
-
 

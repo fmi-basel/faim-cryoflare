@@ -20,12 +20,20 @@
 #
 #------------------------------------------------------------------------------
 
-QT       += core gui xml charts printsupport
+QT       += core gui xml charts printsupport network
 greaterThan(QT_MAJOR_VERSION, 5): QT += widgets
 
 TARGET = cryoflare
 TEMPLATE = app
 PRE_TARGETDEPS += ../mrcio/libmrcio.a
+PRE_TARGETDEPS += ../external/botan2/libbotan2.a
+PRE_TARGETDEPS += ../external/qssh/libqssh.a
+PRE_TARGETDEPS += ../external/limereport/3rdparty/libQtZint.a
+PRE_TARGETDEPS += ../external/limereport/limereport/liblimereport.a
+#LIBS += -L$$OUT_PWD/../external/limereport/limereport/ -llimereport
+#LIBS += -L$$OUT_PWD/../external/limereport/3rdparty/ -lQtZint
+INCLUDEPATH += $$PWD/../external/limereport/limereport
+
 
 GIT_VERSION = $$system(git --git-dir $$PWD/../../.git --work-tree $$PWD/../.. describe --always --tags)
 GIT_VERSION ~= s/-/"."
@@ -65,7 +73,10 @@ SOURCES += \
     imagetablesortfilterproxymodel.cpp \
     scatterplotdialog.cpp \
     horizontalheaderview.cpp \
-    tablesummarymodel.cpp
+    tablesummarymodel.cpp \
+    exportdialog.cpp \
+    sshconnectiondialog.cpp \
+    remotefiledialog.cpp
 
 
 
@@ -94,16 +105,28 @@ HEADERS  += \
     imagetablesortfilterproxymodel.h \
     scatterplotdialog.h \
     horizontalheaderview.h \
-    tablesummarymodel.h
+    tablesummarymodel.h \
+    exportdialog.h \
+    sshconnectiondialog.h \
+    remotefiledialog.h
 
 
 FORMS    += \
     mainwindow.ui \
     settingsdialog.ui \
     aboutdialog.ui \
-    scatterplotdialog.ui
+    scatterplotdialog.ui \
+    reportdialog.ui \
+    exportdialog.ui \
+    sshconnectiondialog.ui \
+    remotefiledialog.ui
 
-LIBS     += ../mrcio/libmrcio.a 
+LIBS += ../mrcio/libmrcio.a
+LIBS += ../external/qssh/libqssh.a
+LIBS += ../external/botan2/libbotan2.a
+LIBS += ../external/limereport/limereport/liblimereport.a
+LIBS += ../external/limereport/3rdparty/libQtZint.a
+LIBS += -ldl
 CONFIG += static
 static {
     DEFINES += STATIC
@@ -112,4 +135,7 @@ static {
 
 RESOURCES += \
     app.qrc
+
+DISTFILES +=
+
 

@@ -1,4 +1,4 @@
-#!/bin/sh --noprofile
+#!/bin/bash --noprofile
 
 source_dir="$1"
 destination_dir="$2"

@@ -1,4 +1,4 @@
-#!/bin/sh --noprofile
+#!/bin/bash --noprofile
 
 image=$1
 boxfile=$2

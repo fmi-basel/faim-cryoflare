@@ -35,6 +35,7 @@
 #include <imagetablemodel.h>
 #include "positionchart.h"
 #include "tablesummarymodel.h"
+#include <LimeReport>
 
 namespace Ui {
 class MainWindow;
@@ -77,7 +78,7 @@ public slots:
     void deleteProcessIndicators();
     void displayLinearChartDetails(const QPointF &point, bool state);
     void displayHistogramChartDetails(const QPointF &point, bool state);
-    void exportPlots() const;
+    void writeReport();
     void selectFromLinearChart(float start, float end, bool invert);
     void selectFromHistogramChart(float start, float end, bool invert);
     void onStartStopButton(bool start);
@@ -100,6 +101,8 @@ private:
     void updateTaskWidget_(Settings *settings, QFormLayout *parent_input_layout, QFormLayout *parent_output_layout);
     Ui::MainWindow *ui;
     ImageTableModel *model_;
+    //used for report builder: TODO merge with model_
+    ImageTableModel *full_model_;
     ImageTableSortFilterProxyModel *sort_proxy_;
     TableSummaryModel* summary_model_;
     QLabel *statusbar_queue_count_;
@@ -116,6 +119,8 @@ private:
     QList<InputOutputVariable> default_columns_;
     QAction* scatter_plot_action_;
     QAction* run_script_action_;
+    LimeReport::ReportEngine report_;
+
 };
 
 #endif // MAINWINDOW_H

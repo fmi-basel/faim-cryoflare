@@ -785,7 +785,7 @@ A: Column average</string>
    <sender>export_report</sender>
    <signal>clicked()</signal>
    <receiver>MainWindow</receiver>
-   <slot>exportPlots()</slot>
+   <slot>writeReport()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>1288</x>
@@ -818,6 +818,6 @@ A: Column average</string>
   <slot>phasePlateClicked(int)</slot>
   <slot>gridSquareClicked(int)</slot>
   <slot>enableSelection(bool)</slot>
-  <slot>exportPlots()</slot>
+  <slot>writeReport()</slot>
  </slots>
 </ui>

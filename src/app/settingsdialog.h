@@ -25,6 +25,7 @@
 
 #include <QDialog>
 #include "settings.h"
+#include <LimeReport>
 #include <inputoutputvariable.h>
 
 //fw decl
@@ -41,7 +42,7 @@ class SettingsDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit SettingsDialog(QList<InputOutputVariable> default_columns, QWidget *parent = 0);
+    explicit SettingsDialog(QList<InputOutputVariable> default_columns,LimeReport::ReportEngine *report_engine, QWidget *parent = 0);
     void saveSettings();
     void loadSettings();
     ~SettingsDialog();
@@ -57,6 +58,7 @@ public slots:
     void saveAsDefaults();
     void resetToDefaults();
     void updateVariables(QTreeWidgetItem* new_item, QTreeWidgetItem* old_item);
+    void designReport();
 private:
     Ui::SettingsDialog *ui;
     QMenu *task_tree_menu_;
@@ -66,6 +68,7 @@ private:
     QAction *output_variable_delete_;
     QAction *input_variable_new_;
     QAction *input_variable_delete_;
+    LimeReport::ReportEngine *report_engine_;
 };
 
 #endif // SETTINGSDIALOG_H

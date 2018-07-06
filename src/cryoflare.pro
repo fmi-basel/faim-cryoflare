@@ -26,10 +26,13 @@ CONFIG+=static
  
 SUBDIRS += \
            mrcio  \
-           app
+           external
  
-mrcio.subdir  = mrcio
-app.subdir  = app
+#mrcio.subdir  = mrcio
+#app.subdir  = app
 
-app.depends = mrcio
+#app.depends = mrcio
   
+CONFIG += ordered
+SUBDIRS += app
+

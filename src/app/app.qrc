@@ -15,5 +15,6 @@
         <file>icons/draw-arrow-back.png</file>
         <file>icons/view-no-filter.png</file>
         <file>icons/export-plots.png</file>
+        <file>icons/document-open-remote.png</file>
     </qresource>
 </RCC>

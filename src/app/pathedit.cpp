@@ -33,7 +33,7 @@ PathEdit::PathEdit(QWidget *parent):
     caption_(),
     filter_(),
     path_widget_(new QLineEdit(this)),
-    browse_(new QPushButton("Browse...",this))
+    browse_(new QPushButton(QIcon(":/icons/document-open-folder.png"),"",this))
 {
     QHBoxLayout *layout=new QHBoxLayout();
     layout->addWidget(path_widget_);
@@ -41,6 +41,7 @@ PathEdit::PathEdit(QWidget *parent):
     this->setLayout(layout);
     connect(browse_,SIGNAL(clicked()),this,SLOT(onBrowse()));
     connect(path_widget_,SIGNAL(textChanged(QString)),this,SIGNAL(pathChanged(QString)));
+    browse_->setToolTip("Browse folder");
 }
 
 PathEdit::PathEdit(PathEdit::PathType t, QString caption, QString path, QString filter, QWidget *parent):
