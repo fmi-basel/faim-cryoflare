@@ -3,6 +3,7 @@
 
 #include <QDialog>
 #include <QProgressDialog>
+#include "../external/qssh/sshconnection.h"
 
 namespace Ui {
 class ExportDialog;
@@ -15,13 +16,8 @@ class ExportDialog : public QDialog
 public:
     explicit ExportDialog(QWidget *parent = 0);
     ~ExportDialog();
-public slots:
-    void browseRemoteData();
-    void browseRemoteRawData();
-
 private:
     Ui::ExportDialog *ui;
-    QProgressDialog* progress_dialog_;
 };
 
 #endif // EXPORTDIALOG_H

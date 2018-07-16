@@ -48,7 +48,7 @@ signals:
 public slots:
     void onBrowse();
 
-private:
+protected:
     PathType path_type_;
     QString caption_;
     QString filter_;

@@ -55,7 +55,7 @@
 #include <QTextTable>
 #include "scatterplotdialog.h"
 #include "aboutdialog.h"
-
+#include "exportdialog.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -537,7 +537,9 @@ void MainWindow::inputDataChanged()
 
 void MainWindow::onExport()
 {
-    QString export_path;
+    ExportDialog dialog;
+    dialog.exec();
+    /*QString export_path;
     Settings settings;
     bool ask_destination=settings.value("ask_destination").toBool();
     if(ask_destination){
@@ -553,7 +555,7 @@ void MainWindow::onExport()
             }
         }
         emit exportImages(export_path,images);
-    }
+    }*/
 }
 
 void MainWindow::updateQueueCounts(int cpu_queue, int gpu_queue)

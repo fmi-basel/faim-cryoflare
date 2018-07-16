@@ -24,7 +24,14 @@
       </widget>
      </item>
      <item>
-      <widget class="QLineEdit" name="host"/>
+      <widget class="QLineEdit" name="host">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+         <horstretch>1</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+      </widget>
      </item>
      <item>
       <widget class="QLabel" name="label_2">
@@ -34,7 +41,37 @@
       </widget>
      </item>
      <item>
-      <widget class="QLineEdit" name="user"/>
+      <widget class="QLineEdit" name="user">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+         <horstretch>1</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_4">
+       <property name="text">
+        <string>Port:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="port">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>30</width>
+         <height>16777215</height>
+        </size>
+       </property>
+      </widget>
      </item>
      <item>
       <widget class="QLabel" name="label">
@@ -44,12 +81,25 @@
       </widget>
      </item>
      <item>
-      <widget class="QLineEdit" name="password"/>
+      <widget class="QLineEdit" name="password">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+         <horstretch>1</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="echoMode">
+        <enum>QLineEdit::Password</enum>
+       </property>
+      </widget>
      </item>
      <item>
       <widget class="QPushButton" name="connect">
        <property name="text">
         <string>Connect</string>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
@@ -102,8 +152,8 @@
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>248</x>
-     <y>254</y>
+     <x>913</x>
+     <y>479</y>
     </hint>
     <hint type="destinationlabel">
      <x>157</x>
@@ -118,8 +168,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>316</x>
-     <y>260</y>
+     <x>913</x>
+     <y>479</y>
     </hint>
     <hint type="destinationlabel">
      <x>286</x>
@@ -127,5 +177,24 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>connect</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>RemoteFileDialog</receiver>
+   <slot>connectToHost(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>887</x>
+     <y>29</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>923</x>
+     <y>38</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
+ <slots>
+  <slot>connectToHost(bool)</slot>
+ </slots>
 </ui>

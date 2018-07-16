@@ -38,7 +38,7 @@ PathEdit::PathEdit(QWidget *parent):
     QHBoxLayout *layout=new QHBoxLayout();
     layout->addWidget(path_widget_);
     layout->addWidget(browse_);
-    this->setLayout(layout);
+    setLayout(layout);
     connect(browse_,SIGNAL(clicked()),this,SLOT(onBrowse()));
     connect(path_widget_,SIGNAL(textChanged(QString)),this,SIGNAL(pathChanged(QString)));
     browse_->setToolTip("Browse folder");

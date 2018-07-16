@@ -268,6 +268,8 @@ void SftpFileSystemModel::shutDown()
     }
     if (d->sshConnection) {
         disconnect(d->sshConnection, 0, this, 0);
+        // forced discconect to avoid crash at application exit
+        d->sshConnection->disconnectFromHost();
         SshConnectionManager::instance().releaseConnection(d->sshConnection);
         d->sshConnection = 0;
     }
@@ -300,6 +302,7 @@ void SftpFileSystemModel::handleSshConnectionEstablished()
     connect(d->sftpChannel.data(), SIGNAL(initializationFailed(QString)),
         SLOT(handleSftpChannelInitializationFailed(QString)));
     d->sftpChannel->initialize();
+    emit connectionEstablished();
 }
 
 void SftpFileSystemModel::handleSftpChannelInitializationFailed(const QString &reason)

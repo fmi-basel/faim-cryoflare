@@ -78,6 +78,9 @@ signals:
      */
     void connectionError(const QString &errorMessage);
 
+    // emitted after connection is established
+    void connectionEstablished();
+
     // Success <=> error.isEmpty().
     void sftpOperationFinished(QSsh::SftpJobId, const QString &error);
 

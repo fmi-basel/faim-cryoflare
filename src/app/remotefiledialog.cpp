@@ -1,44 +1,91 @@
 #include "remotefiledialog.h"
 #include "ui_remotefiledialog.h"
 #include "../external/qssh/sftpfilesystemmodel.h"
+#include "../external/qssh/sshconnection.h"
 
-RemoteFileDialog::RemoteFileDialog(QWidget *parent) :
+RemoteFileDialog::RemoteFileDialog(const QUrl& remote_path,QWidget *parent) :
     QDialog(parent),
     ui(new Ui::RemoteFileDialog),
-    model_(new QSsh::SftpFileSystemModel(this)),
-    ssh_params_()
+    model_(new QSsh::SftpFileSystemModel()),
+    remote_path_(remote_path)
 {
     ui->setupUi(this);
-}
-
-QString RemoteFileDialog::path()
-{
-    return model_->data(ui->tree->currentIndex()).toString();
-}
-
-QSsh::SshConnectionParameters RemoteFileDialog::connectionParameters()
-{
-    return ssh_params_;
-}
-
-QPair<QSsh::SshConnectionParameters, QString> RemoteFileDialog::getRemotePath()
-{
-    RemoteFileDialog dialog;
-    if(dialog.exec()==QDialog::Accepted && dialog.path()!=QString()){
-        return QPair<QSsh::SshConnectionParameters, QString>(dialog.connectionParameters(),dialog.path());
+    ui->tree->setModel(model_);
+    connect(model_,&QSsh::SftpFileSystemModel::connectionError,this,&RemoteFileDialog::onConnectionError);
+    connect(model_,&QSsh::SftpFileSystemModel::connectionEstablished,this,&RemoteFileDialog::onConnectionEstablished);
+    if(remote_path.isValid()){
+        ui->host->setText(remote_path.host());
+        ui->user->setText(remote_path.userName());
+        ui->port->setText(QString("%1").arg(remote_path.port()));
+        ui->password->setText(remote_path.password());
+        //if(!remote_path.path().isEmpty()){
+         // sftp filesystem model doesn't provide a way to get the index for a remote path
+         // therefore it is currently not possible to set the current index of the view to the previous path
+        //}
     }
-    return QPair<QSsh::SshConnectionParameters, QString>();
+    remote_path_.setScheme("sftp");
+}
+
+QUrl RemoteFileDialog::remotePath() const
+{
+    QString path=model_->data(ui->tree->currentIndex(),QSsh::SftpFileSystemModel::PathRole).toString();
+    if(path.isEmpty()){
+        return QUrl();
+    }
+    QUrl remote_path=remote_path_;
+    remote_path.setPath(path);
+    return remote_path;
+}
+
+
+QUrl RemoteFileDialog::getRemotePath(const QUrl& path )
+{
+    RemoteFileDialog dialog(path);
+    if(dialog.exec()==QDialog::Accepted){
+        QUrl new_path=dialog.remotePath();
+        if(new_path.isValid()){
+            return new_path;
+        }
+    }
+    return QUrl();
 }
 
 RemoteFileDialog::~RemoteFileDialog()
 {
     delete ui;
+    delete model_;
 }
 
-void RemoteFileDialog::connectToHost()
+void RemoteFileDialog::connectToHost(bool con)
 {
-    ssh_params_.host=ui->host->text();
-    ssh_params_.userName=ui->user->text();
-    ssh_params_.password=ui->password->text();
-    model_->setSshConnection(ssh_params_);
+    if(con){
+        //connect
+        ui->message->setText("Connecting ...");
+        QSsh::SshConnectionParameters params;
+        remote_path_.setHost(ui->host->text());
+        remote_path_.setUserName(ui->user->text());
+        remote_path_.setPassword(ui->password->text());
+        remote_path_.setPort(ui->port->text().toInt());
+        params.host=ui->host->text();
+        params.userName=ui->user->text();
+        params.password=ui->password->text();
+        params.authenticationType=QSsh::SshConnectionParameters::AuthenticationByPassword;
+        params.timeout=10;
+        params.port=ui->port->text().toInt();
+        params.proxyType=QSsh::SshConnectionParameters::NoProxy;
+        model_->setSshConnection(params);
+
+    }else{
+        //disconnect
+    }
+}
+
+void RemoteFileDialog::onConnectionEstablished()
+{
+    ui->message->setText("Connected");
+}
+
+void RemoteFileDialog::onConnectionError(const QString &error)
+{
+    ui->message->setText("Connection Error: "+error);
 }

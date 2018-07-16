@@ -30,27 +30,7 @@
       </widget>
      </item>
      <item>
-      <widget class="PathEdit" name="data_path" native="true"/>
-     </item>
-     <item>
-      <widget class="QPushButton" name="data_browse_remote">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="toolTip">
-        <string>Browse remote folder</string>
-       </property>
-       <property name="text">
-        <string/>
-       </property>
-       <property name="icon">
-        <iconset resource="app.qrc">
-         <normaloff>:/icons/document-open-remote.png</normaloff>:/icons/document-open-remote.png</iconset>
-       </property>
-      </widget>
+      <widget class="RemotePathEdit" name="data_path" native="true"/>
      </item>
     </layout>
    </item>
@@ -77,27 +57,7 @@
       </widget>
      </item>
      <item>
-      <widget class="PathEdit" name="raw_data_path" native="true"/>
-     </item>
-     <item>
-      <widget class="QPushButton" name="raw_data_browse_remote">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="toolTip">
-        <string>Browse remote folder</string>
-       </property>
-       <property name="text">
-        <string/>
-       </property>
-       <property name="icon">
-        <iconset resource="app.qrc">
-         <normaloff>:/icons/document-open-remote.png</normaloff>:/icons/document-open-remote.png</iconset>
-       </property>
-      </widget>
+      <widget class="RemotePathEdit" name="raw_data_path" native="true"/>
      </item>
     </layout>
    </item>
@@ -161,15 +121,13 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>PathEdit</class>
+   <class>RemotePathEdit</class>
    <extends>QWidget</extends>
-   <header>pathedit.h</header>
+   <header>remotepathedit.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
- <resources>
-  <include location="app.qrc"/>
- </resources>
+ <resources/>
  <connections>
   <connection>
    <sender>buttonBox</sender>
@@ -216,54 +174,6 @@
     <hint type="destinationlabel">
      <x>155</x>
      <y>86</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>checkBox</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>raw_data_browse_remote</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>61</x>
-     <y>53</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>698</x>
-     <y>82</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>data_browse_remote</sender>
-   <signal>clicked()</signal>
-   <receiver>ExportDialog</receiver>
-   <slot>browseRemoteData()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>689</x>
-     <y>19</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>711</x>
-     <y>104</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>raw_data_browse_remote</sender>
-   <signal>clicked()</signal>
-   <receiver>ExportDialog</receiver>
-   <slot>browseRemoteRawData()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>695</x>
-     <y>91</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>675</x>
-     <y>98</y>
     </hint>
    </hints>
   </connection>

@@ -75,8 +75,8 @@ SOURCES += \
     horizontalheaderview.cpp \
     tablesummarymodel.cpp \
     exportdialog.cpp \
-    sshconnectiondialog.cpp \
-    remotefiledialog.cpp
+    remotefiledialog.cpp \
+    remotepathedit.cpp
 
 
 
@@ -108,7 +108,8 @@ HEADERS  += \
     tablesummarymodel.h \
     exportdialog.h \
     sshconnectiondialog.h \
-    remotefiledialog.h
+    remotefiledialog.h \
+    remotepathedit.h
 
 
 FORMS    += \
@@ -117,7 +118,6 @@ FORMS    += \
     aboutdialog.ui \
     scatterplotdialog.ui \
     exportdialog.ui \
-    sshconnectiondialog.ui \
     remotefiledialog.ui
 
 LIBS += ../mrcio/libmrcio.a
