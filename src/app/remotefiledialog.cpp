@@ -7,10 +7,14 @@ RemoteFileDialog::RemoteFileDialog(const QUrl& remote_path,QWidget *parent) :
     QDialog(parent),
     ui(new Ui::RemoteFileDialog),
     model_(new QSsh::SftpFileSystemModel()),
+    proxy_(new QSortFilterProxyModel(this)),
     remote_path_(remote_path)
 {
     ui->setupUi(this);
-    ui->tree->setModel(model_);
+    ui->tree->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    proxy_->setSourceModel(model_);
+    ui->tree->setModel(proxy_);
+    proxy_->sort(1);
     connect(model_,&QSsh::SftpFileSystemModel::connectionError,this,&RemoteFileDialog::onConnectionError);
     connect(model_,&QSsh::SftpFileSystemModel::connectionEstablished,this,&RemoteFileDialog::onConnectionEstablished);
     if(remote_path.isValid()){
@@ -28,7 +32,7 @@ RemoteFileDialog::RemoteFileDialog(const QUrl& remote_path,QWidget *parent) :
 
 QUrl RemoteFileDialog::remotePath() const
 {
-    QString path=model_->data(ui->tree->currentIndex(),QSsh::SftpFileSystemModel::PathRole).toString();
+    QString path=proxy_->data(ui->tree->currentIndex(),QSsh::SftpFileSystemModel::PathRole).toString();
     if(path.isEmpty()){
         return QUrl();
     }

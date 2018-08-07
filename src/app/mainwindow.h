@@ -47,6 +47,7 @@ class Settings;
 class QFormLayout;
 class QVBoxLayout;
 class ProcessIndicator;
+class ExportProgressDialog;
 
 class MainWindow : public QMainWindow
 {
@@ -89,12 +90,15 @@ public slots:
     void gridSquareSelectionFinished(QRect rubberBandRect, QPointF fromScenePoint, QPointF toScenePoint);
     void displayScatterPlot();
     void enableSelection(bool selecting);
+    void onExportStarted(const QString& message, int num_files);
+    void onExportMessage(int left, const QList<ExportMessage>& messages);
+    void onExportFinished();
 
 signals:
     void startStop(bool start);
     void settingsChanged();
-    void exportImages(const QString& path,const QStringList& images);
-
+    void exportImages(const QUrl& destiantion_path,const QUrl& raw_destiantion_path,const QStringList& images);
+    void cancelExport();
 private slots:
 
 private:
@@ -120,6 +124,7 @@ private:
     QAction* scatter_plot_action_;
     QAction* run_script_action_;
     LimeReport::ReportEngine report_;
+    ExportProgressDialog* export_progress_dialog_;
 
 };
 

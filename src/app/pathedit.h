@@ -43,6 +43,9 @@ public:
     QString path() const;
     void setPath(const QString &path);
 
+    PathType pathType() const;
+    void setPathType(const PathType &pathType);
+
 signals:
     void pathChanged(QString);
 public slots:

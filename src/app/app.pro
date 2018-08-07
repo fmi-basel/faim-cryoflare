@@ -76,7 +76,8 @@ SOURCES += \
     tablesummarymodel.cpp \
     exportdialog.cpp \
     remotefiledialog.cpp \
-    remotepathedit.cpp
+    remotepathedit.cpp \
+    exportprogressdialog.cpp
 
 
 
@@ -107,9 +108,9 @@ HEADERS  += \
     horizontalheaderview.h \
     tablesummarymodel.h \
     exportdialog.h \
-    sshconnectiondialog.h \
     remotefiledialog.h \
-    remotepathedit.h
+    remotepathedit.h \
+    exportprogressdialog.h
 
 
 FORMS    += \
@@ -118,7 +119,8 @@ FORMS    += \
     aboutdialog.ui \
     scatterplotdialog.ui \
     exportdialog.ui \
-    remotefiledialog.ui
+    remotefiledialog.ui \
+    exportprogressdialog.ui
 
 LIBS += ../mrcio/libmrcio.a
 LIBS += ../external/qssh/libqssh.a

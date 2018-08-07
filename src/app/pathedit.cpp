@@ -88,3 +88,13 @@ void PathEdit::onBrowse()
         path_widget_->setText(new_path);
     }
 }
+
+PathEdit::PathType PathEdit::pathType() const
+{
+    return path_type_;
+}
+
+void PathEdit::setPathType(const PathEdit::PathType &path_type)
+{
+    path_type_ = path_type;
+}

@@ -145,7 +145,7 @@ rm $destination_path/micrographs_all_gctf.star >& /dev/null
 
 
 gctf_defocus=`CALCULATE \($defocus_u+$defocus_v\)/2.0`
-gctf_astigmatism=`CALCULATE \($defocus_u-$defocus_v\)/2.0`
+gctf_astigmatism=`CALCULATE abs\($defocus_u-$defocus_v\)/2.0`
 gctf_defocus_angle=`echo $measured_defocus|cut -f3 -d" "`
 
 

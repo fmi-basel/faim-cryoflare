@@ -2,6 +2,7 @@
 #define REMOTEFILEDIALOG_H
 
 #include <QDialog>
+#include <QSortFilterProxyModel>
 #include <QUrl>
 
 //fw decl
@@ -30,6 +31,7 @@ public slots:
 private:
     Ui::RemoteFileDialog *ui;
     QSsh::SftpFileSystemModel* model_;
+    QSortFilterProxyModel* proxy_;
     QUrl remote_path_;
 };
 

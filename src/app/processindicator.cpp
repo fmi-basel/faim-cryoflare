@@ -60,6 +60,10 @@ void ProcessIndicator::finished()
 
 void ProcessIndicator::displayTooltip()
 {
+    if(!elapsed_.isValid()){
+        QToolTip::hideText();
+        return;
+    }
     QToolTip::showText(pos_, display_string_.arg(task_).arg(process_id_).arg(image_).arg(elapsed_.elapsed()/1000.0));
 }
 

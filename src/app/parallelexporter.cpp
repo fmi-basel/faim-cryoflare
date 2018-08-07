@@ -20,6 +20,7 @@
 //
 //------------------------------------------------------------------------------
 
+#include <unistd.h>
 #include <iostream>
 #include <QDir>
 #include <QDebug>
@@ -27,190 +28,549 @@
 #include <QProgressDialog>
 #include <QProcess>
 #include <QThread>
-#include <QMutex>
-#include <QMutexLocker>
+#include <QSet>
+#include <QtAlgorithms>
 #include "parallelexporter.h"
+ExportWorkerBase::ExportWorkerBase(int id, QSharedPointer<ThreadSafeQueue<WorkItem> > queue, const QString &source, const QUrl &destination, const QStringList &images, Barrier &b):
+    QObject(),
+    queue_(queue),
+    source_(source),
+    destination_(destination),
+    images_(images),
+    image_name_("\\d{8}_\\d{6}"),
+    message_buffer_(),
+    barrier_(b),
+    id_(id),
+    busy_(false)
+{
+    // queued connection here to allow signal to reach main event loop as well
+    connect(this,&ExportWorkerBase::next,this,&ExportWorkerBase::processNext_,Qt::QueuedConnection);
+}
 
-Worker::Worker(const QString &source, const QString &destination, QQueue<QSet<QString> > *queue, QMutex *mutex, const QString &mode, const QString &script,QObject *parent):
+ExportWorkerBase::~ExportWorkerBase()
+{
+
+}
+
+
+bool ExportWorkerBase::busy() const
+{
+    return busy_;
+}
+
+
+QList<ExportMessage> ExportWorkerBase::messages()
+{
+    QList<ExportMessage> result=message_buffer_.list();
+    message_buffer_.clear();
+    return result;
+}
+
+void ExportWorkerBase::startExport()
+{
+    startImpl_();
+}
+
+void ExportWorkerBase::error_(const QString &error)
+{
+    message_buffer_.append(ExportMessage(id_,ExportMessage::ERROR,error));
+}
+
+void ExportWorkerBase::message_(const QString &message)
+{
+    message_buffer_.append(ExportMessage(id_,ExportMessage::MESSAGE,message));
+}
+
+QTemporaryFile* ExportWorkerBase::filter_(const QString &source_path) const
+{
+    QTemporaryFile* temp_file=new QTemporaryFile();
+    temp_file->open();
+    QFile file(source_path);
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)){
+        return nullptr;
+    }
+    while (!file.atEnd()) {
+        QByteArray line = file.readLine();
+        QRegularExpressionMatch match = image_name_.match(line);
+        if(match.hasMatch()){
+            if(images_.contains(match.captured(0))){
+                temp_file->write(line);
+            }
+        }else{
+            temp_file->write(line);
+        }
+    }
+    return temp_file;
+}
+
+int ExportWorkerBase::id() const
+{
+    return id_;
+}
+
+void ExportWorkerBase::processNext_()
+{
+    processNextImpl_();
+}
+
+
+LocalExportWorker::LocalExportWorker(int id, QSharedPointer<ThreadSafeQueue<WorkItem> > queue, const QString &source, const QUrl &destination, const QStringList &images, Barrier &b):
+    ExportWorkerBase(id,queue,source,destination,images,b)
+{
+
+}
+
+void LocalExportWorker::startImpl_()
+{
+    if(!busy()){
+        processNext_();
+    }
+}
+
+void LocalExportWorker::processNextImpl_()
+{
+    busy_=true;
+    if(queue_->empty()){
+        busy_=false;
+        return;
+    }
+    WorkItem item=queue_->dequeue();
+    switch(item.type){
+    case WorkItem::FILE:
+        copyFile_(item);
+        break;
+    case WorkItem::DIRECTORY:
+        createDirectory_(item);
+        break;
+    case WorkItem::BARRIER:
+        barrier_.wait();
+        break;
+    default:
+        break;
+    }
+    emit next();
+}
+void LocalExportWorker::copyFile_(const WorkItem &item)
+{
+    QString path=source_.absoluteFilePath(item.filename);
+    if(!QFileInfo(path).exists()){
+        error_(QString("Skipping missing file: %1").arg(item.filename));
+    }else{
+        // filter file
+        QSharedPointer<QFile> source_file;
+        if(item.filter){
+            QTemporaryFile* temp_file=filter_(path);
+            if(!temp_file){
+                return;
+            }
+            source_file=QSharedPointer<QFile>(temp_file);
+        }else{
+            source_file=QSharedPointer<QFile>(new QFile(path));
+        }
+        if(!source_file->copy(QDir(destination_.path()).absoluteFilePath(item.filename))){
+            error_("Error copying file: "+item.filename);
+        }else{
+            message_("Copied: "+item.filename);
+        }
+    }
+}
+
+void LocalExportWorker::createDirectory_(const WorkItem& item)
+{
+    foreach(QString dirname, item.directories){
+        QString abs_dir_name=QDir(destination_.path()).absoluteFilePath(dirname);
+        QDir dir(abs_dir_name);
+        if(!dir.exists()){
+            QString dirname=dir.dirName();
+            dir.cdUp();
+            if(!dir.mkpath(dirname)){
+                error_("Error creating directory: "+dirname);
+            }
+        }
+    }
+}
+
+
+RemoteExportWorker::RemoteExportWorker(int id, QSharedPointer<ThreadSafeQueue<WorkItem> > queue, const QString &source, const QUrl &destination, const QStringList &images, Barrier &b):
+    ExportWorkerBase(id,queue,source,destination,images,b),
+    connection_parameters_(),
+    ssh_connection_(nullptr),
+    channel_(),
+    sftp_ops_(),
+    current_item_(),
+    temp_files_()
+{
+    connection_parameters_.host = destination_.host();
+    connection_parameters_.userName = destination_.userName();
+    connection_parameters_.password = destination_.password();
+    connection_parameters_.authenticationType = QSsh::SshConnectionParameters::AuthenticationByPassword;
+    connection_parameters_.timeout = 30;
+    connection_parameters_.port = static_cast<quint16>(destination_.port());
+}
+
+void RemoteExportWorker::startImpl_()
+{
+    if(!busy()){
+        if(ssh_connection_){
+            switch(ssh_connection_->state()){
+            case QSsh::SshConnection::Unconnected:
+                ssh_connection_->connectToHost();
+                break;
+            case QSsh::SshConnection::Connecting:
+                break;
+            case QSsh::SshConnection::Connected:
+                processNext_();
+                break;
+            }
+        }else{
+            message_("Starting connection");
+            ssh_connection_=new QSsh::SshConnection(connection_parameters_, this);
+            connect(ssh_connection_,&QSsh::SshConnection::connected,this,&RemoteExportWorker::connected_);
+            connect(ssh_connection_,&QSsh::SshConnection::error,this,&RemoteExportWorker::connectionFailed_);
+            ssh_connection_->connectToHost();
+        }
+    }
+}
+
+
+void RemoteExportWorker::processNextImpl_()
+{
+    busy_=true;
+    if(queue_->empty()){
+        busy_=false;
+        message_("idle");
+        return;
+    }
+    current_item_=queue_->dequeue();
+    switch(current_item_.type){
+    case WorkItem::FILE:
+        copyFile_();
+        break;
+    case WorkItem::DIRECTORY:
+        checkDestinationDirectory_();
+        break;
+    case WorkItem::BARRIER:
+        barrier_.wait();
+        emit next();
+        break;
+    default:
+        break;
+    }
+}
+
+void RemoteExportWorker::copyFile_()
+{
+    QString path=source_.absoluteFilePath(current_item_.filename);
+    if(!QFileInfo(path).exists()){
+        error_(QString("Skipping missing file: %1").arg(current_item_.filename));
+        emit next();
+        return;
+    }
+    if(QFileInfo(path).isSymLink()){
+        // check for existence of symlink at destination
+        QSsh::SftpJobId id=channel_->statFile(QDir(destination_.path()).absoluteFilePath(current_item_.filename));
+        sftp_ops_.insert(id,LinkStat);
+    }else{
+        if(current_item_.filter){
+            QTemporaryFile* temp_file=filter_(path);
+            if(!temp_file){
+                error_(QString("Could not create temporary file for filtering: %1").arg(current_item_.filename));
+                emit next();
+                return;
+            }
+            QSsh::SftpJobId id=channel_->uploadFile(temp_file->fileName(), QDir(destination_.path()).absoluteFilePath(current_item_.filename), QSsh::SftpAppendToExisting);
+            sftp_ops_.insert(id,Copy);
+            // store pointer to keep temp file around until op finishes
+            temp_files_.insert(id,QSharedPointer<QTemporaryFile>(temp_file));
+        }else{
+            QSsh::SftpJobId id=channel_->uploadFile(path, QDir(destination_.path()).absoluteFilePath(current_item_.filename), QSsh::SftpAppendToExisting);
+            sftp_ops_.insert(id,Copy);
+        }
+    }
+}
+
+void RemoteExportWorker::checkDestinationDirectory_()
+{
+    QSsh::SftpJobId id=channel_->statFile(QDir(destination_.path()).absoluteFilePath(current_item_.directories.first()));
+    sftp_ops_.insert(id,DirStat);
+}
+
+void RemoteExportWorker::createDirectory_()
+{
+    QSsh::SftpJobId id=channel_->createDirectory(QDir(destination_.path()).absoluteFilePath(current_item_.directories.first()));
+    sftp_ops_.insert(id,MkDir);
+}
+
+
+
+void RemoteExportWorker::createLink_()
+{
+    bool is_open_ssh=true;
+    QByteArray buffer(2048,0);
+    ssize_t len=readlink(current_item_.filename.toLatin1().data(), buffer.data(), static_cast<size_t>(buffer.size()));
+    if(len>0){
+        QSsh::SftpJobId id;
+        if(is_open_ssh){
+            // Open SSH expects reverse order of arguments for symlinks
+            id=channel_->createLink(QString(buffer),QDir(destination_.path()).absoluteFilePath(current_item_.filename));
+        }else{
+            id=channel_->createLink(QDir(destination_.path()).absoluteFilePath(current_item_.filename),QString(buffer));
+        }
+        sftp_ops_.insert(id,Link);
+    }else{
+        error_(QString("Error reading local symlink: %1").arg(current_item_.filename));
+        next();
+    }
+}
+
+
+void RemoteExportWorker::connected_()
+{
+    message_("Connected");
+    channel_=ssh_connection_->createSftpChannel();
+    connect(channel_.data(),&QSsh::SftpChannel::initialized,this,&RemoteExportWorker::initialized_);
+    connect(channel_.data(),&QSsh::SftpChannel::initializationFailed,this,&RemoteExportWorker::initializationFailed_);
+    connect(channel_.data(),&QSsh::SftpChannel::finished,this,&RemoteExportWorker::sftpOpFinished_);
+    connect(channel_.data(),&QSsh::SftpChannel::fileInfoAvailable,this,&RemoteExportWorker::fileInfo_);
+    channel_->initialize();
+}
+
+void RemoteExportWorker::connectionFailed_()
+{
+    error_("SSH connection failed");
+}
+
+void RemoteExportWorker::initialized_()
+{
+    message_("Initialized");
+    processNext_();
+}
+
+void RemoteExportWorker::initializationFailed_()
+{
+    error_("SFTP channel inizialization failed");
+}
+
+void RemoteExportWorker::sftpOpFinished_(QSsh::SftpJobId job, const QString &err)
+{
+    //message_(QString("Finished job: %1").arg(job));
+    if(!sftp_ops_.contains(job)){
+        error_(QString("Unknown sftp job id encountered: %1").arg(job));
+    }
+    OpType op=sftp_ops_.take(job);
+    switch (op) {
+    case Copy:
+        if(temp_files_.contains(job)){
+            temp_files_.remove(job);
+        }
+        if(err!=""){
+            error_(QString("Couldn't copy file: %1 (%2)").arg(QDir(destination_.path()).absoluteFilePath(current_item_.filename)).arg(err));
+        }else{
+            message_(QString("Copied file: %1").arg(QDir(destination_.path()).absoluteFilePath(current_item_.filename)));
+        }
+        next();
+        break;
+    case Link:
+        if(err!=""){
+            error_(QString("Couldn't create link: %1").arg(QDir(destination_.path()).absoluteFilePath(current_item_.filename)));
+        }else{
+            message_(QString("Created link: %1").arg(QDir(destination_.path()).absoluteFilePath(current_item_.filename)));
+        }
+        next();
+        break;
+    case LinkStat:
+        if(err!=""){
+            // link doesn't exist at destination and has to be created
+            createLink_();
+        }else{
+            // nothing to do here as succesful LinkStat will be handled in fileInfo_
+        }
+        break;
+    case MkDir:
+        if(err!=""){
+            QString dir_path=current_item_.directories.first();
+            message_(QString("MkDir err: %1 (%2)").arg(QDir(destination_.path()).absoluteFilePath(dir_path)).arg(err));
+            emit  next();
+        }else{
+            current_item_.directories.takeFirst();
+            if(!current_item_.directories.empty()){
+                checkDestinationDirectory_();
+            }else{
+                emit next();
+            }
+        }
+        break;
+    case DirStat:
+        if(err!=""){
+            // directory doesn't exist at destination and has to be created
+            createDirectory_();
+        }else{
+            // nothing to do here as succesful DirStat will be handled in fileInfo_
+        }
+        break;
+    case NoOp:
+    default:
+        if(err!=""){
+            error_(err);
+        }
+        break;
+    }
+}
+
+
+void RemoteExportWorker::fileInfo_(QSsh::SftpJobId job, const QList<QSsh::SftpFileInfo> &file_info_list)
+{
+    if(!sftp_ops_.contains(job)){
+        error_(QString("Unknown sftp job id encountered: %1").arg(job));
+    }
+    OpType op=sftp_ops_.value(job);
+    switch(op){
+    case DirStat:
+        // Directory path exists at destiantion. Emit error if it is not a directory
+        if(file_info_list[0].type!=QSsh::FileTypeDirectory){
+            error_(QString("Path %1 exists, but is not a directory.").arg(QDir(destination_.path()).absoluteFilePath(current_item_.directories.first())));
+            current_item_=WorkItem();
+            emit next();
+        }else{
+            current_item_.directories.takeFirst();
+            if(!current_item_.directories.empty()){
+                checkDestinationDirectory_();
+            }else{
+                emit next();
+            }
+        }
+        break;
+    case LinkStat:
+        if(file_info_list[0].type==QSsh::FileTypeOther ||file_info_list[0].type==QSsh::FileTypeRegular){
+            // Assume that the link already exists
+        }else{
+            error_(QString("Path %1 exists, but is not a link. Encountered filetype %2.").arg(QDir(destination_.path()).absoluteFilePath(current_item_.filename)).arg(file_info_list[0].type));
+        }
+        emit next();
+        break;
+    default:
+        break;
+    }
+
+}
+
+
+
+
+
+ParallelExporter::ParallelExporter(const QString &source, const QUrl &destination,const QStringList& images, int num_threads,QObject *parent):
     QObject(parent),
     source_(source),
     destination_(destination),
-    queue_(queue),
-    mutex_(mutex),
-    mode_(mode),
-    script_(script),
-    output_(),
-    error_()
+    images_(images),
+    num_threads_(num_threads),
+    queue_(new ThreadSafeQueue<WorkItem>()),
+    started_(false),
+    workers_(),
+    message_timer_(),
+    barrier_(num_threads)
 {
-}
-
-Worker::~Worker(){}
-
-void Worker::process() {
-    while(true){
-        QSet<QString> file_list;
-        {
-            QMutexLocker locker(mutex_);
-            if(queue_->empty()){
-                emit finished(output_,error_);
-                return;
-            }
-            file_list=queue_->dequeue();
-        }
-        if(mode_=="custom"){
-            QProcess process;
-            QStringList arguments;
-            arguments << source_ << destination_;
-            arguments+=file_list.values();
-            process.start(script_,arguments);
-            process.waitForFinished(-1);
-            output_.append(process.readAllStandardOutput());
-            error_.append(process.readAllStandardError());
-        }else if(mode_=="move"){
-            foreach(QString relative_file,file_list){
-                QFile(QDir(source_).absoluteFilePath(relative_file)).rename(QDir(destination_).absoluteFilePath(relative_file));
-            }
+    for(int i=0;i<num_threads_ ;++i){
+        QThread* thread = new QThread();
+        ExportWorkerBase* w;
+        if(destination.isLocalFile()){
+            w=new LocalExportWorker(i+1, queue_,source, destination, images,barrier_);
         }else{
-            foreach(QString relative_file,file_list){
-                QFile(QDir(source_).absoluteFilePath(relative_file)).copy(QDir(destination_).absoluteFilePath(relative_file));
-            }
+            w=new RemoteExportWorker(i+1, queue_,source, destination, images,barrier_);
         }
-        emit nextImage();
-    }
-}
-
-
-ParallelExporter::ParallelExporter(QObject *parent):
-    QObject(parent),
-    queue_(),
-    num_tasks_(0),
-    num_tasks_done_(0),
-    dialog_(NULL),
-    mutex_(),
-    num_threads_(),
-    post_script_(),
-    post_arguments_(),
-    output_(),
-    error_()
-{
-
-}
-
-void ParallelExporter::exportImages(const QString &source, const QString &destination, QQueue<QSet<QString> > &image_list, int num_processes, const QString &mode, const QString &custom_script, const QString &pre_script, const QString &post_script,const QStringList& image_names)
-{
-    if(!queue_.empty()){
-        return;
-    }
-    post_script_=post_script;
-    queue_=image_list;
-    num_tasks_=image_list.size()+2;
-
-    if (qobject_cast<QApplication*>(QCoreApplication::instance())) {
-        //GUI
-        dialog_=new QProgressDialog("Exporting images...", "Abort Export", 0, num_tasks_,QApplication::topLevelWidgets()[0]);
-        dialog_->setWindowModality(Qt::ApplicationModal);
-        dialog_->setMinimumDuration(0);
-        dialog_->show();
-        connect(dialog_, SIGNAL(canceled()), this, SLOT(cancel()));
-    }else{
-        std::cerr << "[" << std::string(78,'-') << "]\r";
-    }
-
-    QStringList pre_post_arguments;
-    pre_post_arguments << source << destination;
-    pre_post_arguments+=image_names;
-    post_arguments_=pre_post_arguments;
-    if(pre_script.size()){
-        QProcess process;
-        process.start(pre_script,pre_post_arguments);
-        process.waitForFinished(-1);
-        QFile file(QDir(destination).absoluteFilePath("pre_export_out.log"));
-        file.open(QIODevice::WriteOnly);
-        file.write(process.readAllStandardOutput());
-        file.close();
-        QFile file_error(QDir(destination).absoluteFilePath("pre_export_error.log"));
-        file_error.open(QIODevice::WriteOnly);
-        file_error.write(process.readAllStandardError());
-        file_error.close();
-    }
-    updateProgress();
-    num_threads_=0;
-    for(int i=0;i<num_processes && i< image_list.size();++i){
-        ++num_threads_;
-        QThread* thread = new QThread(this);
-        Worker* worker = new Worker(source,destination,&queue_,&mutex_,mode,custom_script);
-        worker->moveToThread(thread);
-        connect(worker, SIGNAL (nextImage()), this, SLOT (updateProgress()));
-        connect(thread, SIGNAL (started()), worker, SLOT (process()));
-        connect(worker, SIGNAL (finished(QByteArray,QByteArray)), this, SLOT (runPost(QByteArray,QByteArray)));
-        connect(worker, SIGNAL (finished(QByteArray,QByteArray)), thread, SLOT (quit()));
-        connect(worker, SIGNAL (finished(QByteArray,QByteArray)), worker, SLOT (deleteLater()));
-        connect(thread, SIGNAL (finished()), thread, SLOT (deleteLater()));
+        workers_.append(w);
+        w->moveToThread(thread);
+        connect(this,&ParallelExporter::newFiles,w,&ExportWorkerBase::startExport);
+        // Proper connect sequence crucial here
+        // See https://mayaposch.wordpress.com/2011/11/01/how-to-really-truly-use-qthreads-the-full-explanation/ for details
+        connect(this,&ParallelExporter::deleteThreads,thread,&QThread::quit);
+        connect(this,&ParallelExporter::deleteThreads,w,&ExportWorkerBase::deleteLater);
+        connect(thread,&QThread::finished,thread,&QThread::deleteLater);
         thread->start();
     }
+    message_timer_.start(1000);
+    connect(&message_timer_,&QTimer::timeout,this,&ParallelExporter::getMessages);
+
 }
 
-
-
-void ParallelExporter::updateProgress()
+ParallelExporter::~ParallelExporter()
 {
-    ++num_tasks_done_;
-    qDebug() << "num tasks done: " << num_tasks_done_ <<"/" << num_tasks_;
-    if(dialog_){
-        dialog_->setValue(num_tasks_done_);
-    }else{
-        if(num_tasks_done_==num_tasks_){
-            std::cerr << "[" << std::string(78,'#') << "]\n";
-        }else{
-            int progressed=num_tasks_done_*78/num_tasks_;
-            std::cerr << "[" << std::string(progressed,'#') << std::string(78-progressed,'-') << "]\r";
+    emit deleteThreads();
+}
+
+void ParallelExporter::addImages(const QStringList &files, bool filter)
+{
+    QList<WorkItem> work_items;
+    QHash<QString,QSet<QString>> directories;
+    foreach(QString f,files){
+        QString path=QFileInfo(f).path();
+        if(path=="."){
+            continue;
+        }
+        QStringList splitted_path=path.split("/",QString::SkipEmptyParts);
+        if(!directories.contains(splitted_path[0])){
+            directories.insert(splitted_path[0],QSet<QString>());
+        }
+        for(int i=1;i<=splitted_path.size();++i){
+            directories[splitted_path[0]].insert(splitted_path.mid(0,i).join("/"));
         }
     }
+    if(!directories.empty()){
+        work_items.append(WorkItem::createBarrier());
+        foreach(QString key,directories.keys()){
+            QList<QString> dir_paths=directories[key].toList();
+            qSort(dir_paths);
+            work_items.append(WorkItem::createDirectory(dir_paths));
+        }
+        work_items.append(WorkItem::createBarrier());
+    }
+    foreach(QString f,files){
+        if(filter){
+            work_items.append(WorkItem::createFile(f,true));
+        }else{
+            work_items.append(WorkItem::createFile(f,false));
+        }
+    }
+    queue_->append(work_items);
+    if(started_){
+        emit newFiles();
+    }
+}
 
+QUrl ParallelExporter::destination() const
+{
+    return destination_;
+}
+
+int ParallelExporter::numFiles() const
+{
+    return queue_->size();
 }
 
 void ParallelExporter::cancel()
 {
-    QMutexLocker locker(&mutex_);
-    queue_.clear();
+    queue_->clear();
 }
 
-void ParallelExporter::runPost(const QByteArray &output, const QByteArray &error)
+void ParallelExporter::start()
 {
-    qDebug() << "checking run post" ;
-    output_.append(output);
-    error_.append(error);
-    --num_threads_;
-    if(!num_threads_){
-        QFile log_file(QDir(post_arguments_[1]).absoluteFilePath("export_out.log"));
-        log_file.open(QIODevice::WriteOnly);
-        log_file.write(output_);
-        log_file.close();
-        QFile log_file_error(QDir(post_arguments_[1]).absoluteFilePath("export_error.log"));
-        log_file_error.open(QIODevice::WriteOnly);
-        log_file_error.write(error_);
-        log_file_error.close();
-        qDebug() << "run post" ;
-        if(post_script_.size()){
-            QProcess process;
-            process.start(post_script_,post_arguments_);
-            process.waitForFinished(-1);
-            QFile file(QDir(post_arguments_[1]).absoluteFilePath("post_export_out.log"));
-            file.open(QIODevice::WriteOnly);
-            file.write(process.readAllStandardOutput());
-            file.close();
-            QFile file_error(QDir(post_arguments_[1]).absoluteFilePath("post_export_error.log"));
-            file_error.open(QIODevice::WriteOnly);
-            file_error.write(process.readAllStandardError());
-            file_error.close();
+    started_=true;
+    emit newFiles();
+}
+
+void ParallelExporter::getMessages()
+{
+    int left=numFiles();
+    int n_busy=0;
+    QList<ExportMessage> messages;
+    foreach(ExportWorkerBase* w, workers_){
+        if(w->busy()){
+            ++n_busy;
         }
-        updateProgress();
-        num_tasks_done_=0;
-        dialog_=NULL;
-        num_threads_=0;
-        post_script_=QString();
-        post_arguments_=QStringList();
-        output_=QByteArray();
-        error_=QByteArray();
+        messages.append(w->messages());
+    }
+    emit message(left+n_busy,messages);
+    if(left==0 && n_busy==0){
+        emit finished();
     }
 }

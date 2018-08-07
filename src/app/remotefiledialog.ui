@@ -106,7 +106,17 @@
     </layout>
    </item>
    <item>
-    <widget class="QTreeView" name="tree"/>
+    <widget class="QTreeView" name="tree">
+     <property name="rootIsDecorated">
+      <bool>true</bool>
+     </property>
+     <property name="sortingEnabled">
+      <bool>true</bool>
+     </property>
+     <property name="headerHidden">
+      <bool>true</bool>
+     </property>
+    </widget>
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_2">

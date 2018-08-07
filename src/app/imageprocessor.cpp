@@ -30,7 +30,6 @@
 #include <QDomDocument>
 #include <QProcess>
 #include <processwrapper.h>
-#include <parallelexporter.h>
 #include "imageprocessor.h"
 
 namespace  {
@@ -53,9 +52,10 @@ DataPtr parse_grid_xml(const QDir& grid_square_dir){
     }
     QString xml_path=grid_square_dir.absoluteFilePath(grid_sqare_xmls.at(0));
     QFile file(xml_path);
-    if (!file.open(QIODevice::ReadOnly))
+    if (!file.open(QIODevice::ReadOnly)){
         qDebug() << "Could not open : "+xml_path;
         return result;
+    }
     if (!dom_document.setContent(&file)) {
         qDebug() << "Error parsing : "+xml_path;
         file.close();
@@ -158,10 +158,6 @@ DataPtr parse_xml_data(const QString& xml_path){
     result->insert("apix_x",QString("%1").arg(pixel_size_values.at(0).toElement().text().toFloat()*1e10/result->value("super_resolution_factor").toFloat()));
     result->insert("apix_y",QString("%1").arg(pixel_size_values.at(1).toElement().text().toFloat()*1e10/result->value("super_resolution_factor").toFloat()));
 
-    QDomNode stage=dom_document.elementsByTagName("stage").at(0);
-    result->insert("x",stage.toElement().elementsByTagName("X").at(0).toElement().text());
-    result->insert("y",stage.toElement().elementsByTagName("Y").at(0).toElement().text());
-    result->insert("z",stage.toElement().elementsByTagName("Z").at(0).toElement().text());
     
     result->insert("acceleration_voltage",QString("%1").arg(dom_document.elementsByTagName("AccelerationVoltage").at(0).toElement().text().toFloat()/1000.0));
     QDomNode nominal_magnification=dom_document.elementsByTagName("NominalMagnification").at(0);
@@ -201,7 +197,8 @@ ImageProcessor::ImageProcessor():
     raw_files_(),
     output_files_(),
     shared_output_files_(),
-    exporter_(new ParallelExporter(this)),
+    exporters_(),
+    current_exporter_(nullptr),
     process_(new QProcess(this)),
     running_state_(false)
 
@@ -360,22 +357,14 @@ void ImageProcessor::loadSettings()
 
 }
 
-void ImageProcessor::exportImages(const QString &export_path, const QStringList &image_list)
+void ImageProcessor::exportImages(const QUrl &export_path, const QUrl &raw_export_path, const QStringList &image_list)
 {
-    QQueue<QSet<QString> >files_to_export;
-    QQueue<QSet<QString> >raw_files_to_export;
-    files_to_export.enqueue(shared_output_files_);
-    foreach(QString image,image_list){
-        files_to_export.enqueue(output_files_[image]);
-        raw_files_to_export.enqueue(raw_files_[image]);
-    }
+    qInfo() << "export images";
+
     Settings settings;
     QString export_mode=settings.value("export").toString();
-    QString custom_script=settings.value("export_custom_script").toString();
-    int num_processes=settings.value("export_num_processes",1).toInt();
-    QString pre_script=settings.value("export_pre_script").toString();
-    QString post_script=settings.value("export_post_script").toString();
     if(export_mode=="custom2"){
+        QString custom_script=settings.value("export_custom_script").toString();
         process_->setProcessChannelMode(QProcess::MergedChannels);
         process_->setStandardOutputFile(QDir(QDir::currentPath()).absoluteFilePath("export.log"));
         QStringList arguments;
@@ -388,12 +377,49 @@ void ImageProcessor::exportImages(const QString &export_path, const QStringList 
         }
         process_->write(QString("%1=%2\n").arg("shared").arg(QStringList(shared_output_files_.toList()).join(",")).toLatin1());
         process_->closeWriteChannel();
-        //process.waitForFinished(-1);
-
     }else{
-        exporter_->exportImages(QDir::currentPath() , export_path, files_to_export, num_processes, export_mode, custom_script,pre_script,post_script,image_list);
+        int num_processes=settings.value("export_num_processes",1).toInt();
+
+        QStringList files;
+        QStringList raw_files;
+        QStringList files_to_filter;
+        foreach(QString f,shared_output_files_){
+            if(f.endsWith(".star")){
+                files_to_filter.append(f);
+            }else{
+                files.append(f);
+            }
+        }
+        foreach(QString image,image_list){
+            files.append(output_files_[image].toList());
+            raw_files.append(raw_files_[image].toList());
+        }
+        bool separate_raw_export=export_path!=raw_export_path;
+        if(!separate_raw_export){
+            files.append(raw_files);
+        }
+        if(!files.empty()){
+            ParallelExporter* exporter=new ParallelExporter(QDir::currentPath(),export_path,image_list,num_processes);
+            exporter->addImages(files_to_filter,true);
+            exporter->addImages(files,false);
+            exporters_.enqueue(exporter);
+        }
+        if(separate_raw_export && !raw_files.empty()){
+            ParallelExporter* raw_exporter=new ParallelExporter(QDir::currentPath(),raw_export_path,image_list,num_processes);
+            raw_exporter->addImages(raw_files,false);
+            exporters_.enqueue(raw_exporter);
+        }
+        startNextExport_();
     }
 
+}
+
+void ImageProcessor::cancelExport()
+{
+    if(current_exporter_){
+        current_exporter_->cancel();
+        exportFinished_();
+    }
 }
 
 void ImageProcessor::startTasks()
@@ -416,6 +442,36 @@ void ImageProcessor::startTasks()
     }
     if(count_changed){
         emit queueCountChanged(cpu_task_stack_.size(),gpu_task_stack_.size());
+    }
+}
+
+void ImageProcessor::exportFinished_()
+{
+    delete current_exporter_;
+    current_exporter_=nullptr;
+    emit exportFinished();
+    startNextExport_();
+}
+
+void ImageProcessor::startNextExport_()
+{
+    qInfo() << "start next exporter";
+    if(current_exporter_){
+        // don't start new export if one is already running
+        qInfo() << "start next exporter: already running";
+        return;
+    }
+    if(!exporters_.empty()){
+        current_exporter_=exporters_.dequeue();
+        //finished signal needs to go to GUI first, before current exporter is deleted
+        connect(current_exporter_,&ParallelExporter::finished,this,&ImageProcessor::exportFinished_);
+        connect(current_exporter_,&ParallelExporter::message,this,&ImageProcessor::exportMessage);
+        current_exporter_->start();
+        qInfo() << "start next exporter before emit: " <<current_exporter_->numFiles() ;
+        emit exportStarted(current_exporter_->destination().toString(QUrl::RemovePassword),current_exporter_->numFiles());
+        qInfo() << "start next exporter after emit";
+    }else{
+        qInfo() << "start next exporter: empty";
     }
 }
 

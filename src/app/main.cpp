@@ -106,13 +106,17 @@ int main(int argc, char* argv[])
         qobject_cast<QApplication *>(app.data())->setStyle(QStyleFactory::create("fusion"));
         MainWindow w;
         QObject::connect(&w, SIGNAL(startStop(bool)), &processor, SLOT(startStop(bool)));
-        QObject::connect(&w,SIGNAL(exportImages(QString,QStringList)),&processor,SLOT(exportImages(QString,QStringList)));
+        QObject::connect(&w,&MainWindow::exportImages,&processor,&ImageProcessor::exportImages);
+        QObject::connect(&w,&MainWindow::cancelExport,&processor,&ImageProcessor::cancelExport);
         QObject::connect(&processor, SIGNAL(newImage(DataPtr)), &w, SLOT(addImage(DataPtr)));
         QObject::connect(&processor, SIGNAL(dataChanged(DataPtr)), &w, SLOT(onDataChanged(DataPtr)));
         QObject::connect(&w,SIGNAL(settingsChanged()),&processor,SLOT(loadSettings()));
         QObject::connect(&processor,SIGNAL(queueCountChanged(int,int)),&w,SLOT(updateQueueCounts(int,int)));
         QObject::connect(&processor,SIGNAL(processCreated(ProcessWrapper*,int)),&w,SLOT(createProcessIndicator(ProcessWrapper*,int)));
         QObject::connect(&processor,SIGNAL(processesDeleted()),&w,SLOT(deleteProcessIndicators()));
+        QObject::connect(&processor,&ImageProcessor::exportStarted,&w,&MainWindow::onExportStarted);
+        QObject::connect(&processor,&ImageProcessor::exportFinished,&w,&MainWindow::onExportFinished);
+        QObject::connect(&processor,&ImageProcessor::exportMessage,&w,&MainWindow::onExportMessage);
         w.init();
         w.show();
         //next line within if to avoid MainWindow going out of scope

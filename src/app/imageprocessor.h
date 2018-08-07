@@ -27,12 +27,12 @@
 #include <QObject>
 #include <QStringList>
 #include <task.h>
+#include <parallelexporter.h>
 #include <dataptr.h>
 
 //fw decl
 class FileSystemWatcher;
 class ProcessWrapper;
-class ParallelExporter;
 class Settings;
 class QProcess;
 
@@ -47,7 +47,8 @@ public slots:
     void onDirChange(const QString & path);
     void onTaskFinished(const TaskPtr& task, bool gpu);
     void loadSettings();
-    void exportImages(const QString& export_path,const QStringList& image_list);
+    void exportImages(const QUrl& export_path,const QUrl& raw_export_path,const QStringList& image_list);
+    void cancelExport();
     void startTasks();
 signals:
     void newImage(DataPtr data);
@@ -56,8 +57,14 @@ signals:
     void queueCountChanged(int,int);
     void processCreated(ProcessWrapper *wrapper,int gpu_id);
     void processesDeleted();
+    void exportStarted(const QString& title, int num);
+    void exportMessage(int left, const QList<ExportMessage>& output);
+    void exportFinished();
 
+protected slots:
+    void exportFinished_();
 private:
+    void startNextExport_();
     void updateDisc_(const QString& disc);
     void updateGridSquare_(const QString& grid_square);
     void updateImages_(const QString& grid_square);
@@ -77,7 +84,8 @@ private:
     QHash<QString,QSet<QString> > raw_files_;
     QHash<QString,QSet<QString> > output_files_;
     QSet<QString> shared_output_files_;
-    ParallelExporter* exporter_;
+    QQueue<ParallelExporter*> exporters_;
+    ParallelExporter* current_exporter_;
     QProcess* process_;
     bool running_state_;
 

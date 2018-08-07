@@ -56,6 +56,7 @@
 #include "scatterplotdialog.h"
 #include "aboutdialog.h"
 #include "exportdialog.h"
+#include "exportprogressdialog.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -78,7 +79,8 @@ MainWindow::MainWindow(QWidget *parent) :
     default_columns_(),
     scatter_plot_action_(new QAction("Scatter Plot",this)),
     run_script_action_(new QAction("Run script",this)),
-    report_()
+    report_(),
+    export_progress_dialog_(new ExportProgressDialog(this))
 
 
 {
@@ -87,6 +89,7 @@ MainWindow::MainWindow(QWidget *parent) :
     stylesheet+="* {color: #e6e6e6; background-color: #40434a} ";
     stylesheet+="QScrollBar::handle {background-color: rgb(5,97,137) }  ";
     stylesheet+="QLineEdit{background-color: rgb(136, 138, 133)} ";
+    stylesheet+="QLineEdit:disabled{background-color: rgb(80, 80, 80)} ";
     stylesheet+="QGraphicsView {padding:0px;margin:0px; border: 1px; border-radius: 5px; background: qlineargradient(x1:0, y1:0, x2:0, y2:1,stop:0 rgb(5,97,137), stop:1 rgb(16,27,50))} ";
     qApp->setStyleSheet(stylesheet);
     ui->chart->chart()->setTheme(QtCharts::QChart::ChartThemeBlueCerulean);
@@ -180,11 +183,15 @@ MainWindow::MainWindow(QWidget *parent) :
                      << InputOutputVariable("PP","phase_plate_num",Float)
                      << InputOutputVariable("PP position","phase_plate_pos",Float)
                      << InputOutputVariable("PP count","phase_plate_count",Float)
-                     << InputOutputVariable("Grid square","grid_square",Float)
-                     << InputOutputVariable("Foil hole","grid_square_pos",Float)
-                     << InputOutputVariable("Foil hole position","grid_square_hole_pos",Float);
+                     << InputOutputVariable("Grid square X","square_X",Float)
+                     << InputOutputVariable("Grid square Y","square_Y",Float)
+                     << InputOutputVariable("Grid square Z","square_Z",Float)
+                     << InputOutputVariable("Grid square id","square_id",Float)
+                     << InputOutputVariable("X","X",Float)
+                     << InputOutputVariable("Y","Y",Float)
+                     << InputOutputVariable("Z","Z",Float);
     report_.dataManager()->addModel("Images",full_model_,false);
-
+    connect(export_progress_dialog_,&ExportProgressDialog::rejected,this,&MainWindow::cancelExport);
 }
 
 MainWindow::~MainWindow()
@@ -376,82 +383,6 @@ void MainWindow::writeReport()
     if (!file_name.isEmpty()){
         report_.printToPDF(file_name);
     }
-/*    QString file_name = QFileDialog::getSaveFileName(0, "Save Plots",".","Pdf files (*.pdf)");
-    if (!file_name.isEmpty()){
-        QPdfWriter writer(file_name);
-        writer.setPageSize(QPagedPaintDevice::A4);
-        writer.setPageOrientation(QPageLayout::Landscape);
-        writer.setResolution(1200);
-        QTextDocument doc;
-        QFont font=doc.defaultFont();
-        font.setPointSize(8);
-        doc.setDefaultFont(font);
-        QTextCursor cursor(&doc);
-        QAbstractItemModel* model=ui->image_list->model();
-        QTextTable* table=cursor.insertTable(model->rowCount()+1,model->columnCount());
-        for(int column=0;column<model->columnCount();++column)
-        {
-            table->cellAt(0,column).firstCursorPosition().insertText(model->headerData(column,Qt::Horizontal).toString());
-        }
-        for(int row=1;row<=model->rowCount();++row)
-        {
-            for(int column=0;column<model->columnCount();++column)
-            {
-                table->cellAt(row,column).firstCursorPosition().insertText(model->data(model->index(row,column)).toString());
-            }
-        }
-        QImage image(writer.pageLayout().paintRectPixels(72).size(),QImage::Format_RGB32);
-        QPainter painter(&image);
-        painter.fillRect(image.rect(),QColor("white"));
-        ui->chart->render(&painter, writer.pageLayout().paintRectPixels(72));
-        cursor.movePosition(QTextCursor::End);
-        cursor.insertImage(image);
-        painter.end();
-
-        QImage image_histo(writer.pageLayout().paintRectPixels(72).size(),QImage::Format_RGB32);
-        QPainter painter_histo(&image_histo);
-        painter_histo.fillRect(image_histo.rect(),QColor("white"));
-        ui->histogram->render(&painter_histo, writer.pageLayout().paintRectPixels(72));
-        cursor.movePosition(QTextCursor::End);
-        cursor.insertImage(image_histo);
-        painter_histo.end();
-
-        QImage image_pp(writer.pageLayout().paintRectPixels(72).size(),QImage::Format_RGB32);
-        QPainter painter_pp(&image_pp);
-        painter_pp.fillRect(image_pp.rect(),QColor("white"));
-        PositionChart* chart=dynamic_cast<PositionChart*>(ui->phase_plate->scene());
-        if(!chart){
-            return;
-        }
-        QBrush old_brush=chart->max_label->brush();
-        chart->min_label->setBrush(QColor("black"));
-        chart->max_label->setBrush(QColor("black"));
-        ui->phase_plate->render(&painter_pp, writer.pageLayout().paintRectPixels(72));
-        chart->min_label->setBrush(old_brush);
-        chart->max_label->setBrush(old_brush);
-        cursor.movePosition(QTextCursor::End);
-        cursor.insertImage(image_pp);
-        painter_pp.end();
-
-        QImage image_gs(writer.pageLayout().paintRectPixels(72).size(),QImage::Format_RGB32);
-        QPainter painter_gs(&image_gs);
-        painter_gs.fillRect(image_gs.rect(),QColor("white"));
-        chart=dynamic_cast<PositionChart*>(ui->grid_square_chart->scene());
-        if(!chart){
-            return;
-        }
-        chart->min_label->setBrush(QColor("black"));
-        chart->max_label->setBrush(QColor("black"));
-        ui->grid_square_chart->render(&painter_gs, writer.pageLayout().paintRectPixels(72));
-        chart->min_label->setBrush(old_brush);
-        chart->max_label->setBrush(old_brush);
-        cursor.movePosition(QTextCursor::End);
-        cursor.insertImage(image_gs);
-        painter_gs.end();
-
-        doc.print(&writer);
-
-    }*/
 }
 
 void MainWindow::onAvgSourceDirTextChanged(const QString &dir)
@@ -537,25 +468,32 @@ void MainWindow::inputDataChanged()
 
 void MainWindow::onExport()
 {
-    ExportDialog dialog;
-    dialog.exec();
-    /*QString export_path;
     Settings settings;
-    bool ask_destination=settings.value("ask_destination").toBool();
-    if(ask_destination){
-        export_path=QFileDialog::getExistingDirectory(0, "Export folder","",  QFileDialog::ShowDirsOnly| QFileDialog::DontResolveSymlinks);
+    ExportDialog dialog;
+    dialog.setSeparateRawPath(settings.value("separate_raw_export").toBool());
+    dialog.setDestinationPath(QUrl::fromUserInput(settings.value("export_path").toString()));
+    if(settings.value("separate_raw_export").toBool()){
+        dialog.setRawDestinationPath(QUrl::fromUserInput(settings.value("raw_export_path").toString()));
     }
-    if( (! export_path.isEmpty()) || (! ask_destination)){
+    if(dialog.exec()==QDialog::Accepted){
         QStringList images;
         for(int i=0;i<model_->rowCount();++i){
             DataPtr data=model_->image(i);
             QString export_val=data->value("export","true");
-            if (export_val.compare("true", Qt::CaseInsensitive) == 0 || export_val==QString("1")){
+            if ((export_val.compare("true", Qt::CaseInsensitive) == 0 || export_val==QString("1")) && data->value("tasks_unfinished").toInt()<=0){
                 images<<data->value("short_name");
             }
         }
-        emit exportImages(export_path,images);
-    }*/
+        settings.setValue("export_path",dialog.destinationPath().toString(QUrl::RemovePassword));
+        settings.setValue("separate_raw_export",dialog.separateRawPath());
+        if(dialog.separateRawPath()){
+            settings.setValue("raw_export_path",dialog.rawDestinationPath().toString(QUrl::RemovePassword));
+        }
+
+        settings.saveToFile(".cryoflare.ini", QStringList(), QStringList() << "export_path" << "raw_export_path" << "separate_raw_export");
+
+         emit exportImages(dialog.destinationPath(),dialog.rawDestinationPath(),images);
+    }
 }
 
 void MainWindow::updateQueueCounts(int cpu_queue, int gpu_queue)
@@ -574,7 +512,7 @@ void MainWindow::updateDetails()
     int i=ui->image_data->currentIndex();
     QScrollArea *scroll_area=qobject_cast<QScrollArea*>(ui->image_data->widget(i));
     if(!scroll_area){
-        qDebug() << "found no scroll area at tab: " << i;
+        //qDebug() << "found no scroll area at tab: " << i;
         return;
     }
     QWidget * widget_ptr=scroll_area->widget();
@@ -712,8 +650,7 @@ void MainWindow::updatePhasePlateChart()
     if(column<0 || column>= model_->columnCount(QModelIndex())){
         return;
     }
-
-    QVector<QVector<float> > data_vectors;
+    QHash<int,QVector<float> > data_vectors;
     for(int i=0;i<model_->rowCount();++i){
         QVariant val=model_->data(model_->index(i,column),ImageTableModel::SortRole);
         DataPtr data=model_->image(i);
@@ -724,9 +661,9 @@ void MainWindow::updatePhasePlateChart()
             int phase_plate_num=std::max(1,std::min(6,data->value("phase_plate_num").toInt()));
             int phase_plate_pos_num=data->value("phase_plate_pos").toInt();
             if(phase_plate_export_flag && (phase_plate_level_==0 || phase_plate_num==current_phase_plate_)){
-                int index=(phase_plate_level_==0 ? phase_plate_num -1: phase_plate_pos_num);
-                while(index>=data_vectors.size()){
-                    data_vectors.append(QVector<float>());
+                int index=(phase_plate_level_==0 ? phase_plate_num : phase_plate_pos_num);
+                if(!data_vectors.contains(i)){
+                    data_vectors[i]=QVector<float>();
                 }
                 data_vectors[index].append(fval);
             }
@@ -1065,5 +1002,24 @@ void MainWindow::enableSelection(bool selecting)
     ui->histogram->enableSelection(selecting);
     ui->phase_plate->enableSelection(selecting);
     ui->grid_square_chart->enableSelection(selecting);
+}
+
+void MainWindow::onExportStarted(const QString &message, int num_files)
+{
+    qInfo() << "export started";
+    export_progress_dialog_->start(message,num_files);
+}
+
+
+void MainWindow::onExportMessage(int left, const QList<ExportMessage> &messages)
+{
+    qInfo() << "export message" << messages.size();
+    export_progress_dialog_->update(messages,left);
+}
+
+void MainWindow::onExportFinished()
+{
+    qInfo() << "export finished";
+    export_progress_dialog_->finish();
 }
 

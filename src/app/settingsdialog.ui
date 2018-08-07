@@ -43,7 +43,7 @@
    <item row="0" column="0">
     <widget class="QTabWidget" name="settings">
      <property name="currentIndex">
-      <number>2</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="tab">
       <attribute name="title">
@@ -552,7 +552,7 @@
   <customwidget>
    <class>PathEdit</class>
    <extends>QWidget</extends>
-   <header location="global">pathedit.h</header>
+   <header>pathedit.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

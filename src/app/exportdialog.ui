@@ -35,11 +35,22 @@
     </layout>
    </item>
    <item>
-    <widget class="QCheckBox" name="checkBox">
-     <property name="text">
-      <string>Separate folder for raw data</string>
-     </property>
-    </widget>
+    <layout class="QHBoxLayout" name="horizontalLayout_4">
+     <item>
+      <widget class="QCheckBox" name="separate_raw_path">
+       <property name="text">
+        <string>Separate destination for raw data</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="duplicate_raw">
+       <property name="text">
+        <string>Copy raw data to main destination as well</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_3">
@@ -57,7 +68,11 @@
       </widget>
      </item>
      <item>
-      <widget class="RemotePathEdit" name="raw_data_path" native="true"/>
+      <widget class="RemotePathEdit" name="raw_data_path" native="true">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+      </widget>
      </item>
     </layout>
    </item>
@@ -162,7 +177,7 @@
    </hints>
   </connection>
   <connection>
-   <sender>checkBox</sender>
+   <sender>separate_raw_path</sender>
    <signal>toggled(bool)</signal>
    <receiver>raw_data_path</receiver>
    <slot>setEnabled(bool)</slot>

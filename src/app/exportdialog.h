@@ -2,6 +2,7 @@
 #define EXPORTDIALOG_H
 
 #include <QDialog>
+#include <QUrl>
 #include <QProgressDialog>
 #include "../external/qssh/sshconnection.h"
 
@@ -16,6 +17,14 @@ class ExportDialog : public QDialog
 public:
     explicit ExportDialog(QWidget *parent = 0);
     ~ExportDialog();
+    QUrl destinationPath() const;
+    QUrl rawDestinationPath() const;
+    void setDestinationPath(const QUrl& url);
+    void setRawDestinationPath(const QUrl& url);
+    bool separateRawPath() const;
+    void setSeparateRawPath( bool f);
+
+
 private:
     Ui::ExportDialog *ui;
 };
