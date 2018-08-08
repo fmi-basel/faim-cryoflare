@@ -87,6 +87,10 @@ public:
         QMutexLocker locker(&mutex);
         list_.clear();
     }
+    T first(){
+        QMutexLocker locker(&mutex);
+        return list_.first();
+    }
 };
 template <class T>
 class ThreadSafeQueue: public ThreadSafeList<T>{
@@ -99,13 +103,14 @@ public:
     }
 };
 
-
+template<class T>
 class Barrier{
 public:
-    Barrier(int n_threads): mutex_(),wait_condition_(), n_(n_threads-1){}
+    Barrier(T* queue,int n_threads): queue_(queue),mutex_(),wait_condition_(), n_(n_threads-1){}
     void wait(){
         mutex_.lock();
         if(n_==0){
+            queue_->dequeue();
             wait_condition_.wakeAll();
             mutex_.unlock();
         }else{
@@ -115,7 +120,11 @@ public:
             mutex_.unlock();
         }
     }
+    void release(){
+       wait_condition_.wakeAll();
+    }
 protected:
+    T* queue_;
     QMutex mutex_;
     QWaitCondition wait_condition_;
     int n_;
@@ -168,7 +177,7 @@ signals:
     void next();
 public:
 
-    ExportWorkerBase(int id, QSharedPointer<ThreadSafeQueue<WorkItem> > queue, const QString &source, const QUrl &destination, const QStringList& images, Barrier& b);
+    ExportWorkerBase(int id, QSharedPointer<ThreadSafeQueue<WorkItem> > queue, const QString &source, const QUrl &destination, const QStringList& images, Barrier<ThreadSafeQueue<WorkItem> >& b);
     ~ExportWorkerBase();
     bool busy() const;
     QList<ExportMessage> messages();
@@ -188,7 +197,7 @@ protected:
     QStringList images_;
     QRegularExpression image_name_;
     ThreadSafeList<ExportMessage> message_buffer_;
-    Barrier& barrier_;
+    Barrier<ThreadSafeQueue<WorkItem> >& barrier_;
     int id_;
     int busy_;
 protected slots:
@@ -199,7 +208,7 @@ protected slots:
 class LocalExportWorker: public ExportWorkerBase{
     Q_OBJECT
 public:
-    LocalExportWorker(int id, QSharedPointer<ThreadSafeQueue<WorkItem> > queue, const QString &source, const QUrl &destination, const QStringList& images, Barrier& b);
+    LocalExportWorker(int id, QSharedPointer<ThreadSafeQueue<WorkItem> > queue, const QString &source, const QUrl &destination, const QStringList& images, Barrier<ThreadSafeQueue<WorkItem> >& b);
 protected:
     virtual void startImpl_();
     virtual void processNextImpl_();
@@ -214,7 +223,7 @@ public:
         NoOp,Stat,MkDir,Copy,DirStat,LinkStat,Link
     };
 
-    RemoteExportWorker(int id, QSharedPointer<ThreadSafeQueue<WorkItem> > queue, const QString &source, const QUrl &destination, const QStringList& images, Barrier& b);
+    RemoteExportWorker(int id, QSharedPointer<ThreadSafeQueue<WorkItem> > queue, const QString &source, const QUrl &destination, const QStringList& images, Barrier<ThreadSafeQueue<WorkItem> >& b);
 protected:
     virtual void startImpl_();
     virtual void processNextImpl_();
@@ -267,7 +276,7 @@ protected:
     bool started_;
     QList<ExportWorkerBase*> workers_;
     QTimer message_timer_;
-    Barrier barrier_;
+    Barrier<ThreadSafeQueue<WorkItem> > barrier_;
 private:
     Q_DISABLE_COPY(ParallelExporter)
 };

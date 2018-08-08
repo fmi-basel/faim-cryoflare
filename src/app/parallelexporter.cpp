@@ -31,7 +31,7 @@
 #include <QSet>
 #include <QtAlgorithms>
 #include "parallelexporter.h"
-ExportWorkerBase::ExportWorkerBase(int id, QSharedPointer<ThreadSafeQueue<WorkItem> > queue, const QString &source, const QUrl &destination, const QStringList &images, Barrier &b):
+ExportWorkerBase::ExportWorkerBase(int id, QSharedPointer<ThreadSafeQueue<WorkItem> > queue, const QString &source, const QUrl &destination, const QStringList &images, Barrier<ThreadSafeQueue<WorkItem> > &b):
     QObject(),
     queue_(queue),
     source_(source),
@@ -114,7 +114,7 @@ void ExportWorkerBase::processNext_()
 }
 
 
-LocalExportWorker::LocalExportWorker(int id, QSharedPointer<ThreadSafeQueue<WorkItem> > queue, const QString &source, const QUrl &destination, const QStringList &images, Barrier &b):
+LocalExportWorker::LocalExportWorker(int id, QSharedPointer<ThreadSafeQueue<WorkItem> > queue, const QString &source, const QUrl &destination, const QStringList &images, Barrier<ThreadSafeQueue<WorkItem> > &b):
     ExportWorkerBase(id,queue,source,destination,images,b)
 {
 
@@ -134,19 +134,20 @@ void LocalExportWorker::processNextImpl_()
         busy_=false;
         return;
     }
-    WorkItem item=queue_->dequeue();
-    switch(item.type){
-    case WorkItem::FILE:
-        copyFile_(item);
-        break;
-    case WorkItem::DIRECTORY:
-        createDirectory_(item);
-        break;
-    case WorkItem::BARRIER:
+    if(queue_->first().type==WorkItem::BARRIER){
         barrier_.wait();
-        break;
-    default:
-        break;
+    }else{
+        WorkItem item=queue_->dequeue();
+        switch(item.type){
+        case WorkItem::FILE:
+            copyFile_(item);
+            break;
+        case WorkItem::DIRECTORY:
+            createDirectory_(item);
+            break;
+        default:
+            break;
+        }
     }
     emit next();
 }
@@ -191,7 +192,7 @@ void LocalExportWorker::createDirectory_(const WorkItem& item)
 }
 
 
-RemoteExportWorker::RemoteExportWorker(int id, QSharedPointer<ThreadSafeQueue<WorkItem> > queue, const QString &source, const QUrl &destination, const QStringList &images, Barrier &b):
+RemoteExportWorker::RemoteExportWorker(int id, QSharedPointer<ThreadSafeQueue<WorkItem> > queue, const QString &source, const QUrl &destination, const QStringList &images, Barrier<ThreadSafeQueue<WorkItem> > &b):
     ExportWorkerBase(id,queue,source,destination,images,b),
     connection_parameters_(),
     ssh_connection_(nullptr),
@@ -241,20 +242,21 @@ void RemoteExportWorker::processNextImpl_()
         message_("idle");
         return;
     }
-    current_item_=queue_->dequeue();
-    switch(current_item_.type){
-    case WorkItem::FILE:
-        copyFile_();
-        break;
-    case WorkItem::DIRECTORY:
-        checkDestinationDirectory_();
-        break;
-    case WorkItem::BARRIER:
+    if(queue_->first().type==WorkItem::BARRIER){
         barrier_.wait();
         emit next();
-        break;
-    default:
-        break;
+    }else{
+        current_item_=queue_->dequeue();
+        switch(current_item_.type){
+        case WorkItem::FILE:
+            copyFile_();
+            break;
+        case WorkItem::DIRECTORY:
+            checkDestinationDirectory_();
+            break;
+        default:
+            break;
+        }
     }
 }
 
@@ -468,7 +470,7 @@ ParallelExporter::ParallelExporter(const QString &source, const QUrl &destinatio
     started_(false),
     workers_(),
     message_timer_(),
-    barrier_(num_threads)
+    barrier_(queue_.data(),num_threads)
 {
     for(int i=0;i<num_threads_ ;++i){
         QThread* thread = new QThread();
@@ -550,6 +552,7 @@ int ParallelExporter::numFiles() const
 void ParallelExporter::cancel()
 {
     queue_->clear();
+    barrier_.release();
 }
 
 void ParallelExporter::start()
