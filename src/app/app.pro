@@ -77,7 +77,10 @@ SOURCES += \
     exportdialog.cpp \
     remotefiledialog.cpp \
     remotepathedit.cpp \
-    exportprogressdialog.cpp
+    exportprogressdialog.cpp \
+    sshauthenticationdialog.cpp \
+    sshauthenticationstore.cpp \
+    sftpurl.cpp
 
 
 
@@ -110,7 +113,10 @@ HEADERS  += \
     exportdialog.h \
     remotefiledialog.h \
     remotepathedit.h \
-    exportprogressdialog.h
+    exportprogressdialog.h \
+    sshauthenticationdialog.h \
+    sshauthenticationstore.h \
+    sftpurl.h
 
 
 FORMS    += \
@@ -120,7 +126,8 @@ FORMS    += \
     scatterplotdialog.ui \
     exportdialog.ui \
     remotefiledialog.ui \
-    exportprogressdialog.ui
+    exportprogressdialog.ui \
+    sshauthenticationdialog.ui
 
 LIBS += ../mrcio/libmrcio.a
 LIBS += ../external/qssh/libqssh.a

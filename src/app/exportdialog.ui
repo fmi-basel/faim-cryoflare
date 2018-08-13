@@ -146,22 +146,6 @@
  <connections>
   <connection>
    <sender>buttonBox</sender>
-   <signal>accepted()</signal>
-   <receiver>ExportDialog</receiver>
-   <slot>accept()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>227</x>
-     <y>484</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>157</x>
-     <y>274</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>buttonBox</sender>
    <signal>rejected()</signal>
    <receiver>ExportDialog</receiver>
    <slot>reject()</slot>
@@ -183,12 +167,28 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>36</x>
-     <y>58</y>
+     <x>46</x>
+     <y>57</y>
     </hint>
     <hint type="destinationlabel">
-     <x>155</x>
-     <y>86</y>
+     <x>260</x>
+     <y>82</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>buttonBox</sender>
+   <signal>accepted()</signal>
+   <receiver>ExportDialog</receiver>
+   <slot>verifyDestinations()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>481</x>
+     <y>476</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>475</x>
+     <y>439</y>
     </hint>
    </hints>
   </connection>
@@ -196,5 +196,6 @@
  <slots>
   <slot>browseRemoteData()</slot>
   <slot>browseRemoteRawData()</slot>
+  <slot>verifyDestinations()</slot>
  </slots>
 </ui>

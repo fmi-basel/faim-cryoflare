@@ -76,7 +76,7 @@ int main(int argc, char* argv[])
     QScopedPointer<QCoreApplication> app(createApplication(argc, argv));
     QCoreApplication::setOrganizationName("Friedrich Miescher Institute");
     QCoreApplication::setOrganizationDomain("fmi.ch");
-    QCoreApplication::setApplicationName("StackGUI");
+    QCoreApplication::setApplicationName("CryoFLARE");
 
     Settings settings;
     if(!settings.loadFromFile(".cryoflare.ini")){
