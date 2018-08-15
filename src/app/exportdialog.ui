@@ -45,6 +45,9 @@
      </item>
      <item>
       <widget class="QCheckBox" name="duplicate_raw">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="text">
         <string>Copy raw data to main destination as well</string>
        </property>
@@ -189,6 +192,22 @@
     <hint type="destinationlabel">
      <x>475</x>
      <y>439</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>separate_raw_path</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>duplicate_raw</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>149</x>
+     <y>40</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>502</x>
+     <y>47</y>
     </hint>
    </hints>
   </connection>

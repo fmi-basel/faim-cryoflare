@@ -254,6 +254,44 @@ int SftpFileSystemModel::rowCount(const QModelIndex &parent) const
     return 0;
 }
 
+bool SftpFileSystemModel::wasFetched(const QModelIndex &parent) const
+{
+    if (!d->rootNode)
+        return false;
+    if (!parent.isValid())
+        return 1;
+    if (parent.column() != 0)
+        return false;
+    SftpDirNode * const dirNode = indexToDirNode(parent);
+    if (!dirNode)
+        return false;
+    return dirNode->lsState == SftpDirNode::LsFinished;
+}
+
+bool SftpFileSystemModel::isFetching(const QModelIndex &parent) const
+{
+    if (!d->rootNode)
+        return false;
+    if (!parent.isValid())
+        return 1;
+    if (parent.column() != 0)
+        return false;
+    SftpDirNode * const dirNode = indexToDirNode(parent);
+    if (!dirNode)
+        return false;
+    return dirNode->lsState == SftpDirNode::LsRunning;
+
+}
+
+void SftpFileSystemModel::fetch(const QModelIndex &parent)
+{
+    if(!wasFetched(parent)){
+        SftpDirNode * const dirNode = indexToDirNode(parent);
+        d->lsOps.insert(d->sftpChannel->listDirectory(dirNode->path), dirNode);
+        dirNode->lsState = SftpDirNode::LsRunning;
+    }
+}
+
 void SftpFileSystemModel::statRootDirectory()
 {
     d->statJobId = d->sftpChannel->statFile(d->rootDirectory);
@@ -333,8 +371,10 @@ void SftpFileSystemModel::handleFileInfo(SftpJobId jobId, const QList<SftpFileIn
         if (fi.name != QLatin1String(".") && fi.name != QLatin1String(".."))
             filteredList << fi;
     }
-    if (filteredList.isEmpty())
+    if (filteredList.isEmpty()){
+        emit dirListed();
         return;
+    }
 
     // In theory beginInsertRows() should suffice, but that fails to have an effect
     // if rowCount() returned 0 earlier.
@@ -355,6 +395,7 @@ void SftpFileSystemModel::handleFileInfo(SftpJobId jobId, const QList<SftpFileIn
         parentNode->children << childNode;
     }
     emit layoutChanged(); // Should be endInsertRows(), see above.
+    emit dirListed();
 }
 
 void SftpFileSystemModel::handleSftpJobFinished(SftpJobId jobId, const QString &errorMessage)

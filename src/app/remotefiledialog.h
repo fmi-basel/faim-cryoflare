@@ -27,13 +27,16 @@ public slots:
     void connectToHost(bool con);
     void onConnectionEstablished();
     void onConnectionError(const QString &error);
-
+protected slots:
+    void modelReady_();
 private:
     void initSftpFileSystemModel_();
     Ui::RemoteFileDialog *ui;
     QSsh::SftpFileSystemModel* model_;
     QSortFilterProxyModel* proxy_;
     SftpUrl remote_path_;
+    QStringList initial_path_;
+    QModelIndex initial_idx_;
 };
 
 #endif // REMOTEFILEDIALOG_H

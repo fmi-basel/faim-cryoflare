@@ -10,21 +10,17 @@ RemoteFileDialog::RemoteFileDialog(const SftpUrl &remote_path, QWidget *parent) 
     ui(new Ui::RemoteFileDialog),
     model_(),
     proxy_(new QSortFilterProxyModel(this)),
-    remote_path_(remote_path)
+    remote_path_(remote_path),
+    initial_path_(remote_path_.path().split("/",QString::SkipEmptyParts)),
+    initial_idx_()
 {
     ui->setupUi(this);
     ui->tree->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
     initSftpFileSystemModel_();
-    ui->tree->setModel(proxy_);
-    proxy_->sort(1);
     if(remote_path.isValid()){
         ui->host->setText(remote_path.host());
         ui->user->setText(remote_path.userName());
         ui->port->setText(QString("%1").arg(remote_path.port()));
-        //if(!remote_path.path().isEmpty()){
-         // sftp filesystem model doesn't provide a way to get the index for a remote path
-         // therefore it is currently not possible to set the current index of the view to the previous path
-        //}
     }else{
         ui->port->setText(QString("%1").arg(22));
     }
@@ -110,6 +106,42 @@ void RemoteFileDialog::onConnectionError(const QString &error)
     }
 }
 
+void RemoteFileDialog::modelReady_()
+{
+    if(!initial_path_.empty()){
+        QString name=model_->data(initial_idx_,Qt::DisplayRole).toString();
+        if(!initial_idx_.isValid()){
+            initial_idx_=model_->index(0,0);
+        }
+        if(model_->isFetching(initial_idx_)){
+        //    return;
+        //}
+        //if(model_->wasFetched(idx)){
+            QString folder=initial_path_.takeFirst();
+            bool found=false;
+            for(int i=0;i<model_->rowCount(initial_idx_);++i){
+                QString name=model_->data(model_->index(i,1,initial_idx_),Qt::DisplayRole).toString();
+                if(name==folder){
+                    QModelIndex new_idx=model_->index(i,0,initial_idx_);
+                    initial_idx_=new_idx;
+                    model_->fetch(new_idx);
+                    found=true;
+                    break;
+                }
+            }
+            if(!found){
+                initial_path_.clear();
+            }
+        }else{
+            model_->fetch(initial_idx_);
+        }
+    }else{
+        ui->tree->setCurrentIndex(proxy_->mapFromSource(initial_idx_));
+        initial_idx_=QModelIndex();
+        disconnect(model_,&QSsh::SftpFileSystemModel::dirListed,this,&RemoteFileDialog::modelReady_);
+    }
+}
+
 void RemoteFileDialog::initSftpFileSystemModel_()
 {
     if(model_){
@@ -119,4 +151,7 @@ void RemoteFileDialog::initSftpFileSystemModel_()
     proxy_->setSourceModel(model_);
     connect(model_,&QSsh::SftpFileSystemModel::connectionError,this,&RemoteFileDialog::onConnectionError);
     connect(model_,&QSsh::SftpFileSystemModel::connectionEstablished,this,&RemoteFileDialog::onConnectionEstablished);
+    connect(model_,&QSsh::SftpFileSystemModel::dirListed,this,&RemoteFileDialog::modelReady_);
+    ui->tree->setModel(proxy_);
+    proxy_->sort(1);
 }

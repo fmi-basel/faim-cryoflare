@@ -64,6 +64,11 @@ public:
     static const int PathRole = Qt::UserRole;
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const;
 
+    QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const;
+    int rowCount(const QModelIndex &parent = QModelIndex()) const;
+    virtual bool wasFetched(const QModelIndex &parent) const;
+    virtual bool isFetching(const QModelIndex &parent) const;
+    virtual void fetch(const QModelIndex &parent);
 signals:
      /*
       * E.g. "Permission denied". Note that this can happen without direct user intervention,
@@ -84,6 +89,9 @@ signals:
     // Success <=> error.isEmpty().
     void sftpOperationFinished(QSsh::SftpJobId, const QString &error);
 
+    //emitted after directory was listed
+    void dirListed();
+
 private slots:
     void handleSshConnectionEstablished();
     void handleSshConnectionFailure();
@@ -96,9 +104,7 @@ private:
     int columnCount(const QModelIndex &parent = QModelIndex()) const;
     Qt::ItemFlags flags(const QModelIndex &index) const;
     QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const;
-    QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const;
     QModelIndex parent(const QModelIndex &child) const;
-    int rowCount(const QModelIndex &parent = QModelIndex()) const;
 
     void statRootDirectory();
     void shutDown();
