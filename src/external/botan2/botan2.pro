@@ -10,6 +10,7 @@ TARGET = botan2
 TEMPLATE = lib
 CONFIG += staticlib
 
+QMAKE_CXXFLAGS += -march=native
 
 # The following define makes your compiler emit warnings if you use
 # any feature of Qt which as been marked as deprecated (the exact warnings
@@ -23,15 +24,14 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-    botan_all_aesni.cpp \
-    botan_all_avx2.cpp \
-    botan_all_bmi2.cpp \
-    botan_all.cpp \
-    botan_all_rdrand.cpp \
-    botan_all_rdseed.cpp \
-    botan_all_sha_sse41_ssse3.cpp \
-    botan_all_sha_ssse3.cpp \
-    botan_all_ssse3.cpp
+	botan_all_aesni.cpp\
+	botan_all_avx2.cpp\
+	botan_all_bmi2.cpp\
+	botan_all.cpp\
+	botan_all_rdrand.cpp\
+	botan_all_rdseed.cpp\
+	botan_all_ssse3.cpp
+
 
 HEADERS +=
 unix {
