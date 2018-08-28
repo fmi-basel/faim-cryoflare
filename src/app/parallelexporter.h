@@ -47,6 +47,7 @@ class ThreadSafeList{
 protected:
     QList<T> list_;
 public:
+    typedef QPair<bool,T> result_pair;
     mutable QMutex mutex;
     ThreadSafeList():
         list_(),
@@ -63,9 +64,12 @@ public:
         QMutexLocker locker(&mutex);
         return list_;
     }
-    T takeFirst(){
+    result_pair checkEmptyAndTakeFirst(){
         QMutexLocker locker(&mutex);
-        return list_.takeFirst();
+        if(list_.empty()){
+            return result_pair(true,T());
+        }
+        return result_pair(false,list_.takeFirst());
     }
     void append(const T &t){
         QMutexLocker locker(&mutex);
@@ -87,16 +91,19 @@ public:
         QMutexLocker locker(&mutex);
         list_.clear();
     }
-    T first(){
+    result_pair checkEmptyAndFirst(){
         QMutexLocker locker(&mutex);
-        return list_.first();
+        if(list_.empty()){
+            return result_pair(true,T());
+        }
+        return result_pair(false,list_.first());
     }
 };
 template <class T>
 class ThreadSafeQueue: public ThreadSafeList<T>{
 public:
-    T dequeue(){
-        return ThreadSafeList<T>::takeFirst();
+    typename ThreadSafeList<T>::result_pair checkEmptyAndDequeue(){
+        return ThreadSafeList<T>::checkEmptyAndTakeFirst();
     }
     void enqueue(const T &t){
         ThreadSafeList<T>::append(t);
@@ -110,7 +117,7 @@ public:
     void wait(){
         mutex_.lock();
         if(n_==0){
-            queue_->dequeue();
+            queue_->checkEmptyAndDequeue();
             wait_condition_.wakeAll();
             mutex_.unlock();
         }else{
@@ -177,7 +184,7 @@ signals:
     void next();
 public:
 
-    ExportWorkerBase(int id, QSharedPointer<ThreadSafeQueue<WorkItem> > queue, const QString &source, const QUrl &destination, const QStringList& images, Barrier<ThreadSafeQueue<WorkItem> >& b);
+    ExportWorkerBase(int id, QSharedPointer<ThreadSafeQueue<WorkItem> > queue, const QString &source, const QUrl &destination, const QStringList& images, Barrier<ThreadSafeQueue<WorkItem> >& );
     ~ExportWorkerBase();
     bool busy() const;
     QList<ExportMessage> messages();

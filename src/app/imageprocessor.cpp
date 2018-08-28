@@ -280,19 +280,19 @@ void ImageProcessor::onDirChange(const QString &path)
 void ImageProcessor::onTaskFinished(const TaskPtr &task, bool gpu)
 {
     if(! output_files_.contains(task->data->value("short_name"))){
-        output_files_[task->data->value("short_name")]=QSet<QString>();
+        output_files_[task->data->value("short_name")]=QMap<QString,QString>();
     }
-    foreach(QString file, task->output_files){
-        output_files_[task->data->value("short_name")].insert(QDir::current().relativeFilePath(file));
+    foreach(QString key, task->output_files.keys()){
+        output_files_[task->data->value("short_name")].insert(key,QDir::current().relativeFilePath(task->output_files.value(key)));
     }
     if(! raw_files_.contains(task->data->value("short_name"))){
-        raw_files_[task->data->value("short_name")]=QSet<QString>();
+        raw_files_[task->data->value("short_name")]=QMap<QString,QString>();
     }
-    foreach(QString file, task->raw_files){
-        raw_files_[task->data->value("short_name")].insert(QDir::current().relativeFilePath(file));
+    foreach(QString key, task->raw_files.keys()){
+        raw_files_[task->data->value("short_name")].insert(key,QDir::current().relativeFilePath(task->raw_files.value(key)));
     }
-    foreach(QString file, task->shared_output_files){
-        shared_output_files_.insert(QDir::current().relativeFilePath(file));
+    foreach(QString key, task->shared_output_files.keys()){
+        shared_output_files_.insert(key,QDir::current().relativeFilePath( task->shared_output_files.value(key)));
     }
     foreach(TaskPtr child,task->children){
         QStack<TaskPtr>& stack=child->gpu?gpu_task_stack_:cpu_task_stack_;
@@ -357,10 +357,8 @@ void ImageProcessor::loadSettings()
 
 }
 
-void ImageProcessor::exportImages(const QUrl &export_path, const QUrl &raw_export_path, const QStringList &image_list)
+void ImageProcessor::exportImages(const QUrl &export_path, const QUrl &raw_export_path, const QStringList &image_list, const QStringList &output_keys, const QStringList &raw_keys, const QStringList &shared_keys, bool duplicate_raw)
 {
-    qInfo() << "export images";
-
     Settings settings;
     QString export_mode=settings.value("export").toString();
     if(export_mode=="custom2"){
@@ -372,10 +370,28 @@ void ImageProcessor::exportImages(const QUrl &export_path, const QUrl &raw_expor
         process_->start(custom_script,arguments);
         process_->waitForStarted(-1);
         foreach(QString image,image_list){
-            process_->write(QString("raw_%1=%2\n").arg(image).arg(QStringList(raw_files_[image].toList()).join(",")).toLatin1());
-            process_->write(QString("%1=%2\n").arg(image).arg(QStringList(output_files_[image].toList()).join(",")).toLatin1());
+            QStringList raw_list;
+            foreach(QString key, raw_files_[image].keys()){
+                if(raw_keys.contains(key)){
+                    raw_list << raw_files_[image][key];
+                }
+            }
+            process_->write(QString("raw_%1=%2\n").arg(image).arg(raw_list.join(",")).toLatin1());
+            QStringList output_list;
+            foreach(QString key, output_files_[image].keys()){
+                if(output_keys.contains(key)){
+                    output_list << output_files_[image][key];
+                }
+            }
+            process_->write(QString("%1=%2\n").arg(image).arg(output_list.join(",")).toLatin1());
         }
-        process_->write(QString("%1=%2\n").arg("shared").arg(QStringList(shared_output_files_.toList()).join(",")).toLatin1());
+        QStringList shared_list;
+        foreach(QString key, shared_output_files_.keys()){
+            if(shared_keys.contains(key)){
+                shared_list << shared_output_files_[key];
+            }
+        }
+        process_->write(QString("%1=%2\n").arg("shared").arg(shared_list.join(",")).toLatin1());
         process_->closeWriteChannel();
     }else{
         int num_processes=settings.value("export_num_processes",1).toInt();
@@ -383,29 +399,40 @@ void ImageProcessor::exportImages(const QUrl &export_path, const QUrl &raw_expor
         QStringList files;
         QStringList raw_files;
         QStringList files_to_filter;
-        foreach(QString f,shared_output_files_){
-            if(f.endsWith(".star")){
-                files_to_filter.append(f);
+        QString current_dir=QDir::current().dirName();
+        foreach(QString key,shared_output_files_.keys()){
+            if(shared_output_files_[key].endsWith(".star")){
+                files_to_filter.append(current_dir+"/"+shared_output_files_[key]);
             }else{
-                files.append(f);
+                files.append(current_dir+"/"+shared_output_files_[key]);
             }
         }
         foreach(QString image,image_list){
-            files.append(output_files_[image].toList());
-            raw_files.append(raw_files_[image].toList());
+            foreach(QString key, output_files_[image].keys()){
+                if(output_keys.contains(key)){
+                    files << current_dir+"/"+output_files_[image][key];
+                }
+            }
+            foreach(QString key, raw_files_[image].keys()){
+                if(raw_keys.contains(key)){
+                    raw_files << current_dir+"/"+raw_files_[image][key];
+                }
+            }
         }
         bool separate_raw_export=export_path!=raw_export_path;
-        if(!separate_raw_export){
+        if( (!separate_raw_export) || duplicate_raw){
             files.append(raw_files);
         }
+        QDir parent_dir=QDir::current();
+        parent_dir.cdUp();
         if(!files.empty()){
-            ParallelExporter* exporter=new ParallelExporter(QDir::currentPath(),export_path,image_list,num_processes);
+            ParallelExporter* exporter=new ParallelExporter(parent_dir.path(),export_path,image_list,num_processes);
             exporter->addImages(files_to_filter,true);
             exporter->addImages(files,false);
             exporters_.enqueue(exporter);
         }
         if(separate_raw_export && !raw_files.empty()){
-            ParallelExporter* raw_exporter=new ParallelExporter(QDir::currentPath(),raw_export_path,image_list,num_processes);
+            ParallelExporter* raw_exporter=new ParallelExporter(parent_dir.path(),raw_export_path,image_list,num_processes);
             raw_exporter->addImages(raw_files,false);
             exporters_.enqueue(raw_exporter);
         }
@@ -445,6 +472,29 @@ void ImageProcessor::startTasks()
     }
 }
 
+QSet<QString> ImageProcessor::getOutputFilesKeys() const
+{
+    QSet<QString> result;
+    foreach(QString hash_key, output_files_.keys()){
+        result.unite(QSet<QString>::fromList(output_files_[hash_key].keys()));
+    }
+    return result;
+}
+
+QSet<QString> ImageProcessor::getRawFilesKeys() const
+{
+    QSet<QString> result;
+    foreach(QString hash_key, raw_files_.keys()){
+        result.unite(QSet<QString>::fromList(raw_files_[hash_key].keys()));
+    }
+    return result;
+}
+
+QSet<QString> ImageProcessor::getSharedFilesKeys() const
+{
+    return QSet<QString>::fromList(shared_output_files_.keys());
+}
+
 void ImageProcessor::exportFinished_()
 {
     delete current_exporter_;
@@ -455,10 +505,8 @@ void ImageProcessor::exportFinished_()
 
 void ImageProcessor::startNextExport_()
 {
-    qInfo() << "start next exporter";
     if(current_exporter_){
         // don't start new export if one is already running
-        qInfo() << "start next exporter: already running";
         return;
     }
     if(!exporters_.empty()){
@@ -467,11 +515,8 @@ void ImageProcessor::startNextExport_()
         connect(current_exporter_,&ParallelExporter::finished,this,&ImageProcessor::exportFinished_);
         connect(current_exporter_,&ParallelExporter::message,this,&ImageProcessor::exportMessage);
         current_exporter_->start();
-        qInfo() << "start next exporter before emit: " <<current_exporter_->numFiles() ;
         emit exportStarted(current_exporter_->destination().toString(QUrl::RemovePassword),current_exporter_->numFiles());
-        qInfo() << "start next exporter after emit";
     }else{
-        qInfo() << "start next exporter: empty";
     }
 }
 

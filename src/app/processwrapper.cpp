@@ -101,16 +101,35 @@ void ProcessWrapper::onFinished(int exitcode)
         if(line.startsWith(result_token)){
             line.remove(0,result_token.size());
             QStringList splitted=line.split("=");
+            if(splitted.size()<2){
+                qDebug() << "invalid result line: " << line;
+                continue;
+            }
             task_->data->insert(splitted[0].trimmed(),splitted[1].trimmed());
         }else if(line.startsWith(raw_file_token)){
             line.remove(0,raw_file_token.size());
-            task_->raw_files.insert(line.trimmed());
+            QStringList splitted=line.split("=");
+            if(splitted.size()<2){
+                qDebug() << "invalid result line: " << line;
+                continue;
+            }
+            task_->raw_files.insert(splitted[0].trimmed(),splitted[1].trimmed());
         }else if(line.startsWith(result_file_token)){
             line.remove(0,result_file_token.size());
-            task_->output_files.insert(line.trimmed());
+            QStringList splitted=line.split("=");
+            if(splitted.size()<2){
+                qDebug() << "invalid result line: " << line;
+                continue;
+            }
+            task_->output_files.insert(splitted[0].trimmed(),splitted[1].trimmed());
         }else if(line.startsWith(shared_result_file_token)){
             line.remove(0,shared_result_file_token.size());
-            task_->shared_output_files.insert(line.trimmed());
+            QStringList splitted=line.split("=");
+            if(splitted.size()<2){
+                qDebug() << "invalid result line: " << line;
+                continue;
+            }
+            task_->shared_output_files.insert(splitted[0].trimmed(),splitted[1].trimmed());
         }
     } while (!line.isNull());
     task_->output=output;

@@ -58,8 +58,9 @@
 #include "exportdialog.h"
 #include "exportprogressdialog.h"
 
-MainWindow::MainWindow(QWidget *parent) :
-    QMainWindow(parent),
+MainWindow::MainWindow(ImageProcessor &processor) :
+    QMainWindow(),
+    processor_(processor),
     ui(new Ui::MainWindow),
     model_(new ImageTableModel(this)),
     full_model_(new ImageTableModel(this)),
@@ -312,6 +313,7 @@ void MainWindow::updateTaskWidget_(Settings *settings, QFormLayout *parent_input
                 QDoubleSpinBox *sp_widget=new QDoubleSpinBox();
                 sp_widget->setMaximum(9999999);
                 sp_widget->setMinimum(-9999999);
+                sp_widget->setDecimals(5);
                 local_widget=sp_widget;
                 connect(local_widget,SIGNAL(valueChanged(double)),this,SLOT(inputDataChanged()));
                 sp_widget->setValue(script_input_settings.value(settings_key).toFloat());
@@ -469,7 +471,8 @@ void MainWindow::inputDataChanged()
 void MainWindow::onExport()
 {
     Settings settings;
-    ExportDialog dialog;
+    ExportDialog dialog(processor_.getRawFilesKeys().toList(),processor_.getOutputFilesKeys().toList(),processor_.getSharedFilesKeys().toList());
+    dialog.setDuplicateRaw(settings.value("duplicate_raw_export").toBool());
     dialog.setSeparateRawPath(settings.value("separate_raw_export").toBool());
     dialog.setDestinationPath(QUrl::fromUserInput(settings.value("export_path").toString()));
     if(settings.value("separate_raw_export").toBool()){
@@ -486,13 +489,14 @@ void MainWindow::onExport()
         }
         settings.setValue("export_path",dialog.destinationPath().toString(QUrl::RemovePassword));
         settings.setValue("separate_raw_export",dialog.separateRawPath());
+        settings.setValue("duplicate_raw_export",dialog.duplicateRaw());
         if(dialog.separateRawPath()){
             settings.setValue("raw_export_path",dialog.rawDestinationPath().toString(QUrl::RemovePassword));
         }
 
-        settings.saveToFile(".cryoflare.ini", QStringList(), QStringList() << "export_path" << "raw_export_path" << "separate_raw_export");
+        settings.saveToFile(".cryoflare.ini", QStringList(), QStringList() << "export_path" << "raw_export_path" << "separate_raw_export" << "duplicate_raw_export");
 
-         emit exportImages(dialog.destinationPath(),dialog.rawDestinationPath(),images);
+         processor_.exportImages(dialog.destinationPath(),dialog.rawDestinationPath(),images,dialog.selectedOutputKeys(),dialog.selectedRawKeys(),dialog.selectedSharedKeys(),dialog.duplicateRaw());
     }
 }
 

@@ -87,7 +87,7 @@ _export_files(){
   for var in "${@:2}"
   do
     if [ -n "${!var}" ]; then 
-      echo $1:${!var}
+      echo $1:$var=${!var}
     else 
       echo WARNING: file "$var" not defined
     fi
