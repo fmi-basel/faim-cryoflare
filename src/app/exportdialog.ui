@@ -91,7 +91,14 @@
         </widget>
        </item>
        <item>
-        <widget class="QListWidget" name="raw_data_list"/>
+        <widget class="QListWidget" name="raw_data_list">
+         <property name="selectionMode">
+          <enum>QAbstractItemView::MultiSelection</enum>
+         </property>
+         <property name="selectionBehavior">
+          <enum>QAbstractItemView::SelectItems</enum>
+         </property>
+        </widget>
        </item>
       </layout>
      </item>
@@ -105,7 +112,11 @@
         </widget>
        </item>
        <item>
-        <widget class="QListWidget" name="data_list"/>
+        <widget class="QListWidget" name="data_list">
+         <property name="selectionMode">
+          <enum>QAbstractItemView::MultiSelection</enum>
+         </property>
+        </widget>
        </item>
       </layout>
      </item>
@@ -119,7 +130,11 @@
         </widget>
        </item>
        <item>
-        <widget class="QListWidget" name="shared_data_list"/>
+        <widget class="QListWidget" name="shared_data_list">
+         <property name="selectionMode">
+          <enum>QAbstractItemView::MultiSelection</enum>
+         </property>
+        </widget>
        </item>
       </layout>
      </item>

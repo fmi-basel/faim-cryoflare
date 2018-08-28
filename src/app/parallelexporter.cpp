@@ -130,14 +130,20 @@ void LocalExportWorker::startImpl_()
 void LocalExportWorker::processNextImpl_()
 {
     busy_=true;
-    if(queue_->empty()){
+    ThreadSafeQueue<WorkItem>::result_pair result=queue_->checkEmptyAndFirst();
+    if(result.first){
         busy_=false;
         return;
     }
-    if(queue_->first().type==WorkItem::BARRIER){
+    if(result.second.type==WorkItem::BARRIER){
         barrier_.wait();
     }else{
-        WorkItem item=queue_->dequeue();
+        result=queue_->checkEmptyAndDequeue();
+        if(result.first){
+            busy_=false;
+            return;
+        }
+        WorkItem item=result.second;
         switch(item.type){
         case WorkItem::FILE:
             copyFile_(item);
@@ -237,16 +243,21 @@ void RemoteExportWorker::startImpl_()
 void RemoteExportWorker::processNextImpl_()
 {
     busy_=true;
-    if(queue_->empty()){
+    ThreadSafeQueue<WorkItem>::result_pair result=queue_->checkEmptyAndFirst();
+    if(result.first){
         busy_=false;
-        message_("idle");
         return;
     }
-    if(queue_->first().type==WorkItem::BARRIER){
+    if(result.second.type==WorkItem::BARRIER){
         barrier_.wait();
         emit next();
     }else{
-        current_item_=queue_->dequeue();
+        result=queue_->checkEmptyAndDequeue();
+        if(result.first){
+            busy_=false;
+            return;
+        }
+        current_item_=result.second;
         switch(current_item_.type){
         case WorkItem::FILE:
             copyFile_();
@@ -460,7 +471,7 @@ void RemoteExportWorker::fileInfo_(QSsh::SftpJobId job, const QList<QSsh::SftpFi
 
 
 
-ParallelExporter::ParallelExporter(const QString &source, const QUrl &destination,const QStringList& images, int num_threads,QObject *parent):
+ParallelExporter::ParallelExporter(const QString &source, const QUrl &destination, const QStringList& images, int num_threads, QObject *parent):
     QObject(parent),
     source_(source),
     destination_(destination),

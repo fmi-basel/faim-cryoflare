@@ -1,10 +1,11 @@
+#include <QListWidget>
 #include <QMessageBox>
 #include "exportdialog.h"
 #include "ui_exportdialog.h"
 #include "remotefiledialog.h"
 #include "sshauthenticationdialog.h"
 
-ExportDialog::ExportDialog(QWidget *parent) :
+ExportDialog::ExportDialog(const QStringList &raw_keys, const QStringList &output_keys, const QStringList &shared_keys, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::ExportDialog),
     connection_(nullptr)
@@ -12,6 +13,12 @@ ExportDialog::ExportDialog(QWidget *parent) :
     ui->setupUi(this);
     ui->data_path->setPathType(PathEdit::ExistingDirectory);
     ui->raw_data_path->setPathType(PathEdit::ExistingDirectory);
+    ui->data_list->addItems(output_keys);
+    ui->data_list->selectAll();
+    ui->raw_data_list->addItems(raw_keys);
+    ui->raw_data_list->selectAll();
+    ui->shared_data_list->addItems(shared_keys);
+    ui->shared_data_list->selectAll();
 }
 
 ExportDialog::~ExportDialog()
@@ -51,6 +58,43 @@ bool ExportDialog::separateRawPath() const
 void ExportDialog::setSeparateRawPath(bool f)
 {
     ui->separate_raw_path->setChecked(f);
+}
+
+bool ExportDialog::duplicateRaw() const
+{
+    return ui->duplicate_raw->isChecked();
+}
+
+void ExportDialog::setDuplicateRaw(bool f)
+{
+    ui->duplicate_raw->setChecked(f);
+}
+
+QStringList ExportDialog::selectedOutputKeys() const
+{
+    QStringList result;
+    foreach(QListWidgetItem* i, ui->data_list->selectedItems()){
+        result << i->text();
+    }
+    return result;
+}
+
+QStringList ExportDialog::selectedRawKeys() const
+{
+    QStringList result;
+    foreach(QListWidgetItem* i, ui->raw_data_list->selectedItems()){
+        result << i->text();
+    }
+    return result;
+}
+
+QStringList ExportDialog::selectedSharedKeys() const
+{
+    QStringList result;
+    foreach(QListWidgetItem* i, ui->shared_data_list->selectedItems()){
+        result << i->text();
+    }
+    return result;
 }
 
 void ExportDialog::verifyDestinations()

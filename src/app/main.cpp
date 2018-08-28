@@ -104,13 +104,13 @@ int main(int argc, char* argv[])
     if (qobject_cast<QApplication *>(app.data())) {
          // start GUI version...
         qobject_cast<QApplication *>(app.data())->setStyle(QStyleFactory::create("fusion"));
-        MainWindow w;
+        MainWindow w(processor);
         QObject::connect(&w, SIGNAL(startStop(bool)), &processor, SLOT(startStop(bool)));
-        QObject::connect(&w,&MainWindow::exportImages,&processor,&ImageProcessor::exportImages);
         QObject::connect(&w,&MainWindow::cancelExport,&processor,&ImageProcessor::cancelExport);
+        QObject::connect(&w,SIGNAL(settingsChanged()),&processor,SLOT(loadSettings()));
+
         QObject::connect(&processor, SIGNAL(newImage(DataPtr)), &w, SLOT(addImage(DataPtr)));
         QObject::connect(&processor, SIGNAL(dataChanged(DataPtr)), &w, SLOT(onDataChanged(DataPtr)));
-        QObject::connect(&w,SIGNAL(settingsChanged()),&processor,SLOT(loadSettings()));
         QObject::connect(&processor,SIGNAL(queueCountChanged(int,int)),&w,SLOT(updateQueueCounts(int,int)));
         QObject::connect(&processor,SIGNAL(processCreated(ProcessWrapper*,int)),&w,SLOT(createProcessIndicator(ProcessWrapper*,int)));
         QObject::connect(&processor,SIGNAL(processesDeleted()),&w,SLOT(deleteProcessIndicators()));

@@ -47,9 +47,12 @@ public slots:
     void onDirChange(const QString & path);
     void onTaskFinished(const TaskPtr& task, bool gpu);
     void loadSettings();
-    void exportImages(const QUrl& export_path,const QUrl& raw_export_path,const QStringList& image_list);
+    void exportImages(const QUrl& export_path,const QUrl& raw_export_path,const QStringList& image_list, const QStringList& output_keys,const QStringList& raw_keys,const QStringList& shared_keys,bool duplicate_raw );
     void cancelExport();
     void startTasks();
+    QSet<QString> getOutputFilesKeys() const;
+    QSet<QString> getRawFilesKeys() const;
+    QSet<QString> getSharedFilesKeys() const;
 signals:
     void newImage(DataPtr data);
     void dataChanged(DataPtr data);
@@ -81,9 +84,9 @@ private:
     QList<ProcessWrapper*> cpu_processes_;
     QList<ProcessWrapper*> gpu_processes_;
     TaskPtr root_task_;
-    QHash<QString,QSet<QString> > raw_files_;
-    QHash<QString,QSet<QString> > output_files_;
-    QSet<QString> shared_output_files_;
+    QHash<QString,QMap<QString,QString> > raw_files_;
+    QHash<QString,QMap<QString,QString> > output_files_;
+    QMap<QString,QString> shared_output_files_;
     QQueue<ParallelExporter*> exporters_;
     ParallelExporter* current_exporter_;
     QProcess* process_;

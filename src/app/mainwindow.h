@@ -35,6 +35,7 @@
 #include <imagetablemodel.h>
 #include "positionchart.h"
 #include "tablesummarymodel.h"
+#include "imageprocessor.h"
 #include <LimeReport>
 
 namespace Ui {
@@ -54,7 +55,7 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget *parent = 0);
+    explicit MainWindow(ImageProcessor& processor);
     ~MainWindow();
     void init();
     void updateTaskWidgets();
@@ -97,12 +98,12 @@ public slots:
 signals:
     void startStop(bool start);
     void settingsChanged();
-    void exportImages(const QUrl& destiantion_path,const QUrl& raw_destiantion_path,const QStringList& images);
     void cancelExport();
 private slots:
 
 private:
     void updateTaskWidget_(Settings *settings, QFormLayout *parent_input_layout, QFormLayout *parent_output_layout);
+    ImageProcessor& processor_;
     Ui::MainWindow *ui;
     ImageTableModel *model_;
     //used for report builder: TODO merge with model_
