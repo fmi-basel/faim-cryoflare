@@ -320,7 +320,7 @@ void RemoteExportWorker::createLink_()
 {
     bool is_open_ssh=true;
     QByteArray buffer(2048,0);
-    ssize_t len=readlink(current_item_.filename.toLatin1().data(), buffer.data(), static_cast<size_t>(buffer.size()));
+    ssize_t len=readlink(source_.absoluteFilePath(current_item_.filename).toLatin1().data(), buffer.data(), static_cast<size_t>(buffer.size()));
     if(len>0){
         QSsh::SftpJobId id;
         if(is_open_ssh){
