@@ -54,4 +54,5 @@ void DiskUsageWidget::update()
        setStyleSheet("QProgressBar::chunk {background-color: #00AF00 } QProgressBar { text-align: center}");
    }
    setValue(p);
+   setToolTip(QString("Available: %1 GB\nUsed: %2 GB\nTotal: %3 GB").arg(storage_info_.bytesAvailable()/1024.0/1024.0/1024.0).arg((storage_info_.bytesTotal()-storage_info_.bytesAvailable())/1024.0/1024.0/1024.0).arg(storage_info_.bytesTotal()/1024.0/1024.0/1024.0));
 }
