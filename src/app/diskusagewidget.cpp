@@ -47,11 +47,11 @@ void DiskUsageWidget::stop()
 void DiskUsageWidget::update()
 {
    storage_info_.refresh();
-   int p=static_cast<int>(100.0*storage_info_.bytesAvailable()/storage_info_.bytesTotal());
+   int p=static_cast<int>(round(100.0*(storage_info_.bytesTotal()-storage_info_.bytesAvailable())/storage_info_.bytesTotal()));
    if(p>90){
-       setStyleSheet("QProgressBar::chunk {background-color: #FF0000; text-align: center}");
+       setStyleSheet("QProgressBar::chunk {background-color: #AF0000 } QProgressBar { text-align: center}");
    }else{
-       setStyleSheet("QProgressBar::chunk {background-color: #00FF00; text-align: center}");
+       setStyleSheet("QProgressBar::chunk {background-color: #00AF00 } QProgressBar { text-align: center}");
    }
    setValue(p);
 }

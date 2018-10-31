@@ -363,6 +363,11 @@ void ImageProcessor::exportImages(const QUrl &export_path, const QUrl &raw_expor
     QString export_mode=settings.value("export").toString();
     if(export_mode=="custom2"){
         QString custom_script=settings.value("export_custom_script").toString();
+        QFileInfo check_file(custom_script);
+        if (!check_file.exists() || !check_file.isFile()) {
+	    qInfo() << "Custom export script doesn't exist:" << custom_script;
+            return;
+        }
         process_->setProcessChannelMode(QProcess::MergedChannels);
         process_->setStandardOutputFile(QDir(QDir::currentPath()).absoluteFilePath("export.log"));
         QStringList arguments;
