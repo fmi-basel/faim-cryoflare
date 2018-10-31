@@ -38,6 +38,7 @@
 #include "imageprocessor.h"
 #include <LimeReport>
 #include "diskusagewidget.h"
+#include "lastimagetimer.h"
 
 namespace Ui {
 class MainWindow;
@@ -130,7 +131,7 @@ private:
     DiskUsageWidget* epu_disk_usage_;
     DiskUsageWidget* movie_disk_usage_;
     DiskUsageWidget* local_disk_usage_;
-
+    LastImageTimer* last_image_timer_;
 };
 
 #endif // MAINWINDOW_H

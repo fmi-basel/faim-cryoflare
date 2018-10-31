@@ -81,7 +81,8 @@ SOURCES += \
     sshauthenticationdialog.cpp \
     sshauthenticationstore.cpp \
     sftpurl.cpp \
-    diskusagewidget.cpp
+    diskusagewidget.cpp \
+    lastimagetimer.cpp
 
 
 
@@ -118,7 +119,8 @@ HEADERS  += \
     sshauthenticationdialog.h \
     sshauthenticationstore.h \
     sftpurl.h \
-    diskusagewidget.h
+    diskusagewidget.h \
+    lastimagetimer.h
 
 
 FORMS    += \

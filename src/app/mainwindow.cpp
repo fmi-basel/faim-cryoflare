@@ -84,7 +84,8 @@ MainWindow::MainWindow(ImageProcessor &processor) :
     export_progress_dialog_(new ExportProgressDialog(this)),
     epu_disk_usage_(new DiskUsageWidget("EPU")),
     movie_disk_usage_(new DiskUsageWidget("Movies")),
-    local_disk_usage_(new DiskUsageWidget("Local"))
+    local_disk_usage_(new DiskUsageWidget("Local")),
+    last_image_timer_(new LastImageTimer())
 
 
 {
@@ -119,6 +120,8 @@ MainWindow::MainWindow(ImageProcessor &processor) :
     connect(ui->start_stop, SIGNAL(toggled(bool)), this, SLOT(onStartStopButton(bool)));
     connect(model_,SIGNAL(dataChanged(QModelIndex,QModelIndex)),this,SLOT(updateDetailsfromModel(QModelIndex,QModelIndex)));
     connect(ui->image_list->selectionModel(),SIGNAL(currentChanged(QModelIndex,QModelIndex)),this,SLOT(updateDetailsfromView(QModelIndex,QModelIndex)));
+    statusBar()->addPermanentWidget(last_image_timer_);
+    connect(model_,&ImageTableModel::columnsInserted,last_image_timer_,&LastImageTimer::reset);
     statusBar()->addPermanentWidget(epu_disk_usage_);
     statusBar()->addPermanentWidget(movie_disk_usage_);
     statusBar()->addPermanentWidget(local_disk_usage_);
@@ -864,6 +867,9 @@ void MainWindow::onStartStopButton(bool start)
         local_disk_usage_->start(".");
         full_model_->clearData();
         model_->clearData();
+        last_image_timer_->reset();
+    }else{
+        last_image_timer_->stop();
     }
     emit startStop(start);
 }

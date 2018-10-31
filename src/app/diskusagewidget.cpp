@@ -20,7 +20,7 @@
 //
 //------------------------------------------------------------------------------
 #include "diskusagewidget.h"
-
+#include <cmath>
 
 DiskUsageWidget::DiskUsageWidget(const QString &name):
     storage_info_(),
