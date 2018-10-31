@@ -81,7 +81,10 @@ MainWindow::MainWindow(ImageProcessor &processor) :
     scatter_plot_action_(new QAction("Scatter Plot",this)),
     run_script_action_(new QAction("Run script",this)),
     report_(),
-    export_progress_dialog_(new ExportProgressDialog(this))
+    export_progress_dialog_(new ExportProgressDialog(this)),
+    epu_disk_usage_(new DiskUsageWidget("EPU")),
+    movie_disk_usage_(new DiskUsageWidget("Movies")),
+    local_disk_usage_(new DiskUsageWidget("Local"))
 
 
 {
@@ -116,6 +119,9 @@ MainWindow::MainWindow(ImageProcessor &processor) :
     connect(ui->start_stop, SIGNAL(toggled(bool)), this, SLOT(onStartStopButton(bool)));
     connect(model_,SIGNAL(dataChanged(QModelIndex,QModelIndex)),this,SLOT(updateDetailsfromModel(QModelIndex,QModelIndex)));
     connect(ui->image_list->selectionModel(),SIGNAL(currentChanged(QModelIndex,QModelIndex)),this,SLOT(updateDetailsfromView(QModelIndex,QModelIndex)));
+    statusBar()->addPermanentWidget(epu_disk_usage_);
+    statusBar()->addPermanentWidget(movie_disk_usage_);
+    statusBar()->addPermanentWidget(local_disk_usage_);
     statusBar()->addPermanentWidget(statusbar_queue_count_);
     chart_update_timer_.setSingleShot(true);
 
@@ -853,6 +859,9 @@ void MainWindow::selectFromHistogramChart(float start, float end, bool invert)
 void MainWindow::onStartStopButton(bool start)
 {
     if(start){
+        epu_disk_usage_->start(ui->avg_source_dir->text());
+        movie_disk_usage_->start(ui->stack_source_dir->text());
+        local_disk_usage_->start(".");
         full_model_->clearData();
         model_->clearData();
     }

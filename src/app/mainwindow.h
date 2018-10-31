@@ -37,6 +37,7 @@
 #include "tablesummarymodel.h"
 #include "imageprocessor.h"
 #include <LimeReport>
+#include "diskusagewidget.h"
 
 namespace Ui {
 class MainWindow;
@@ -126,6 +127,9 @@ private:
     QAction* run_script_action_;
     LimeReport::ReportEngine report_;
     ExportProgressDialog* export_progress_dialog_;
+    DiskUsageWidget* epu_disk_usage_;
+    DiskUsageWidget* movie_disk_usage_;
+    DiskUsageWidget* local_disk_usage_;
 
 };
 

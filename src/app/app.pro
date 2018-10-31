@@ -80,7 +80,8 @@ SOURCES += \
     exportprogressdialog.cpp \
     sshauthenticationdialog.cpp \
     sshauthenticationstore.cpp \
-    sftpurl.cpp
+    sftpurl.cpp \
+    diskusagewidget.cpp
 
 
 
@@ -116,7 +117,8 @@ HEADERS  += \
     exportprogressdialog.h \
     sshauthenticationdialog.h \
     sshauthenticationstore.h \
-    sftpurl.h
+    sftpurl.h \
+    diskusagewidget.h
 
 
 FORMS    += \
