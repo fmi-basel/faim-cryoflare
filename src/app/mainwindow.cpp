@@ -121,7 +121,7 @@ MainWindow::MainWindow(ImageProcessor &processor) :
     connect(model_,SIGNAL(dataChanged(QModelIndex,QModelIndex)),this,SLOT(updateDetailsfromModel(QModelIndex,QModelIndex)));
     connect(ui->image_list->selectionModel(),SIGNAL(currentChanged(QModelIndex,QModelIndex)),this,SLOT(updateDetailsfromView(QModelIndex,QModelIndex)));
     statusBar()->addPermanentWidget(last_image_timer_);
-    connect(model_,&ImageTableModel::columnsInserted,last_image_timer_,&LastImageTimer::reset);
+    connect(model_,&ImageTableModel::rowsInserted,last_image_timer_,&LastImageTimer::reset);
     statusBar()->addPermanentWidget(epu_disk_usage_);
     statusBar()->addPermanentWidget(movie_disk_usage_);
     statusBar()->addPermanentWidget(local_disk_usage_);
