@@ -82,7 +82,10 @@ SOURCES += \
     sshauthenticationstore.cpp \
     sftpurl.cpp \
     diskusagewidget.cpp \
-    lastimagetimer.cpp
+    lastimagetimer.cpp \
+    metadatastore.cpp \
+    datasourcebase.cpp \
+    epudatasource.cpp
 
 
 
@@ -120,7 +123,10 @@ HEADERS  += \
     sshauthenticationstore.h \
     sftpurl.h \
     diskusagewidget.h \
-    lastimagetimer.h
+    lastimagetimer.h \
+    metadatastore.h \
+    datasourcebase.h \
+    epudatasource.h
 
 
 FORMS    += \

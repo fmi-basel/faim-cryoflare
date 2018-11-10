@@ -31,6 +31,8 @@
 #include <QtPlugin>
 #include  "settings.h"
 #include "filelocker.h"
+#include "metadatastore.h"
+#include "epudatasource.h"
 
 QCoreApplication* createApplication(int &argc, char *argv[])
 {
@@ -101,6 +103,11 @@ int main(int argc, char* argv[])
         }
     }
     ImageProcessor processor;
+    MetaDataStore meta_data_store;
+    EPUDataSource*  data_source= new EPUDataSource;
+    meta_data_store.setDataSource(data_source);
+    QObject::connect(&meta_data_store,&MetaDataStore::newImage,&processor,&ImageProcessor::createTaskTree);
+
     if (qobject_cast<QApplication *>(app.data())) {
          // start GUI version...
         qobject_cast<QApplication *>(app.data())->setStyle(QStyleFactory::create("fusion"));
@@ -109,7 +116,7 @@ int main(int argc, char* argv[])
         QObject::connect(&w,&MainWindow::cancelExport,&processor,&ImageProcessor::cancelExport);
         QObject::connect(&w,SIGNAL(settingsChanged()),&processor,SLOT(loadSettings()));
 
-        QObject::connect(&processor, SIGNAL(newImage(DataPtr)), &w, SLOT(addImage(DataPtr)));
+        QObject::connect(&meta_data_store,&MetaDataStore::newImage, &w, &MainWindow::addImage);
         QObject::connect(&processor, SIGNAL(dataChanged(DataPtr)), &w, SLOT(onDataChanged(DataPtr)));
         QObject::connect(&processor,SIGNAL(queueCountChanged(int,int)),&w,SLOT(updateQueueCounts(int,int)));
         QObject::connect(&processor,SIGNAL(processCreated(ProcessWrapper*,int)),&w,SLOT(createProcessIndicator(ProcessWrapper*,int)));
@@ -129,10 +136,12 @@ int main(int argc, char* argv[])
                 switch(path_count){
                 case 0:
                     settings.setValue("avg_source_dir",app->arguments()[i]);
+                    data_source->setProjectDir(app->arguments()[i]);
                     path_count=1;
                     break;
                 case 1:
                     settings.setValue("stack_source_dir",app->arguments()[i]);
+                    data_source->setMovieDir(app->arguments()[i]);
                     path_count=2;
                     break;
                 }

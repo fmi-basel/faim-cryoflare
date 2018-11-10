@@ -34,8 +34,8 @@ class FileSystemWatcher : public QObject
 {
     Q_OBJECT
 public:
-    explicit FileSystemWatcher(QObject *parent = 0);
-    FileSystemWatcher(const QStringList & paths, QObject * parent = 0);
+    explicit FileSystemWatcher(QObject *parent = nullptr);
+    FileSystemWatcher(const QStringList & paths, QObject * parent = nullptr);
     ~FileSystemWatcher();
     bool addPath(const QString & path);
     bool addPaths(const QStringList & paths);

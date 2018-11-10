@@ -26,169 +26,15 @@
 #include <QDateTime>
 #include "settings.h"
 #include <QtDebug>
-#include <filesystemwatcher.h>
-#include <QDomDocument>
 #include <QProcess>
 #include <processwrapper.h>
 #include "imageprocessor.h"
 
-namespace  {
-
-DataPtr parse_grid_xml(const QDir& grid_square_dir){
-    DataPtr result(new Data());
-    result->insert("X","0");
-    result->insert("Y","0");
-    result->insert("Z","0");
-    result->insert("A","0");
-    result->insert("B","0");
-    result->insert("image_shift_x","0");
-    result->insert("image_shift_y","0");
-
-    QDomDocument dom_document;
-    QStringList grid_sqare_xmls=grid_square_dir.entryList(QStringList("GridSquare*.xml"));
-    if(grid_sqare_xmls.isEmpty()){
-        qDebug() << "Missing grid square xml for : "+grid_square_dir.absolutePath();
-        return result;
-    }
-    QString xml_path=grid_square_dir.absoluteFilePath(grid_sqare_xmls.at(0));
-    QFile file(xml_path);
-    if (!file.open(QIODevice::ReadOnly)){
-        qDebug() << "Could not open : "+xml_path;
-        return result;
-    }
-    if (!dom_document.setContent(&file)) {
-        qDebug() << "Error parsing : "+xml_path;
-        file.close();
-        return result;
-    }
-    file.close();
-    QDomNode position=dom_document.elementsByTagName("Position").at(0);
-    result->insert("X",position.toElement().elementsByTagName("X").at(0).toElement().text());
-    result->insert("Y",position.toElement().elementsByTagName("Y").at(0).toElement().text());
-    result->insert("Z",position.toElement().elementsByTagName("Z").at(0).toElement().text());
-    result->insert("A",position.toElement().elementsByTagName("A").at(0).toElement().text());
-    result->insert("B",position.toElement().elementsByTagName("B").at(0).toElement().text());
-    QDomNode image_shift=dom_document.elementsByTagName("ImageShift").at(0);
-    result->insert("image_shift_x",image_shift.toElement().elementsByTagName("a:_x").at(0).toElement().text());
-    result->insert("image_shift_y",image_shift.toElement().elementsByTagName("a:_y").at(0).toElement().text());
-    return result;
-}
-
-DataPtr parse_xml_data(const QString& xml_path){
-    DataPtr result(new Data());
-    QDir xml_dir(xml_path);
-    QString name=xml_dir.dirName();
-    name.truncate(name.lastIndexOf('.'));
-    xml_dir.cdUp();
-    xml_dir.cdUp();
-    DataPtr square_data=parse_grid_xml(xml_dir);
-    result->insert("square_X",square_data->value("X"));
-    result->insert("square_Y",square_data->value("Y"));
-    result->insert("square_Z",square_data->value("Z"));
-    result->insert("square_A",square_data->value("A"));
-    result->insert("square_B",square_data->value("B"));
-    result->insert("square_image_shift_x",square_data->value("image_shift_x"));
-    result->insert("square_image_shift_y",square_data->value("image_shift_y"));
-
-    QString grid_name=xml_dir.dirName();
-    result->insert("xml_file",xml_path);
-    result->insert("name",name);
-    QStringList splitted_name=name.split("_");
-    if(splitted_name.size()<2){
-        qDebug() << "Encountered image name not conforming to EPU conventions: "+name;
-        QCoreApplication::exit(-1);
-    }
-    result->insert("hole_id",splitted_name.at(1));
-    result->insert("grid_name",grid_name);
-    result->insert("square_id",grid_name.remove(0,11));
-    xml_dir.cdUp();
-    result->insert("disc_name",xml_dir.dirName());
-    QDomDocument dom_document;
-    QFile file(xml_path);
-    if (!file.open(QIODevice::ReadOnly))
-        return result;
-    if (!dom_document.setContent(&file)) {
-        file.close();
-        return result;
-    }
-    file.close();
-    QDomNode custom_data=dom_document.elementsByTagName("CustomData").at(0);
-    QDomNode node = custom_data.firstChild();
-    while(!node.isNull()) {
-        if(node.firstChild().toElement().text()=="AppliedDefocus"){
-            result->insert("defocus",QString("%1").arg(node.lastChild().toElement().text().toDouble()*1.0e10));
-        }   else if(node.firstChild().toElement().text()=="PhasePlateUsed"){
-            result->insert("phase_plate",node.lastChild().toElement().text());
-        }    else if(node.firstChild().toElement().text()=="Dose"){
-            result->insert("dose",QString("%1").arg(node.lastChild().toElement().text().toDouble()*1.0e-20));
-        }    else if(node.firstChild().toElement().text()=="PhasePlateApertureName"){
-            QString phase_plate_str=node.lastChild().toElement().text().split(" ").last();
-            result->insert("phase_plate_num",phase_plate_str.right(phase_plate_str.size()-1));
-        }    else if(node.firstChild().toElement().text()=="PhasePlatePosition"){
-            result->insert("phase_plate_pos",node.lastChild().toElement().text());
-        }
-
-
-        node = node.nextSibling();
-    }
-
-    QDomNode camera=dom_document.elementsByTagName("camera").at(0);
-    QString camera_name=camera.toElement().elementsByTagName("Name").at(0).toElement().text();
-    result->insert("camera",camera_name);
-    if(QString("BM-Falcon")==camera_name){
-        result->insert("num_frames",QString("%1").arg(camera.toElement().elementsByTagName("b:DoseFractions").at(0).childNodes().size()));
-    }else if (QString("EF-CCD")==camera_name){
-        result->insert("num_frames",camera.toElement().elementsByTagName("b:NumberOffractions").at(0).toElement().text());
-    }
-    result->insert("exposure_time",camera.toElement().elementsByTagName("ExposureTime").at(0).toElement().text());
-
-    QDomNode pixel_size=dom_document.elementsByTagName("pixelSize").at(0);
-    QDomNodeList pixel_size_values=pixel_size.toElement().elementsByTagName("numericValue");
-    QDomNode cam_specific_input=dom_document.elementsByTagName("CameraSpecificInput").at(0);
-    QDomNodeList inputs=cam_specific_input.childNodes();
-    result->insert("super_resolution_factor","1");
-    for(int i=0;i<inputs.size();++i){
-        QDomNode input=inputs.at(i);
-        QString key=input.firstChild().toElement().text();
-        QString value=input.lastChild().toElement().text();
-        if(key=="SuperResolutionFactor"){
-            result->insert("super_resolution_factor",value);
-        }
-    } 
-    result->insert("apix_x",QString("%1").arg(pixel_size_values.at(0).toElement().text().toFloat()*1e10/result->value("super_resolution_factor").toFloat()));
-    result->insert("apix_y",QString("%1").arg(pixel_size_values.at(1).toElement().text().toFloat()*1e10/result->value("super_resolution_factor").toFloat()));
-
-    
-    result->insert("acceleration_voltage",QString("%1").arg(dom_document.elementsByTagName("AccelerationVoltage").at(0).toElement().text().toFloat()/1000.0));
-    QDomNode nominal_magnification=dom_document.elementsByTagName("NominalMagnification").at(0);
-    result->insert("nominal_magnification",nominal_magnification.toElement().text());
-    QDomNode datetime=dom_document.elementsByTagName("acquisitionDateTime").at(0);
-    QString timestamp=datetime.toElement().text();
-    QDateTime time=QDateTime::fromString(timestamp,Qt::ISODate);
-    result->insert("timestamp",time.toString("yyyy-MM-dd hh:mm:ss"));
-    result->insert("short_name",time.toString("yyyyMMdd_hhmmss"));
-    QDomNode position=dom_document.elementsByTagName("Position").at(0);
-    result->insert("X",position.toElement().elementsByTagName("X").at(0).toElement().text());
-    result->insert("Y",position.toElement().elementsByTagName("Y").at(0).toElement().text());
-    result->insert("Z",position.toElement().elementsByTagName("Z").at(0).toElement().text());
-    result->insert("A",position.toElement().elementsByTagName("A").at(0).toElement().text());
-    result->insert("B",position.toElement().elementsByTagName("B").at(0).toElement().text());
-    QDomNode image_shift=dom_document.elementsByTagName("ImageShift").at(0);
-    result->insert("image_shift_x",image_shift.toElement().elementsByTagName("a:_x").at(0).toElement().text());
-    result->insert("image_shift_y",image_shift.toElement().elementsByTagName("a:_y").at(0).toElement().text());
-
-    return result;
-}
-
-}
 
 ImageProcessor::ImageProcessor():
     QObject(),
-    watcher_(new FileSystemWatcher),
-    avg_source_path_(),
-    stack_source_path_(),
-    grid_squares_(),
-    images_(),
+    epu_project_dir_(),
+    movie_dir_(),
     cpu_task_stack_(),
     gpu_task_stack_(),
     cpu_processes_(),
@@ -204,7 +50,6 @@ ImageProcessor::ImageProcessor():
 
 {
     QTimer::singleShot(0, this, SLOT(loadSettings()));
-    connect(watcher_, SIGNAL(directoryChanged(const QString &)), this, SLOT(onDirChange(const QString &)));
 }
 
 ImageProcessor::~ImageProcessor()
@@ -225,14 +70,14 @@ void ImageProcessor::startStop(bool start)
         shared_output_files_.clear();
         Settings settings;
         running_state_=true;
-        avg_source_path_=settings.value("avg_source_dir").toString();
-        stack_source_path_=settings.value("stack_source_dir").toString();
-        watcher_->addPath(avg_source_path_);
-        onDirChange(avg_source_path_);
+        epu_project_dir_=settings.value("avg_source_dir").toString();
+        movie_dir_=settings.value("stack_source_dir").toString();
+        watcher_->addPath(epu_project_dir_);
+        onDirChange(epu_project_dir_);
         startTasks();
     }else{
         running_state_=false;
-        watcher_->removePath(avg_source_path_);
+        watcher_->removePath(epu_project_dir_);
         cpu_task_stack_.clear();
         gpu_task_stack_.clear();
         foreach(ProcessWrapper* process, cpu_processes_){
@@ -241,39 +86,6 @@ void ImageProcessor::startStop(bool start)
         foreach(ProcessWrapper* process, gpu_processes_){
             process->terminate();
         }
-        grid_squares_.clear();
-        images_.clear();
-    }
-}
-
-
-
-void ImageProcessor::onDirChange(const QString &path)
-{
-    QDir dir(path);
-    if(dir.absolutePath()==avg_source_path_){
-        QFileInfoList images_discs=dir.entryInfoList(QStringList("Images-Disc*"),QDir::Dirs,QDir::Time | QDir::Reversed);
-        for(int i=0;i<images_discs.size();++i){
-            updateDisc_(images_discs.at(i).absoluteFilePath());
-        }
-        return;
-    }
-    dir.cdUp();
-    if(dir.absolutePath()==avg_source_path_){
-        //Images-Disc* directory has changed
-        updateDisc_(path);
-        return;
-    }
-    dir.cdUp();
-    if(dir.absolutePath()==avg_source_path_){
-        // changes within gridsquare dir
-        updateGridSquare_(path);
-        return;
-    }
-    dir.cdUp();
-    if(dir.absolutePath()==avg_source_path_){
-        updateImages_(path);
-        return;
     }
 }
 
@@ -525,59 +337,9 @@ void ImageProcessor::startNextExport_()
     }
 }
 
-void ImageProcessor::updateDisc_(const QString &disc)
-{
-    QFileInfoList grid_squares=QDir(disc).entryInfoList(QStringList("GridSquare_*"),QDir::Dirs,QDir::Time | QDir::Reversed);
-    for(int i=0;i<grid_squares.size();++i){
-        updateGridSquare_(grid_squares.at(i).absoluteFilePath());
-    }
-    return;
-}
-void ImageProcessor::updateGridSquare_(const QString &grid_square)
-{
-    QString grid_square_data=QDir(grid_square).absoluteFilePath("Data");
-    if(! grid_squares_.contains(grid_square_data)){
-        if(QFileInfo::exists(grid_square_data)){
-            watcher_->addPath(grid_square_data);
-            grid_squares_.append(grid_square_data);
-            updateImages_(grid_square_data);
-            watcher_->removePath(grid_square);
-        }else{
-            watcher_->addPath(grid_square);
-        }
-    }
-}
 
-void ImageProcessor::updateImages_(const QString &grid_square)
+void ImageProcessor::createTaskTree( DataPtr data)
 {
-    QFileInfoList xml_files=QDir(grid_square).entryInfoList(QStringList("FoilHole*.xml"));
-    for(int i=0;i<xml_files.size();++i){
-        if(!images_.contains(xml_files.at(i).absoluteFilePath())){
-            images_.append(xml_files.at(i).absoluteFilePath());
-            createTaskTree_(xml_files.at(i).absoluteFilePath());
-        }
-    }
-}
-
-void ImageProcessor::createTaskTree_(const QString &path)
-{
-    DataPtr data=parse_xml_data(path);
-    QString relative_path=QString("%1/%2/Data").arg(data->value("disc_name")).arg(data->value("grid_name"));
-    QString avg_s_path=QString("%1/%2").arg(avg_source_path_).arg(relative_path);
-    QString stack_s_path=QString("%1/%2").arg(stack_source_path_).arg(relative_path);
-    data->insert("destination_path",QDir::currentPath());
-    data->insert("stack_source_path",stack_s_path);
-    data->insert("avg_source_path",avg_s_path);
-    QStringList stack_frames;
-    if(QString("BM-Falcon")==data->value("camera")){
-        data->insert("stack_frames",QString("%1/%2_frames.mrc").arg(stack_s_path).arg(data->value("name")));
-    }else if(QString("EF-CCD")==data->value("camera")){
-        for(int i=1;i<=data->value("num_frames").toInt();++i){
-            stack_frames.append(QString("%1/%2-*-%3.???").arg(stack_s_path).arg(data->value("name")).arg(i,4,10,QChar('0')));
-        }
-        data->insert("stack_frames",stack_frames.join(" "));
-    }
-    emit newImage(data);
     TaskPtr root_task=root_task_->clone();
     root_task->setData(data);
     for(int i=0;i<root_task->children.size();++i){
