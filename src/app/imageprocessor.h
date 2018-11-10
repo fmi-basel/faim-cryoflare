@@ -32,7 +32,6 @@
 #include "sftpurl.h"
 
 //fw decl
-class FileSystemWatcher;
 class ProcessWrapper;
 class Settings;
 class QProcess;
@@ -54,6 +53,7 @@ public slots:
     QSet<QString> getOutputFilesKeys() const;
     QSet<QString> getRawFilesKeys() const;
     QSet<QString> getSharedFilesKeys() const;
+    void createTaskTree(DataPtr data);
 signals:
     void newImage(DataPtr data);
     void dataChanged(DataPtr data);
@@ -69,17 +69,10 @@ protected slots:
     void exportFinished_();
 private:
     void startNextExport_();
-    void updateDisc_(const QString& disc);
-    void updateGridSquare_(const QString& grid_square);
-    void updateImages_(const QString& grid_square);
-    void createTaskTree_(const QString& path);
     void loadTask_(Settings *setting,const TaskPtr& task);
 
-    FileSystemWatcher* watcher_;
-    QString avg_source_path_;
-    QString stack_source_path_;
-    QStringList grid_squares_;
-    QStringList images_;
+    QString epu_project_dir_;
+    QString movie_dir_;
     QStack<TaskPtr> cpu_task_stack_;
     QStack<TaskPtr> gpu_task_stack_;
     QList<ProcessWrapper*> cpu_processes_;
