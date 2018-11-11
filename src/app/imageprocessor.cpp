@@ -29,9 +29,10 @@
 #include <QProcess>
 #include <processwrapper.h>
 #include "imageprocessor.h"
+#include "metadatastore.h"
 
 
-ImageProcessor::ImageProcessor():
+ImageProcessor::ImageProcessor(MetaDataStore &meta_data_store):
     QObject(),
     epu_project_dir_(),
     movie_dir_(),
@@ -46,9 +47,11 @@ ImageProcessor::ImageProcessor():
     exporters_(),
     current_exporter_(nullptr),
     process_(new QProcess(this)),
-    running_state_(false)
+    running_state_(false),
+    meta_data_store_(meta_data_store)
 
 {
+    connect(&meta_data_store_,&MetaDataStore::newImage,this,&ImageProcessor::createTaskTree);
     QTimer::singleShot(0, this, SLOT(loadSettings()));
 }
 
@@ -72,12 +75,13 @@ void ImageProcessor::startStop(bool start)
         running_state_=true;
         epu_project_dir_=settings.value("avg_source_dir").toString();
         movie_dir_=settings.value("stack_source_dir").toString();
-        watcher_->addPath(epu_project_dir_);
-        onDirChange(epu_project_dir_);
+        meta_data_store_.setProjectDir(epu_project_dir_);
+        meta_data_store_.setMovieDir(movie_dir_);
+        meta_data_store_.start();
         startTasks();
     }else{
         running_state_=false;
-        watcher_->removePath(epu_project_dir_);
+        meta_data_store_.stop();
         cpu_task_stack_.clear();
         gpu_task_stack_.clear();
         foreach(ProcessWrapper* process, cpu_processes_){
@@ -91,17 +95,18 @@ void ImageProcessor::startStop(bool start)
 
 void ImageProcessor::onTaskFinished(const TaskPtr &task, bool gpu)
 {
-    if(! output_files_.contains(task->data->value("short_name"))){
-        output_files_[task->data->value("short_name")]=QMap<QString,QString>();
+    QString short_name=task->data->value("short_name").toString();
+    if(! output_files_.contains(short_name)){
+        output_files_[short_name]=QMap<QString,QString>();
     }
     foreach(QString key, task->output_files.keys()){
-        output_files_[task->data->value("short_name")].insert(key,QDir::current().relativeFilePath(task->output_files.value(key)));
+        output_files_[short_name].insert(key,QDir::current().relativeFilePath(task->output_files.value(key)));
     }
-    if(! raw_files_.contains(task->data->value("short_name"))){
-        raw_files_[task->data->value("short_name")]=QMap<QString,QString>();
+    if(! raw_files_.contains(short_name)){
+        raw_files_[short_name]=QMap<QString,QString>();
     }
     foreach(QString key, task->raw_files.keys()){
-        raw_files_[task->data->value("short_name")].insert(key,QDir::current().relativeFilePath(task->raw_files.value(key)));
+        raw_files_[short_name].insert(key,QDir::current().relativeFilePath(task->raw_files.value(key)));
     }
     foreach(QString key, task->shared_output_files.keys()){
         shared_output_files_.insert(key,QDir::current().relativeFilePath( task->shared_output_files.value(key)));
@@ -122,7 +127,7 @@ void ImageProcessor::onTaskFinished(const TaskPtr &task, bool gpu)
         QTextStream stream( &f );
         stream << task->error << endl;
     }
-    task->data->insert("tasks_unfinished",QString("%1").arg(task->data->value("tasks_unfinished","1").toInt()-1));
+    task->data->insert("tasks_unfinished",QString("%1").arg(task->data->value("tasks_unfinished").toInt(1)-1));
     emit dataChanged(task->data);
 }
 

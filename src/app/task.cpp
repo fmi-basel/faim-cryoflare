@@ -44,7 +44,7 @@ Task::Task(const QString &name_, const QString &script_, DataPtr data_, bool gpu
 void Task::setData(const DataPtr &data_)
 {
     data=data_;
-    data->insert("tasks_unfinished",1+data->value("tasks_unfinished",0));
+    data->insert("tasks_unfinished",1+data->value("tasks_unfinished").toInt(0));
     foreach(TaskPtr child,children){
         child->setData(data_);
     }

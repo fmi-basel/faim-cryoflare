@@ -57,7 +57,7 @@ void ProcessWrapper::start(const TaskPtr &task)
     task_=task;
     process_->start(task_->script);
     foreach(QString key,task_->data->keys()){
-        QString val=task_->data->value(key);
+        QString val=task_->data->value(key).toString();
         process_->write(QString("%1=%2\n").arg(key,val).toLatin1());
     }
     if(-1!=gpu_id_){
@@ -142,7 +142,7 @@ void ProcessWrapper::onFinished(int exitcode)
 
 void ProcessWrapper::onStarted()
 {
-    emit started(task_->name,task_->data->value("short_name"),process_->processId());
+    emit started(task_->name,task_->data->value("short_name").toString(),process_->processId());
 }
 
 void ProcessWrapper::kill()

@@ -51,20 +51,20 @@ class QFormLayout;
 class QVBoxLayout;
 class ProcessIndicator;
 class ExportProgressDialog;
+class MetaDataStore;
 
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    explicit MainWindow(ImageProcessor& processor);
+    explicit MainWindow(MetaDataStore& meta_data_store,ImageProcessor& processor);
     ~MainWindow();
     void init();
     void updateTaskWidgets();
 public slots:
     void onAvgSourceDirBrowse();
     void onStackSourceDirBrowse();
-    void addImage(const DataPtr &data);
     void onDataChanged(const DataPtr &data);
     void onAvgSourceDirTextChanged(const QString & dir);
     void onStackSourceDirTextChanged(const QString & dir);
@@ -105,11 +105,10 @@ private slots:
 
 private:
     void updateTaskWidget_(Settings *settings, QFormLayout *parent_input_layout, QFormLayout *parent_output_layout);
+    MetaDataStore & meta_data_store_;
     ImageProcessor& processor_;
     Ui::MainWindow *ui;
     ImageTableModel *model_;
-    //used for report builder: TODO merge with model_
-    ImageTableModel *full_model_;
     ImageTableSortFilterProxyModel *sort_proxy_;
     TableSummaryModel* summary_model_;
     QLabel *statusbar_queue_count_;
