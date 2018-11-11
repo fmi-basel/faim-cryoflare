@@ -35,16 +35,16 @@
 class ProcessWrapper;
 class Settings;
 class QProcess;
+class MetaDataStore;
 
 class ImageProcessor: public QObject
 {
     Q_OBJECT
 public:
-    ImageProcessor();
+    ImageProcessor(MetaDataStore &meta_data_store);
     ~ImageProcessor();
 public slots:
     void startStop(bool start=true);
-    void onDirChange(const QString & path);
     void onTaskFinished(const TaskPtr& task, bool gpu);
     void loadSettings();
     void exportImages(const SftpUrl& export_path,const SftpUrl& raw_export_path,const QStringList& image_list, const QStringList& output_keys,const QStringList& raw_keys,const QStringList& shared_keys,bool duplicate_raw );
@@ -85,6 +85,7 @@ private:
     ParallelExporter* current_exporter_;
     QProcess* process_;
     bool running_state_;
+    MetaDataStore& meta_data_store_;
 
 
 };

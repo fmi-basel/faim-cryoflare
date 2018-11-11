@@ -24,6 +24,7 @@
 #include <limits>
 #include "processindicator.h"
 #include "processwrapper.h"
+#include "metadatastore.h"
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "epuimageinfo.h"
@@ -58,12 +59,12 @@
 #include "exportdialog.h"
 #include "exportprogressdialog.h"
 
-MainWindow::MainWindow(ImageProcessor &processor) :
+MainWindow::MainWindow(MetaDataStore &meta_data_store, ImageProcessor &processor) :
     QMainWindow(),
+    meta_data_store_(meta_data_store),
     processor_(processor),
     ui(new Ui::MainWindow),
-    model_(new ImageTableModel(this)),
-    full_model_(new ImageTableModel(this)),
+    model_(new ImageTableModel(meta_data_store,this)),
     sort_proxy_(new ImageTableSortFilterProxyModel(this)),
     summary_model_(new TableSummaryModel(model_,this)),
     statusbar_queue_count_(new QLabel("CPU queue: 0 / GPU queue: 0")),
@@ -90,6 +91,17 @@ MainWindow::MainWindow(ImageProcessor &processor) :
 
 {
     ui->setupUi(this);
+    connect(this, SIGNAL(startStop(bool)), &processor_, SLOT(startStop(bool)));
+    connect(this,&MainWindow::cancelExport,&processor_,&ImageProcessor::cancelExport);
+    connect(this,SIGNAL(settingsChanged()),&processor_,SLOT(loadSettings()));
+    connect(&processor_, SIGNAL(dataChanged(DataPtr)), this, SLOT(onDataChanged(DataPtr)));
+    connect(&processor_,SIGNAL(queueCountChanged(int,int)),this,SLOT(updateQueueCounts(int,int)));
+    connect(&processor_,SIGNAL(processCreated(ProcessWrapper*,int)),this,SLOT(createProcessIndicator(ProcessWrapper*,int)));
+    connect(&processor_,SIGNAL(processesDeleted()),this,SLOT(deleteProcessIndicators()));
+    connect(&processor_,&ImageProcessor::exportStarted,this,&MainWindow::onExportStarted);
+    connect(&processor_,&ImageProcessor::exportFinished,this,&MainWindow::onExportFinished);
+    connect(&processor_,&ImageProcessor::exportMessage,this,&MainWindow::onExportMessage);
+
     QString stylesheet;
     stylesheet+="* {color: #e6e6e6; background-color: #40434a} ";
     stylesheet+="QScrollBar::handle {background-color: rgb(5,97,137) }  ";
@@ -200,7 +212,7 @@ MainWindow::MainWindow(ImageProcessor &processor) :
                      << InputOutputVariable("X","X",Float)
                      << InputOutputVariable("Y","Y",Float)
                      << InputOutputVariable("Z","Z",Float);
-    report_.dataManager()->addModel("Images",full_model_,false);
+    report_.dataManager()->addModel("Images",model_,false);
     connect(export_progress_dialog_,&ExportProgressDialog::rejected,this,&MainWindow::cancelExport);
 }
 
@@ -237,12 +249,6 @@ void MainWindow::onStackSourceDirBrowse()
 }
 
 
-void MainWindow::addImage(const DataPtr &data)
-{
-    model_->addImage(data);
-    full_model_->addImage(data);
-}
-
 void MainWindow::onDataChanged(const DataPtr &data)
 {
     model_->onDataChanged(data);
@@ -256,14 +262,15 @@ void MainWindow::updateTaskWidgets()
         delete widget_ptr;
     }
     model_->clearColumns();
-    full_model_->clearColumns();
     Settings *settings=new Settings;
     settings->beginGroup("DefaultColumns");
+    int col_num=1;
     Q_FOREACH(InputOutputVariable column, default_columns_){
-        full_model_->addColumn(column);
-        if(settings->value(column.label,true).toBool()){
-            model_->addColumn(column);
+        model_->addColumn(column);
+        if(! settings->value(column.label,true).toBool()){
+            ui->image_list->hideColumn(col_num);
         }
+        ++col_num;
     }
     settings->endGroup();
     settings->beginGroup("Tasks");
@@ -340,15 +347,14 @@ void MainWindow::updateTaskWidget_(Settings *settings, QFormLayout *parent_input
         bool color_set=false;
         foreach(QVariant v,variant_list){
             InputOutputVariable iov(v);
-            full_model_->addColumn(iov);
-            if(iov.in_column){
-                if(!color_set){
-                    color_set=true;
-                    color_idx+=1;
-                    color_idx%=colors.size();
-                }
-                model_->addColumn(iov,colors[color_idx]);
-            }else{
+            if(!color_set){
+                color_set=true;
+                color_idx+=1;
+                color_idx%=colors.size();
+            }
+            model_->addColumn(iov,colors[color_idx]);
+            if(! iov.in_column){
+                ui->image_list->hideColumn(model_->columnCount(QModelIndex())-1);
                 QLabel *label=new QLabel();
                 label->setProperty("type",iov.type);
                 label->setProperty("label",iov.label);
@@ -400,14 +406,14 @@ void MainWindow::onAvgSourceDirTextChanged(const QString &dir)
 {
     Settings settings;
     settings.setValue("avg_source_dir",ui->avg_source_dir->text());
-    settings.saveToFile(".cryoflare.ini", QStringList(), QStringList() << "avg_source_dir");
+    settings.saveToFile(CRYOFLARE_INI, QStringList(), QStringList() << "avg_source_dir");
 }
 
 void MainWindow::onStackSourceDirTextChanged(const QString &dir)
 {
     Settings settings;
     settings.setValue("stack_source_dir",ui->stack_source_dir->text());
-    settings.saveToFile(".cryoflare.ini", QStringList(), QStringList() << "stack_source_dir");
+    settings.saveToFile(CRYOFLARE_INI, QStringList(), QStringList() << "stack_source_dir");
 }
 
 void MainWindow::updateDetailsfromModel(const QModelIndex &topLeft, const QModelIndex &bottomRight)
@@ -440,7 +446,7 @@ void MainWindow::onSettings()
     if (QDialog::Accepted==settings_dialog.exec()){
         settings_dialog.saveSettings();
         Settings settings;
-        settings.saveToFile(".cryoflare.ini");
+        settings.saveToFile(CRYOFLARE_INI);
         if(QFileInfo::exists(settings.value("report_template").toString())){
           report_.loadFromFile(settings.value("report_template").toString());
         }
@@ -473,7 +479,7 @@ void MainWindow::inputDataChanged()
         }
         settings.endGroup();
         settings.endGroup();
-        settings.saveToFile(".cryoflare.ini", QStringList(), QStringList() << "ScriptInput/"+task.toString()+"/"+label.toString());
+        settings.saveToFile(CRYOFLARE_INI, QStringList(), QStringList() << "ScriptInput/"+task.toString()+"/"+label.toString());
     }
 }
 
@@ -491,9 +497,9 @@ void MainWindow::onExport()
         QStringList images;
         for(int i=0;i<model_->rowCount();++i){
             DataPtr data=model_->image(i);
-            QString export_val=data->value("export","true");
+            QString export_val=data->value("export").toString("true");
             if ((export_val.compare("true", Qt::CaseInsensitive) == 0 || export_val==QString("1")) && data->value("tasks_unfinished").toInt()<=0){
-                images<<data->value("short_name");
+                images<<data->value("short_name").toString();
             }
         }
         settings.setValue("export_path",dialog.destinationPath().toString(QUrl::RemovePassword));
@@ -503,7 +509,7 @@ void MainWindow::onExport()
             settings.setValue("raw_export_path",dialog.rawDestinationPath().toString(QUrl::RemovePassword));
         }
 
-        settings.saveToFile(".cryoflare.ini", QStringList(), QStringList() << "export_path" << "raw_export_path" << "separate_raw_export" << "duplicate_raw_export");
+        settings.saveToFile(CRYOFLARE_INI, QStringList(), QStringList() << "export_path" << "raw_export_path" << "separate_raw_export" << "duplicate_raw_export");
 
          processor_.exportImages(dialog.destinationPath(),dialog.rawDestinationPath(),images,dialog.selectedOutputKeys(),dialog.selectedRawKeys(),dialog.selectedSharedKeys(),dialog.duplicateRaw());
     }
@@ -542,7 +548,7 @@ void MainWindow::updateDetails()
                 continue;
             }
             if(static_cast<VariableType>(type.toInt())==Image){
-                QString path=data->value(label.toString());
+                QString path=data->value(label.toString()).toString();
                 QPicture p;
                 if(QFileInfo::exists(path)){
                     QImageReader reader(path);
@@ -557,7 +563,7 @@ void MainWindow::updateDetails()
                 }
                 qlabel->setPicture(p);
             }else if(static_cast<VariableType>(type.toInt())==String || static_cast<VariableType>(type.toInt())==Float || static_cast<VariableType>(type.toInt())==Int){
-                qlabel->setText(data->value(label.toString()));
+                qlabel->setText(data->value(label.toString()).toString());
             }
         }
     }
@@ -576,7 +582,7 @@ void MainWindow::updateChart()
     for(int i=0;i<model_->rowCount();++i){
         QVariant val=model_->data(model_->index(i,column),ImageTableModel::SortRole);
         DataPtr data=model_->image(i);
-        QString export_val=data->value("export","true");
+        QString export_val=data->value("export").toString("true");
         bool linear_export_flag=export_val.compare("true", Qt::CaseInsensitive) == 0 || export_val==QString("1") || ui->filter->isChecked()==false;
         bool chart_export_flag=export_val.compare("true", Qt::CaseInsensitive) == 0 || export_val==QString("1") || ui->filter->isChecked()==false;
         if(val.canConvert<float>() && val.toString()!=QString("")){
@@ -667,7 +673,7 @@ void MainWindow::updatePhasePlateChart()
     for(int i=0;i<model_->rowCount();++i){
         QVariant val=model_->data(model_->index(i,column),ImageTableModel::SortRole);
         DataPtr data=model_->image(i);
-        QString export_val=data->value("export","true");
+        QString export_val=data->value("export").toString("true");
         bool phase_plate_export_flag=export_val.compare("true", Qt::CaseInsensitive) == 0 || export_val==QString("1") || ui->filter->isChecked()==false;
         if(val.canConvert<float>() && val.toString()!=QString("")){
             float fval=val.toFloat();
@@ -713,7 +719,7 @@ void MainWindow::updateGridSquareChart()
     for(int i=0;i<model_->rowCount();++i){
         QVariant val=model_->data(model_->index(i,column),ImageTableModel::SortRole);
         DataPtr data=model_->image(i);
-        QString export_val=data->value("export","true");
+        QString export_val=data->value("export").toString("true");
         bool export_flag=export_val.compare("true", Qt::CaseInsensitive) == 0 || export_val==QString("1") || ui->filter->isChecked()==false;
         if(val.canConvert<float>() && val.toString()!=QString("")){
             float fval=val.toFloat();
@@ -724,7 +730,7 @@ void MainWindow::updateGridSquareChart()
                         data_vectors[square_id]=QVector<float>();
                     }
                     data_vectors[square_id].append(fval);
-                    positions[square_id]=QPointF(2e5*data->value("square_X").toFloat(),2e5*data->value("square_Y").toFloat());
+                    positions[square_id]=QPointF(2e5*data->value("square_X").toDouble(),2e5*data->value("square_Y").toDouble());
                 }
             }else{
                 int hole_id=data->value("hole_id").toInt();
@@ -733,7 +739,7 @@ void MainWindow::updateGridSquareChart()
                         data_vectors[hole_id]=QVector<float>();
                     }
                     data_vectors[hole_id].append(fval);
-                    positions[hole_id]=QPointF(10e6*data->value("X").toFloat(),10e6*data->value("Y").toFloat());
+                    positions[hole_id]=QPointF(10e6*data->value("X").toDouble(),10e6*data->value("Y").toDouble());
                 }
             }
         }
@@ -865,8 +871,7 @@ void MainWindow::onStartStopButton(bool start)
         epu_disk_usage_->start(ui->avg_source_dir->text());
         movie_disk_usage_->start(ui->stack_source_dir->text());
         local_disk_usage_->start(".");
-        full_model_->clearData();
-        model_->clearData();
+        meta_data_store_.clear();
         last_image_timer_->reset();
     }else{
         last_image_timer_->stop();
@@ -935,12 +940,12 @@ void MainWindow::phasePlateSelectionFinished(QRect rubberBandRect, QPointF fromS
         for(int i=0;i<model_->rowCount();++i){
             DataPtr data=model_->image(i);
             if(invert){
-                if(ids.contains(data->value(tag))){
+                if(ids.contains(data->value(tag).toString())){
                     data->insert("export",0);
                     onDataChanged(data);
                 }
             }else{
-                if(!ids.contains(data->value(tag))){
+                if(!ids.contains(data->value(tag).toString())){
                     data->insert("export",0);
                     onDataChanged(data);
                 }
@@ -994,12 +999,12 @@ void MainWindow::gridSquareSelectionFinished(QRect rubberBandRect, QPointF fromS
         for(int i=0;i<model_->rowCount();++i){
             DataPtr data=model_->image(i);
             if(invert){
-                if(ids.contains(data->value(tag))){
+                if(ids.contains(data->value(tag).toString())){
                     data->insert("export",0);
                     onDataChanged(data);
                 }
             }else{
-                if(!ids.contains(data->value(tag))){
+                if(!ids.contains(data->value(tag).toString())){
                     data->insert("export",0);
                     onDataChanged(data);
                 }

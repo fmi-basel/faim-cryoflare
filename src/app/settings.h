@@ -28,6 +28,8 @@
 #include <QVariant>
 #include <QSettings>
 
+const QString  CRYOFLARE_DIRECTORY(".cryoflare");
+const QString  CRYOFLARE_INI(".cryoflare/cryoflare.ini");
 //fw decl
 class SettingsGroup;
 

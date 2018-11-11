@@ -204,8 +204,8 @@ DataPtr EPUDataSource::readXML_(const QString &path)
             result->insert("super_resolution_factor",value);
         }
     }
-    result->insert("apix_x",QString("%1").arg(pixel_size_values.at(0).toElement().text().toFloat()*1e10/result->value("super_resolution_factor").toFloat()));
-    result->insert("apix_y",QString("%1").arg(pixel_size_values.at(1).toElement().text().toFloat()*1e10/result->value("super_resolution_factor").toFloat()));
+    result->insert("apix_x",QString("%1").arg(pixel_size_values.at(0).toElement().text().toFloat()*1e10/result->value("super_resolution_factor").toDouble()));
+    result->insert("apix_y",QString("%1").arg(pixel_size_values.at(1).toElement().text().toFloat()*1e10/result->value("super_resolution_factor").toDouble()));
 
 
     result->insert("acceleration_voltage",QString("%1").arg(dom_document.elementsByTagName("AccelerationVoltage").at(0).toElement().text().toFloat()/1000.0));
@@ -226,18 +226,18 @@ DataPtr EPUDataSource::readXML_(const QString &path)
     result->insert("image_shift_x",image_shift.toElement().elementsByTagName("a:_x").at(0).toElement().text());
     result->insert("image_shift_y",image_shift.toElement().elementsByTagName("a:_y").at(0).toElement().text());
 
-    QString relative_path=QString("%1/%2/Data").arg(result->value("disc_name")).arg(result->value("grid_name"));
+    QString relative_path=QString("%1/%2/Data").arg(result->value("disc_name").toString()).arg(result->value("grid_name").toString());
     QString avg_s_path=QString("%1/%2").arg(epu_project_dir_).arg(relative_path);
     QString stack_s_path=QString("%1/%2").arg(movie_dir_).arg(relative_path);
     result->insert("destination_path",QDir::currentPath());
     result->insert("stack_source_path",stack_s_path);
     result->insert("avg_source_path",avg_s_path);
     QStringList stack_frames;
-    if(QString("BM-Falcon")==result->value("camera")){
-        result->insert("stack_frames",QString("%1/%2_frames.mrc").arg(stack_s_path).arg(result->value("name")));
-    }else if(QString("EF-CCD")==result->value("camera")){
+    if(QString("BM-Falcon")==result->value("camera").toString()){
+        result->insert("stack_frames",QString("%1/%2_frames.mrc").arg(stack_s_path).arg(result->value("name").toString()));
+    }else if(QString("EF-CCD")==result->value("camera").toString()){
         for(int i=1;i<=result->value("num_frames").toInt();++i){
-            stack_frames.append(QString("%1/%2-*-%3.???").arg(stack_s_path).arg(result->value("name")).arg(i,4,10,QChar('0')));
+            stack_frames.append(QString("%1/%2-*-%3.???").arg(stack_s_path).arg(result->value("name").toString()).arg(i,4,10,QChar('0')));
         }
         result->insert("stack_frames",stack_frames.join(" "));
     }

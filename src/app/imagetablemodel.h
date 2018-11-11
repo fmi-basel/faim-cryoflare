@@ -32,14 +32,18 @@
 #include <dataptr.h>
 #include <inputoutputvariable.h>
 
+//fw decl
+class MetaDataStore;
+
 class ImageTableModel : public QAbstractTableModel
 {
+    Q_OBJECT
 public:
     enum Role {
         SortRole=Qt::UserRole,
         SummaryRole
     };
-    ImageTableModel(QObject * parent = 0);
+    ImageTableModel(MetaDataStore& store, QObject * parent = 0);
     virtual int rowCount(const QModelIndex &parent=QModelIndex()) const;
     virtual int columnCount(const QModelIndex &parent) const;
     virtual QVariant data(const QModelIndex &index, int role) const;
@@ -47,13 +51,14 @@ public:
     virtual QVariant headerData(int section, Qt::Orientation orientation, int role) const;
     virtual Qt::ItemFlags flags(const QModelIndex &index) const;
     DataPtr image(int row);
-    void addImage(const DataPtr & data);
     void addColumn(const InputOutputVariable  &column, const QColor& color=QColor(136, 138, 133));
     void clearColumns();
     void onDataChanged(const DataPtr &data);
-    void clearData();
+public slots:
+    void imageAdded(const DataPtr & data);
+
 private:
-    QList<DataPtr> data_;
+    MetaDataStore& meta_data_store_;
     QList<InputOutputVariable>  columns_;
     QList<QColor> colors_;
 
