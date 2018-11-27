@@ -86,7 +86,7 @@ QVariant ImageTableModel::data(const QModelIndex &index, int role) const
     }
     // handle other columns
     if(role==SortRole){
-        QVariant v=meta_data_store_.at(index.row())->value(columns_[index.column()-1].label);
+        QVariant v=QVariant(meta_data_store_.at(index.row())->value(columns_[index.column()-1].label).toString());
         switch(columns_[index.column()-1].type){
         case String:
             return v;
@@ -109,7 +109,7 @@ QVariant ImageTableModel::data(const QModelIndex &index, int role) const
             break;
         }
     }else if(role==Qt::DisplayRole){
-        return meta_data_store_.at(index.row())->value(columns_[index.column()-1].label);
+        return meta_data_store_.at(index.row())->value(columns_[index.column()-1].label).toString();
     }else if (role==SummaryRole){
         return columns_[index.column()-1].summary_type;
     }
