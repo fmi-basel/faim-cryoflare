@@ -63,7 +63,6 @@ void EPUDataSource::onDirChanged(const QString &path)
                 if(!data.isNull()){
                     emit newImage(data);
                 }
-                return;
             }
         }
         return;
@@ -152,11 +151,32 @@ DataPtr EPUDataSource::readXML_(const QString &path)
     QDir images_disc_dir(grid_square_dir);
     images_disc_dir.cdUp();
     result->insert("disc_name",images_disc_dir.dirName());
+
+    // read foil hole metadata
+    QDomDocument fh_meta_dom_document;
+    QString fh_meta_path=QString("%1/Metadata/GridSquare_%2/TargetLocation_%3.dm").arg(epu_project_dir_).arg(result->value("grid_name").toString()).arg(result->value("hole_id").toString());
+    QFile fh_meta_file(fh_meta_path);
+    if (!fh_meta_file.open(QIODevice::ReadOnly)){
+        qDebug() << "Cannot open Foil hole meta data: " << fh_meta_path;
+        return DataPtr();
+    }
+    if (!fh_meta_dom_document.setContent(&fh_meta_file)) {
+        qDebug() << "Cannot parse foil hole meta data: " << fh_meta_path;
+        fh_meta_file.close();
+        return DataPtr();
+    }
+    fh_meta_file.close();
+    QString hole_pos_x=fh_meta_dom_document.elementsByTagName("a:x").at(0).toElement().text();
+    result->insert("hole_pos_x",hole_pos_x);
+    QString hole_pos_y=fh_meta_dom_document.elementsByTagName("a:y").at(0).toElement().text();
+    result->insert("hole_pos_y",hole_pos_y);
+
     QDomDocument dom_document;
     QFile file(path);
-    if (!file.open(QIODevice::ReadOnly))
+    if (!file.open(QIODevice::ReadOnly)){
         qDebug() << "Cannot open XML file: " << path;
         return DataPtr();
+    }
     if (!dom_document.setContent(&file)) {
         qDebug() << "Cannot parse XML file: " << path;
         file.close();
@@ -201,7 +221,7 @@ DataPtr EPUDataSource::readXML_(const QString &path)
         QString key=input.firstChild().toElement().text();
         QString value=input.lastChild().toElement().text();
         if(key=="SuperResolutionFactor"){
-            result->insert("super_resolution_factor",value);
+            result->insert("super_resolution_factor",value.toDouble());
         }
     }
     result->insert("apix_x",QString("%1").arg(pixel_size_values.at(0).toElement().text().toFloat()*1e10/result->value("super_resolution_factor").toDouble()));
@@ -226,7 +246,7 @@ DataPtr EPUDataSource::readXML_(const QString &path)
     result->insert("image_shift_x",image_shift.toElement().elementsByTagName("a:_x").at(0).toElement().text());
     result->insert("image_shift_y",image_shift.toElement().elementsByTagName("a:_y").at(0).toElement().text());
 
-    QString relative_path=QString("%1/%2/Data").arg(result->value("disc_name").toString()).arg(result->value("grid_name").toString());
+    QString relative_path=QString("%1/GridSquare_%2/Data").arg(result->value("disc_name").toString()).arg(result->value("grid_name").toString());
     QString avg_s_path=QString("%1/%2").arg(epu_project_dir_).arg(relative_path);
     QString stack_s_path=QString("%1/%2").arg(movie_dir_).arg(relative_path);
     result->insert("destination_path",QDir::currentPath());
