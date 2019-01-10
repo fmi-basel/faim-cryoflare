@@ -43,16 +43,6 @@ SftpUrl::SftpUrl(const QString &url, QUrl::ParsingMode parsingMode):
     }
 }
 
-SftpUrl::SftpUrl(QUrl &&other):
-    QUrl(other),
-    key_(),
-    auth_type_()
-{
-    if(scheme()=="sftp"){
-        auth_type_=QSsh::SshConnectionParameters::AuthenticationByPassword;
-    }
-}
-
 QSsh::SshConnectionParameters SftpUrl::toConnectionParameters() const
 {
     QSsh::SshConnectionParameters result;

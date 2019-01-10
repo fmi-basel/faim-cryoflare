@@ -11,7 +11,6 @@ public:
     SftpUrl(const QSsh::SshConnectionParameters& p);
     SftpUrl(const QUrl &other);
     SftpUrl(const QString &url, QUrl::ParsingMode parsingMode = TolerantMode);
-    SftpUrl(QUrl &&other);
     QSsh::SshConnectionParameters toConnectionParameters() const;
     QString key() const;
     void setKey(const QString &key);
