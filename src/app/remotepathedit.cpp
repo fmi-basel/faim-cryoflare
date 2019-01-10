@@ -16,12 +16,12 @@ RemotePathEdit::RemotePathEdit(QWidget *parent):
     connect(path_widget_,&QLineEdit::textChanged,this,&RemotePathEdit::updateUrl);
 }
 
-QUrl RemotePathEdit::remotePath() const
+SftpUrl RemotePathEdit::remotePath() const
 {
     return remote_path_;
 }
 
-void RemotePathEdit::setRemotePath(const QUrl &path)
+void RemotePathEdit::setRemotePath(const SftpUrl &path)
 {
     remote_path_=path;
     path_widget_->setText(path.toString(QUrl::RemovePassword));
@@ -40,7 +40,7 @@ void RemotePathEdit::onRemoteBrowse()
     }
 
 
-    QUrl new_path=RemoteFileDialog::getRemotePath(remote_path_);
+    SftpUrl new_path=RemoteFileDialog::getRemotePath(remote_path_);
     if(new_path.isValid()){
         path_widget_->setText(new_path.toString(QUrl::RemovePassword));
         remote_path_=new_path;
@@ -50,7 +50,7 @@ void RemotePathEdit::onRemoteBrowse()
 
 void RemotePathEdit::updateUrl(const QString &text)
 {
-    QUrl new_url=QUrl::fromUserInput(text);
+    SftpUrl new_url=QUrl::fromUserInput(text);
     if(new_url.isValid()){
         if( !new_url.isLocalFile()){
             new_url.setPassword(remote_path_.password());
