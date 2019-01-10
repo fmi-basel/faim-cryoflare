@@ -96,6 +96,9 @@ public slots:
     void onExportStarted(const QString& message, int num_files);
     void onExportMessage(int left, const QList<ExportMessage>& messages);
     void onExportFinished();
+    void reprocessAll();
+    void reprocessSelected();
+    void reprocessCurrent();
 
 signals:
     void startStop(bool start);
@@ -123,8 +126,6 @@ private:
     int current_phase_plate_;
     int chart_current_square_;
     QList<InputOutputVariable> default_columns_;
-    QAction* scatter_plot_action_;
-    QAction* run_script_action_;
     LimeReport::ReportEngine report_;
     ExportProgressDialog* export_progress_dialog_;
     DiskUsageWidget* epu_disk_usage_;

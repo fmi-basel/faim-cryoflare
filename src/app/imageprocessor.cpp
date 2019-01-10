@@ -41,9 +41,6 @@ ImageProcessor::ImageProcessor(MetaDataStore &meta_data_store):
     cpu_processes_(),
     gpu_processes_(),
     root_task_(new Task("General","dummy",DataPtr(new Data))),
-    raw_files_(),
-    output_files_(),
-    shared_output_files_(),
     exporters_(),
     current_exporter_(nullptr),
     process_(new QProcess(this)),
@@ -51,7 +48,7 @@ ImageProcessor::ImageProcessor(MetaDataStore &meta_data_store):
     meta_data_store_(meta_data_store)
 
 {
-    connect(&meta_data_store_,&MetaDataStore::newImage,this,&ImageProcessor::createTaskTree);
+    connect(&meta_data_store_,&MetaDataStore::newImage,[=](const DataPtr& ptr) { createTaskTree( ptr, false); });
     QTimer::singleShot(0, this, SLOT(loadSettings()));
 }
 
@@ -68,9 +65,6 @@ ImageProcessor::~ImageProcessor()
 void ImageProcessor::startStop(bool start)
 {
     if(start){
-        raw_files_.clear();
-        output_files_.clear();
-        shared_output_files_.clear();
         Settings settings;
         running_state_=true;
         epu_project_dir_=settings.value("avg_source_dir").toString();
@@ -96,25 +90,7 @@ void ImageProcessor::startStop(bool start)
 void ImageProcessor::onTaskFinished(const TaskPtr &task, bool gpu)
 {
     QString short_name=task->data->value("short_name").toString();
-    if(! output_files_.contains(short_name)){
-        output_files_[short_name]=QMap<QString,QString>();
-    }
-    foreach(QString key, task->output_files.keys()){
-        output_files_[short_name].insert(key,QDir::current().relativeFilePath(task->output_files.value(key)));
-    }
-    if(! raw_files_.contains(short_name)){
-        raw_files_[short_name]=QMap<QString,QString>();
-    }
-    foreach(QString key, task->raw_files.keys()){
-        raw_files_[short_name].insert(key,QDir::current().relativeFilePath(task->raw_files.value(key)));
-    }
-    foreach(QString key, task->shared_output_files.keys()){
-        shared_output_files_.insert(key,QDir::current().relativeFilePath( task->shared_output_files.value(key)));
-    }
-    foreach(TaskPtr child,task->children){
-        QStack<TaskPtr>& stack=child->gpu?gpu_task_stack_:cpu_task_stack_;
-        stack.append(child);
-    }
+    enqueueChildren_(task);
     emit queueCountChanged(cpu_task_stack_.size(),gpu_task_stack_.size());
     startTasks();
     QFile f(QDir::current().relativeFilePath(task->name+"_out.log"));
@@ -127,7 +103,8 @@ void ImageProcessor::onTaskFinished(const TaskPtr &task, bool gpu)
         QTextStream stream( &f );
         stream << task->error << endl;
     }
-    task->data->insert("tasks_unfinished",QString("%1").arg(task->data->value("tasks_unfinished").toInt(1)-1));
+    task->data->insert(task->taskString(),"FINISHED");
+    meta_data_store_.saveData(task->data);
     emit dataChanged(task->data);
 }
 
@@ -191,27 +168,39 @@ void ImageProcessor::exportImages(const SftpUrl &export_path, const SftpUrl &raw
         arguments << QDir::currentPath();
         process_->start(custom_script,arguments);
         process_->waitForStarted(-1);
-        foreach(QString image,image_list){
-            QStringList raw_list;
-            foreach(QString key, raw_files_[image].keys()){
-                if(raw_keys.contains(key)){
-                    raw_list << raw_files_[image][key];
+        //todo merge logic into meta data store
+        foreach(DataPtr ptr, meta_data_store_.images()){
+            QStringList keys=ptr->keys();
+            keys=keys.filter("_CryoFLARE_TASK_");
+            foreach(QString key,keys){
+                if(ptr->value(key).toString()!=QString("FINISHED")){
+                    continue;
                 }
             }
-            process_->write(QString("raw_%1=%2\n").arg(image).arg(raw_list.join(",")).toLatin1());
-            QStringList output_list;
-            foreach(QString key, output_files_[image].keys()){
-                if(output_keys.contains(key)){
-                    output_list << output_files_[image][key];
+            QString name=ptr->value("name").toString();
+            if(image_list.contains(name)){
+                QJsonObject raw_files=ptr->value("raw_files").toObject();
+                QJsonObject files=ptr->value("files").toObject();
+                QJsonObject shared_files=ptr->value("shared_files").toObject();
+                QStringList raw_paths;
+                foreach(QString key,raw_files.keys()){
+                    if(raw_keys.contains(key)){
+                        raw_paths.append(QDir::current().relativeFilePath((raw_files.value(key).toString())));
+                    }
                 }
+                process_->write(QString("raw_%1=%2\n").arg(name).arg(raw_paths.join(",")).toLatin1());
+                QStringList file_paths;
+                foreach(QString key,files.keys()){
+                    if(output_keys.contains(key)){
+                        file_paths.append(QDir::current().relativeFilePath((files.value(key).toString())));
+                    }
+                }
+                process_->write(QString("%1=%2\n").arg(name).arg(raw_paths.join(",")).toLatin1());
             }
-            process_->write(QString("%1=%2\n").arg(image).arg(output_list.join(",")).toLatin1());
         }
         QStringList shared_list;
-        foreach(QString key, shared_output_files_.keys()){
-            if(shared_keys.contains(key)){
-                shared_list << shared_output_files_[key];
-            }
+        foreach(QString f, meta_data_store_.sharedFiles(image_list,shared_keys)){
+            shared_list.append(QDir::current().relativeFilePath((f)));
         }
         process_->write(QString("%1=%2\n").arg("shared").arg(shared_list.join(",")).toLatin1());
         process_->closeWriteChannel();
@@ -221,38 +210,29 @@ void ImageProcessor::exportImages(const SftpUrl &export_path, const SftpUrl &raw
 
         QStringList files;
         QStringList raw_files;
-        QStringList files_to_filter;
-        QString current_dir=QDir::current().dirName();
-        foreach(QString key,shared_output_files_.keys()){
-            if(shared_output_files_[key].endsWith(".star")){
-                files_to_filter.append(current_dir+"/"+shared_output_files_[key]);
-            }else{
-                files.append(current_dir+"/"+shared_output_files_[key]);
-            }
-        }
-        foreach(QString image,image_list){
-            foreach(QString key, output_files_[image].keys()){
-                if(output_keys.contains(key)){
-                    files << current_dir+"/"+output_files_[image][key];
-                }
-            }
-            foreach(QString key, raw_files_[image].keys()){
-                if(raw_keys.contains(key)){
-                    if( separate_raw_export ){
-                        raw_files << current_dir+"/"+raw_files_[image][key];
-                        if( duplicate_raw){
-                            files << current_dir+"/"+raw_files_[image][key];
-                        }
-                    }else{
-                        files << current_dir+"/"+raw_files_[image][key];
-                    }
-                }
-            }
-        }
+        QStringList abs_raw_files=meta_data_store_.rawFiles(image_list,raw_keys);
         QDir parent_dir=QDir::current();
         parent_dir.cdUp();
+        foreach(QString f,abs_raw_files){
+            raw_files.append(parent_dir.relativeFilePath(f));
+        }
+        QStringList abs_output_files=meta_data_store_.outputFiles(image_list,output_keys);
+        foreach(QString f,abs_output_files){
+            files.append(parent_dir.relativeFilePath(f));
+        }
+        QStringList files_to_filter;
+        QStringList abs_shared_files=meta_data_store_.sharedFiles(image_list,shared_keys);
+        foreach(QString f,abs_shared_files){
+            if(f.endsWith(".star")){
+                files_to_filter.append(parent_dir.relativeFilePath(f));
+            }else{
+                files.append(parent_dir.relativeFilePath(f));
+            }
+        }
+        if( (!separate_raw_export) || duplicate_raw){
+            files.append(raw_files);
+        }
         if(!files.empty() || !files_to_filter.empty()){
-            qDebug() << files_to_filter;
             ParallelExporter* exporter=new ParallelExporter(parent_dir.path(),export_path,image_list,num_processes);
             exporter->addImages(files_to_filter,true);
             exporter->addImages(files,false);
@@ -299,28 +279,6 @@ void ImageProcessor::startTasks()
     }
 }
 
-QSet<QString> ImageProcessor::getOutputFilesKeys() const
-{
-    QSet<QString> result;
-    foreach(QString hash_key, output_files_.keys()){
-        result.unite(QSet<QString>::fromList(output_files_[hash_key].keys()));
-    }
-    return result;
-}
-
-QSet<QString> ImageProcessor::getRawFilesKeys() const
-{
-    QSet<QString> result;
-    foreach(QString hash_key, raw_files_.keys()){
-        result.unite(QSet<QString>::fromList(raw_files_[hash_key].keys()));
-    }
-    return result;
-}
-
-QSet<QString> ImageProcessor::getSharedFilesKeys() const
-{
-    return QSet<QString>::fromList(shared_output_files_.keys());
-}
 
 void ImageProcessor::exportFinished_()
 {
@@ -348,16 +306,49 @@ void ImageProcessor::startNextExport_()
 }
 
 
-void ImageProcessor::createTaskTree( DataPtr data)
+void ImageProcessor::createTaskTree(DataPtr data, bool force_reprocess)
 {
+    qDebug() << "create task tree for: " << data->value("name").toString();
     TaskPtr root_task=root_task_->clone();
-    root_task->setData(data);
-    for(int i=0;i<root_task->children.size();++i){
-        QStack<TaskPtr>& stack=root_task->children.at(i)->gpu?gpu_task_stack_:cpu_task_stack_;
-        stack.append(root_task->children.at(i));
-    }
+    root_task->setData(data,force_reprocess);
+    enqueueChildren_(root_task);
     emit queueCountChanged(cpu_task_stack_.size(),gpu_task_stack_.size());
     startTasks();
+}
+
+void ImageProcessor::reprocess(const QVector<DataPtr> &images)
+{
+    foreach(DataPtr ptr,images){
+        foreach(ProcessWrapper* wrapper,cpu_processes_){
+            if(!wrapper->running()){
+                continue;
+            }
+            if(wrapper->task()->data->value("name").toString()==ptr->value("name").toString()){
+                wrapper->terminate();
+            }
+        }
+        foreach(ProcessWrapper* wrapper,gpu_processes_){
+            if(!wrapper->running()){
+                continue;
+            }
+            if(wrapper->task()->data->value("name").toString()==ptr->value("name").toString()){
+                wrapper->terminate();
+            }
+        }
+        QJsonObject raw_files=ptr->value("raw_files").toObject();
+        QJsonObject files=ptr->value("files").toObject();
+        foreach(QString key,raw_files.keys()){
+            QFile file(raw_files.value(key).toString());
+            file.remove();
+        }
+        foreach(QString key,files.keys()){
+            QFile file(files.value(key).toString());
+            file.remove();
+        }
+        ptr->insert("raw_files",QJsonObject());
+        ptr->insert("files",QJsonObject());
+        createTaskTree(ptr,true);
+    }
 }
 
 
@@ -371,5 +362,19 @@ void ImageProcessor::loadTask_(Settings *settings, const TaskPtr &task)
         settings->endGroup();
     }
 
+}
+
+void ImageProcessor::enqueueChildren_(const TaskPtr &task)
+{
+    for(int i=0;i<task->children.size();++i){
+        TaskPtr child=task->children.at(i);
+        if(child->data->value(child->taskString()).toString()=="FINISHED"){
+            qDebug() << "skipping finished task: " << child->name << " for " << child->data->value("short_name").toString();
+            enqueueChildren_(child);
+        }else{
+            QStack<TaskPtr>& stack=child->gpu?gpu_task_stack_:cpu_task_stack_;
+            stack.append(child);
+        }
+    }
 }
 

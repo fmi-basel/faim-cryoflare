@@ -30,14 +30,19 @@ FileSystemWatcherImpl::FileSystemWatcherImpl(QObject *parent) :
 
 void FileSystemWatcherImpl::addPath(const QString &path)
 {
+    bool emit_signal=false;
     mutex.lock();
     QFileInfo finfo(path);
     if( finfo.exists()){
         if(finfo.isDir()){
             dirs_.append(path);
             dir_file_mod_times_[path]=QHash<QString,QDateTime>();
-            foreach(QFileInfo info, QDir(path).entryInfoList(QDir::AllEntries|QDir::NoDotAndDotDot)){
+            QFileInfoList child_items=QDir(path).entryInfoList(QDir::AllEntries|QDir::NoDotAndDotDot);
+            foreach(QFileInfo info, child_items){
                 dir_file_mod_times_[path][info.canonicalFilePath()]=info.lastModified();
+            }
+            if(child_items.size()>0){
+                emit_signal=true;
             }
         }else{
             files_.append(path);
@@ -47,6 +52,10 @@ void FileSystemWatcherImpl::addPath(const QString &path)
     }
 
     mutex.unlock();
+    //emit only after unlocking mutex to avoid deadlocks
+    if(emit_signal){
+        emit directoryChanged(path);
+    }
 }
 
 void FileSystemWatcherImpl::addPaths(const QStringList &paths)
@@ -103,11 +112,13 @@ void FileSystemWatcherImpl::removeAllPaths()
 }
 
 void FileSystemWatcherImpl::update(){
+    QStringList emit_dirs;
+    QStringList emit_files;
     mutex.lock();
     foreach(QString path,dirs_){
         QFileInfoList entry_list=QDir(path).entryInfoList(QDir::AllEntries|QDir::NoDotAndDotDot);
         if(entry_list.size()!=dir_file_mod_times_.value(path).size()){
-            emit directoryChanged(path);
+            emit_dirs<<path;
             dir_file_mod_times_[path]=QHash<QString,QDateTime>();
             foreach(QFileInfo info, entry_list){
                 dir_file_mod_times_[path][info.canonicalFilePath()]=info.lastModified();
@@ -126,9 +137,16 @@ void FileSystemWatcherImpl::update(){
     foreach(QString path,files_){
         QFileInfo info(path);
         if(file_mod_times_.value(path)!=info.lastModified()){
-            emit fileChanged(path);
+            emit_files<<path;
             file_mod_times_[path]=info.lastModified();
         }
     }
     mutex.unlock();
+    //emit only after unlocking mutex to avoid deadlocks
+    foreach(QString path,emit_dirs){
+        emit directoryChanged(path);
+    }
+    foreach(QString path, emit_files){
+        emit fileChanged(path);
+    }
 }

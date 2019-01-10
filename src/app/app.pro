@@ -85,7 +85,12 @@ SOURCES += \
     lastimagetimer.cpp \
     metadatastore.cpp \
     datasourcebase.cpp \
-    epudatasource.cpp
+    epudatasource.cpp \
+    collection.cpp \
+    collectionstartingcondition.cpp \
+    collectiondefinition.cpp \
+    jobmanager.cpp \
+    job.cpp
 
 
 
@@ -126,7 +131,12 @@ HEADERS  += \
     lastimagetimer.h \
     metadatastore.h \
     datasourcebase.h \
-    epudatasource.h
+    epudatasource.h \
+    collection.h \
+    collectionstartingcondition.h \
+    collectiondefinition.h \
+    jobmanager.h \
+    job.h
 
 
 FORMS    += \
@@ -154,6 +164,7 @@ static {
 RESOURCES += \
     app.qrc
 
-DISTFILES +=
+DISTFILES += \
+    license_header.txt
 
 

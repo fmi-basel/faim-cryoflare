@@ -1,4 +1,4 @@
-//------------------------------------------------------------------------------
+﻿//------------------------------------------------------------------------------
 //
 // Author: Andreas Schenk
 // Friedrich Miescher Institute, Basel, Switzerland
@@ -50,9 +50,10 @@ class Task
 {
 public:
     explicit Task(const QString& name_, const QString& script_,DataPtr data_, bool gpu_=0);
-    void setData(const DataPtr &data_);
+    void setData(const DataPtr &data_,bool force_reprocess=false);
     void addColumn(const QString& key, const QString& value);
     void addDetail(const QString& key, const QString &label,const QString& type);
+    QString taskString() const;
     QPair<QStringList,QStringList> getDisplayKeys() const;
     TaskPtr clone();
     QString name;

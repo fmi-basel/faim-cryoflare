@@ -50,10 +50,8 @@ public slots:
     void exportImages(const SftpUrl& export_path,const SftpUrl& raw_export_path,const QStringList& image_list, const QStringList& output_keys,const QStringList& raw_keys,const QStringList& shared_keys,bool duplicate_raw );
     void cancelExport();
     void startTasks();
-    QSet<QString> getOutputFilesKeys() const;
-    QSet<QString> getRawFilesKeys() const;
-    QSet<QString> getSharedFilesKeys() const;
-    void createTaskTree(DataPtr data);
+    void createTaskTree(DataPtr data, bool force_reprocess=false);
+    void reprocess(const QVector<DataPtr>& images);
 signals:
     void newImage(DataPtr data);
     void dataChanged(DataPtr data);
@@ -70,6 +68,7 @@ protected slots:
 private:
     void startNextExport_();
     void loadTask_(Settings *setting,const TaskPtr& task);
+    void enqueueChildren_(const TaskPtr& task);
 
     QString epu_project_dir_;
     QString movie_dir_;
@@ -78,9 +77,6 @@ private:
     QList<ProcessWrapper*> cpu_processes_;
     QList<ProcessWrapper*> gpu_processes_;
     TaskPtr root_task_;
-    QHash<QString,QMap<QString,QString> > raw_files_;
-    QHash<QString,QMap<QString,QString> > output_files_;
-    QMap<QString,QString> shared_output_files_;
     QQueue<ParallelExporter*> exporters_;
     ParallelExporter* current_exporter_;
     QProcess* process_;

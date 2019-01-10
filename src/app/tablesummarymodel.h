@@ -7,7 +7,7 @@
 class TableSummaryModel : public QAbstractTableModel
 {
 public:
-    TableSummaryModel(ImageTableModel * model,QObject * parent = 0);
+    TableSummaryModel(ImageTableModel * model,QObject * parent = nullptr);
     virtual QVariant data(const QModelIndex &index, int role) const;
     virtual QVariant headerData(int section, Qt::Orientation orientation, int role) const;
     virtual int rowCount(const QModelIndex &parent=QModelIndex()) const;

@@ -21,6 +21,15 @@ public:
     int indexOf(const DataPtr& ptr) const;
     bool empty() const;
     void clear();
+    QStringList rawFiles(const QStringList& image_list,const QStringList& key_list, bool finished_only=true) const;
+    QStringList outputFiles(const QStringList& image_list,const QStringList& key_list, bool finished_only=true) const;
+    QStringList sharedFiles(const QStringList& image_list,const QStringList& key_list, bool finished_only=true) const;
+    QSet<QString> rawKeys() const;
+    QSet<QString> outputKeys() const;
+    QSet<QString> sharedKeys() const;
+    QVector<DataPtr> images() const;
+    QVector<DataPtr> selected() const;
+
 public slots:
     void setProjectDir(const QString& epu_project_dir);
     void setMovieDir(const QString& movie_dir);

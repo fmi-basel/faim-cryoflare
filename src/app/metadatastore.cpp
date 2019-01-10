@@ -1,6 +1,7 @@
 #include <QDir>
 #include <QDebug>
 #include <QJsonDocument>
+#include <QJsonObject>
 #include "settings.h"
 #include "metadatastore.h"
 #include "datasourcebase.h"
@@ -61,6 +62,107 @@ void MetaDataStore::clear()
     data_.clear();
 }
 
+QStringList MetaDataStore::rawFiles(const QStringList& image_list, const QStringList &key_list, bool finished_only) const
+{
+    QStringList result;
+    foreach(DataPtr ptr, data_){
+        if(finished_only){
+            QStringList keys=ptr->keys();
+            keys=keys.filter("_CryoFLARE_TASK_");
+            foreach(QString key,keys){
+                if(ptr->value(key).toString()!=QString("FINISHED")){
+                    continue;
+                }
+            }
+        }
+        QJsonObject raw_files=ptr->value("raw_files").toObject();
+        foreach(QString key,raw_files.keys()){
+            if(key_list.contains(key)){
+                result.append(raw_files.value(key).toString());
+            }
+        }
+    }
+    return result;
+}
+
+QStringList MetaDataStore::outputFiles(const QStringList& image_list, const QStringList& key_list, bool finished_only) const
+{
+    QStringList result;
+    foreach(DataPtr ptr, data_){
+        if(finished_only){
+            QStringList keys=ptr->keys();
+            keys=keys.filter("_CryoFLARE_TASK_");
+            foreach(QString key,keys){
+                if(ptr->value(key).toString()!=QString("FINISHED")){
+                    continue;
+                }
+            }
+        }
+        QJsonObject files=ptr->value("files").toObject();
+        foreach(QString key,files.keys()){
+            if(key_list.contains(key)){
+                result.append(files.value(key).toString());
+            }
+        }
+    }
+    return result;
+}
+
+QStringList MetaDataStore::sharedFiles(const QStringList& image_list, const QStringList& key_list, bool finished_only) const
+{
+    QSet<QString> result;
+    foreach(DataPtr ptr, data_){
+        if(finished_only){
+            QStringList keys=ptr->keys();
+            keys=keys.filter("_CryoFLARE_TASK_");
+            foreach(QString key,keys){
+                if(ptr->value(key).toString()!=QString("FINISHED")){
+                    continue;
+                }
+            }
+        }
+        if(image_list.contains(ptr->value("name").toString())){
+            QJsonObject shared_files=ptr->value("shared_files").toObject();
+            foreach(QString key,shared_files.keys()){
+                if(key_list.contains(key)){
+                    result.insert(shared_files.value(key).toString());
+                }
+            }
+        }
+    }
+    return result.toList();
+}
+
+QSet<QString> MetaDataStore::rawKeys() const
+{
+    QSet<QString> result;
+    foreach(DataPtr ptr, data_){
+        QJsonObject raw_files=ptr->value("raw_files").toObject();
+        result.unite(QSet<QString>::fromList(raw_files.keys()));
+    }
+    return result;
+}
+
+QSet<QString> MetaDataStore::outputKeys() const
+{
+    QSet<QString> result;
+    foreach(DataPtr ptr, data_){
+        QJsonObject files=ptr->value("files").toObject();
+        result.unite(QSet<QString>::fromList(files.keys()));
+    }
+    return result;
+}
+
+QSet<QString> MetaDataStore::sharedKeys() const
+{
+    QSet<QString> result;
+    foreach(DataPtr ptr, data_){
+        QJsonObject shared_files=ptr->value("shared_files").toObject();
+        result.unite(QSet<QString>::fromList(shared_files.keys()));
+    }
+    return result;
+}
+
 void MetaDataStore::setProjectDir(const QString &epu_project_dir)
 {
     data_source_->setProjectDir(epu_project_dir);
@@ -74,7 +176,7 @@ void MetaDataStore::setMovieDir(const QString &movie_dir)
 void MetaDataStore::saveData(const DataPtr &ptr)
 {
     QDir cryoflare_dir(CRYOFLARE_DIRECTORY);
-    QString file_name(cryoflare_dir.filePath(ptr->value("short_name").toString()));
+    QString file_name(QString("%1.dat").arg(cryoflare_dir.filePath(ptr->value("short_name").toString())));
     QFile save_file(file_name);
     if (!save_file.open(QIODevice::WriteOnly)) {
         qWarning() << "Couldn't save file: " <<file_name;
@@ -93,6 +195,27 @@ void MetaDataStore::addImage(const DataPtr &ptr)
             return;
         }
     }
+    ptr->insert("raw_files",QJsonObject());
+    ptr->insert("files",QJsonObject());
+    ptr->insert("shared_files",QJsonObject());
     data_.append(ptr);
+    saveData(ptr);
     emit newImage(ptr);
+}
+
+QVector<DataPtr> MetaDataStore::images() const
+{
+    return data_;
+}
+
+QVector<DataPtr> MetaDataStore::selected() const
+{
+    QVector<DataPtr> result;
+    foreach(DataPtr ptr, data_){
+        QString selected=ptr->value("export").toString("true");
+        if(selected.compare("true", Qt::CaseInsensitive) == 0 || selected==QString("1")){
+            result.append(ptr);
+        }
+    }
+    return result;
 }

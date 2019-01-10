@@ -37,6 +37,7 @@ class ProcessWrapper : public QObject
 public:
     explicit ProcessWrapper(QObject *parent, int timeout, int gpu_id);
     bool running() const;
+    TaskPtr task() const;
 
 signals:
     void finished(const TaskPtr &task, bool gpu=false);

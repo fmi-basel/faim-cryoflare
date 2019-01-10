@@ -57,10 +57,10 @@ void FileSystemWatcher::init_impl()
     connect(thread_, SIGNAL(finished()), impl_, SLOT(deleteLater()));
     connect(timer_, SIGNAL(timeout()), impl_, SLOT(update()));
 
-    connect(impl_, SIGNAL(directoryChanged(const QString &)), this, SIGNAL(directoryChanged(const QString &)));
-    connect(impl_, SIGNAL(fileChanged(const QString &)), this, SIGNAL(fileChanged(const QString &)));
     timer_->moveToThread(thread_);
     impl_->moveToThread(thread_);
+    connect(impl_, SIGNAL(directoryChanged(const QString &)), this, SIGNAL(directoryChanged(const QString &)));
+    connect(impl_, SIGNAL(fileChanged(const QString &)), this, SIGNAL(fileChanged(const QString &)));
     connect(this,&FileSystemWatcher::destroyed,timer_,&QTimer::deleteLater);
     connect(this,&FileSystemWatcher::destroyed,impl_,&FileSystemWatcherImpl::deleteLater);
     connect(this,&FileSystemWatcher::destroyed,thread_,&QThread::deleteLater);

@@ -79,8 +79,6 @@ MainWindow::MainWindow(MetaDataStore &meta_data_store, ImageProcessor &processor
     current_phase_plate_(-1),
     chart_current_square_(-1),
     default_columns_(),
-    scatter_plot_action_(new QAction("Scatter Plot",this)),
-    run_script_action_(new QAction("Run script",this)),
     report_(),
     export_progress_dialog_(new ExportProgressDialog(this)),
     epu_disk_usage_(new DiskUsageWidget("EPU")),
@@ -91,6 +89,7 @@ MainWindow::MainWindow(MetaDataStore &meta_data_store, ImageProcessor &processor
 
 {
     ui->setupUi(this);
+    ui->chart_splitter->setSizes({100,100,100,100});
     connect(this, SIGNAL(startStop(bool)), &processor_, SLOT(startStop(bool)));
     connect(this,&MainWindow::cancelExport,&processor_,&ImageProcessor::cancelExport);
     connect(this,SIGNAL(settingsChanged()),&processor_,SLOT(loadSettings()));
@@ -104,22 +103,31 @@ MainWindow::MainWindow(MetaDataStore &meta_data_store, ImageProcessor &processor
 
     QString stylesheet;
     stylesheet+="* {color: #e6e6e6; background-color: #40434a} ";
-    stylesheet+="QScrollBar::handle {background-color: rgb(5,97,137) }  ";
+    //stylesheet+="QScrollBar::handle {background-color: rgb(5,97,137) }  ";
+    //stylesheet+="QScrollBar { margin: 0px 20px 0 20px; }  ";
+    //stylesheet+="QScrollBar::add-line {background: none }  ";
+    //stylesheet+="QScrollBar::sub-line {background: none }  ";
+    //stylesheet+="QScrollBar::add-page {background: none }  ";
+    //stylesheet+="QScrollBar::sub-page {background: none) }  ";
+    //stylesheet+=" QScrollBar:horizontal { border: 2px solid grey; background: #32CC99;height: 15px; margin: 0px 20px 0 20px;} QScrollBar::handle:horizontal {    background: white;    min-width: 20px;} QScrollBar::add-line:horizontal {    border: 2px solid grey;    background: #32CC99;    width: 20px;    subcontrol-position: right;    subcontrol-origin: margin;} QScrollBar::sub-line:horizontal {    border: 2px solid grey;    background: #32CC99;    width: 20px;    subcontrol-position: left;    subcontrol-origin: margin;}";
+    //stylesheet+=" QScrollBar:vertical { border: 2px solid grey; background: #32CC99;width: 15px; margin: 20px 0px 20px 0px;} QScrollBar::handle:vertical {    background: white;    min-height: 20px;} QScrollBar::add-line:vertical {    border: 2px solid grey;    background: #32CC99;    height: 20px;    subcontrol-position: boyyom;    subcontrol-origin: margin;} QScrollBar::sub-line:vertical {    border: 2px solid grey;    background: #32CC99;    height: 20px;    subcontrol-position: top;    subcontrol-origin: margin;}";
+    stylesheet+=" QScrollBar:vertical { width: 15px; margin: 15px 0px 15px 0px;} QScrollBar::handle:vertical {border: 1px solid #e6e6e6 ; background-color: rgb(5,97,137)}  QScrollBar::add-line:vertical { height: 15px; subcontrol-position: bottom; subcontrol-origin: margin;} QScrollBar::sub-line:vertical {height: 15px; subcontrol-position: top; subcontrol-origin: margin;}";
+    stylesheet+=" QScrollBar:horizontal { height: 15px; margin: 0px 15px 0px 15px;} QScrollBar::handle:horizontal {border: 1px solid #e6e6e6 ; background-color: rgb(5,97,137)}  QScrollBar::add-line:horizontal { width: 15px; subcontrol-position: right; subcontrol-origin: margin;} QScrollBar::sub-line:horizontal {width: 15px; subcontrol-position: left; subcontrol-origin: margin;}";
     stylesheet+="QLineEdit{background-color: rgb(136, 138, 133)} ";
     stylesheet+="QLineEdit:disabled{background-color: rgb(80, 80, 80)} ";
     stylesheet+="QGraphicsView {padding:0px;margin:0px; border: 1px; border-radius: 5px; background: qlineargradient(x1:0, y1:0, x2:0, y2:1,stop:0 rgb(5,97,137), stop:1 rgb(16,27,50))} ";
     qApp->setStyleSheet(stylesheet);
-    ui->chart->chart()->setTheme(QtCharts::QChart::ChartThemeBlueCerulean);
-    ui->chart->chart()->layout()->setContentsMargins(0,0,0,0);
+    ui->linear_chart->chart()->setTheme(QtCharts::QChart::ChartThemeBlueCerulean);
+    ui->linear_chart->chart()->layout()->setContentsMargins(0,0,0,0);
     ui->histogram->chart()->setTheme(QtCharts::QChart::ChartThemeBlueCerulean);
     ui->histogram->chart()->layout()->setContentsMargins(0,0,0,0);
     ui->image_list_summary->setSibling(ui->image_list);
     ui->image_list_summary->setStyleSheet("QHeaderView::section { padding-left: 1 px}");
     ui->image_list->horizontalHeader()->setStyleSheet("QHeaderView::section { padding-left:  8 px}");
 
-    ui->chart->setRenderHints(QPainter::HighQualityAntialiasing|QPainter::TextAntialiasing|QPainter::SmoothPixmapTransform|QPainter::Antialiasing);
-    ui->chart->setOptimizationFlag(QGraphicsView::DontSavePainterState);
-    ui->chart->setOptimizationFlag(QGraphicsView::DontAdjustForAntialiasing);
+    ui->linear_chart->setRenderHints(QPainter::HighQualityAntialiasing|QPainter::TextAntialiasing|QPainter::SmoothPixmapTransform|QPainter::Antialiasing);
+    ui->linear_chart->setOptimizationFlag(QGraphicsView::DontSavePainterState);
+    ui->linear_chart->setOptimizationFlag(QGraphicsView::DontAdjustForAntialiasing);
     ui->histogram->setRenderHints(QPainter::HighQualityAntialiasing|QPainter::TextAntialiasing|QPainter::SmoothPixmapTransform|QPainter::Antialiasing);
     ui->histogram->setOptimizationFlag(QGraphicsView::DontSavePainterState);
     ui->histogram->setOptimizationFlag(QGraphicsView::DontAdjustForAntialiasing);
@@ -174,21 +182,54 @@ MainWindow::MainWindow(MetaDataStore &meta_data_store, ImageProcessor &processor
     }
     phase_plate_position_chart_->addPositions(phase_plate_pos_path,phase_plate_pos_xy_list,true);
     connect(phase_plate_position_chart_,&PositionChart::selectionChanged,this,&MainWindow::phasePlateSelectionChanged);
-
-
-
     connect(&chart_update_timer_, &QTimer::timeout, this, &MainWindow::updateChart);
     QMenu *tools_menu=new QMenu("Tools",this);
-    tools_menu->addAction(scatter_plot_action_);
-    tools_menu->addAction(run_script_action_);
-    connect(scatter_plot_action_, &QAction::triggered, this, &MainWindow::displayScatterPlot);
-     menuBar()->addMenu(tools_menu);
+    QAction* scatter_plot_action=new QAction("Scatter Plot",this);
+    tools_menu->addAction(scatter_plot_action);
+    connect(scatter_plot_action, &QAction::triggered, this, &MainWindow::displayScatterPlot);
+    menuBar()->addMenu(tools_menu);
+    QMenu *select_menu=new QMenu("Select",this);
+    select_menu->addAction(ui->image_list->selectAllAction());
+    select_menu->addAction(ui->image_list->unselectAllAction());
+    select_menu->addAction(ui->image_list->selectAboveAction());
+    select_menu->addAction(ui->image_list->unselectAboveAction());
+    select_menu->addAction(ui->image_list->selectBelowAction());
+    select_menu->addAction(ui->image_list->unselectBelowAction());
+    select_menu->addAction(ui->image_list->invertSelectionAction());
+    menuBar()->addMenu(select_menu);
+    QMenu *process_menu=new QMenu("Process",this);
+    QAction* reprocess_all=new QAction("Reprocess all images",this);
+    connect(reprocess_all,&QAction::triggered,this, &MainWindow::reprocessAll);
+    QAction* reprocess_selected=new QAction("Reprocess selected images",this);
+    connect(reprocess_selected,&QAction::triggered,this, &MainWindow::reprocessSelected);
+    QAction* reprocess_current=new QAction("Reprocess current image",this);
+    connect(reprocess_current,&QAction::triggered,this, &MainWindow::reprocessCurrent);
+    process_menu->addAction(reprocess_all);
+    process_menu->addAction(reprocess_selected);
+    process_menu->addAction(reprocess_current);
+
+    menuBar()->addMenu(process_menu);
     QMenu *window_menu=new QMenu("Window",this);
-    window_menu->addAction(ui->linear_chart_dock->toggleViewAction());
-    window_menu->addAction(ui->histogram_chart_dock->toggleViewAction());
-    window_menu->addAction(ui->phase_plate_dock->toggleViewAction());
-    window_menu->addAction(ui->grid_dock->toggleViewAction());
-    window_menu->addAction(ui->details_dock->toggleViewAction());
+    QAction* hide_action=new QAction("Linear Chart");
+    hide_action->setCheckable(true);
+    hide_action->setChecked(true);
+    connect(hide_action,&QAction::triggered,ui->linear_chart,&ChartView::setVisible);
+    window_menu->addAction(hide_action);
+    hide_action=new QAction("Histogram Chart");
+    hide_action->setCheckable(true);
+    hide_action->setChecked(true);
+    connect(hide_action,&QAction::triggered,ui->histogram,&ChartView::setVisible);
+    window_menu->addAction(hide_action);
+    hide_action=new QAction("Phase Plate Chart");
+    hide_action->setCheckable(true);
+    hide_action->setChecked(true);
+    connect(hide_action,&QAction::triggered,ui->phase_plate,&ChartView::setVisible);
+    window_menu->addAction(hide_action);
+    hide_action=new QAction("Grid Square Chart");
+    hide_action->setCheckable(true);
+    hide_action->setChecked(true);
+    connect(hide_action,&QAction::triggered,ui->grid_square_chart,&ChartView::setVisible);
+    window_menu->addAction(hide_action);
     menuBar()->addMenu(window_menu);
     QMenu *help_menu=new QMenu("Help",this);
     QAction* about_action=help_menu->addAction("About");
@@ -211,7 +252,9 @@ MainWindow::MainWindow(MetaDataStore &meta_data_store, ImageProcessor &processor
                      << InputOutputVariable("Grid square id","square_id",Float)
                      << InputOutputVariable("X","X",Float)
                      << InputOutputVariable("Y","Y",Float)
-                     << InputOutputVariable("Z","Z",Float);
+                     << InputOutputVariable("Z","Z",Float)
+                    << InputOutputVariable("Hole Position X","hole_pos_x",Float)
+                    << InputOutputVariable("Hole Position Y","hole_pos_y",Float);
     report_.dataManager()->addModel("Images",model_,false);
     connect(export_progress_dialog_,&ExportProgressDialog::rejected,this,&MainWindow::cancelExport);
 }
@@ -486,7 +529,7 @@ void MainWindow::inputDataChanged()
 void MainWindow::onExport()
 {
     Settings settings;
-    ExportDialog dialog(processor_.getRawFilesKeys().toList(),processor_.getOutputFilesKeys().toList(),processor_.getSharedFilesKeys().toList());
+    ExportDialog dialog(meta_data_store_.rawKeys().toList(),meta_data_store_.outputKeys().toList(),meta_data_store_.sharedKeys().toList());
     dialog.setDuplicateRaw(settings.value("duplicate_raw_export").toBool());
     dialog.setSeparateRawPath(settings.value("separate_raw_export").toBool());
     dialog.setDestinationPath(QUrl::fromUserInput(settings.value("export_path").toString()));
@@ -634,7 +677,7 @@ void MainWindow::updateChart()
     }
 
     QColor color(23,159,223);
-    QtCharts::QChart *chart = ui->chart->chart();
+    QtCharts::QChart *chart = ui->linear_chart->chart();
     chart->removeAllSeries();
     foreach( QList<QPointF> line, line_list){
         QtCharts::QLineSeries *series = new QtCharts::QLineSeries();
@@ -871,7 +914,6 @@ void MainWindow::onStartStopButton(bool start)
         epu_disk_usage_->start(ui->avg_source_dir->text());
         movie_disk_usage_->start(ui->stack_source_dir->text());
         local_disk_usage_->start(".");
-        meta_data_store_.clear();
         last_image_timer_->reset();
     }else{
         last_image_timer_->stop();
@@ -1022,7 +1064,7 @@ void MainWindow::displayScatterPlot()
 
 void MainWindow::enableSelection(bool selecting)
 {
-    ui->chart->enableSelection(selecting);
+    ui->linear_chart->enableSelection(selecting);
     ui->histogram->enableSelection(selecting);
     ui->phase_plate->enableSelection(selecting);
     ui->grid_square_chart->enableSelection(selecting);
@@ -1042,5 +1084,23 @@ void MainWindow::onExportMessage(int left, const QList<ExportMessage> &messages)
 void MainWindow::onExportFinished()
 {
     export_progress_dialog_->finish();
+}
+
+void MainWindow::reprocessAll()
+{
+    processor_.reprocess(meta_data_store_.images());
+}
+
+void MainWindow::reprocessSelected()
+{
+    processor_.reprocess(meta_data_store_.selected());
+}
+
+void MainWindow::reprocessCurrent()
+{
+    QVector<DataPtr> current;
+    int current_row=sort_proxy_->mapToSource(ui->image_list->currentIndex()).row();
+    current.append(meta_data_store_.at(current_row));
+    processor_.reprocess(current);
 }
 

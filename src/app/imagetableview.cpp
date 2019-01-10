@@ -118,3 +118,38 @@ void ImageTableView::invertSelection()
        }
     }
 }
+
+QAction *ImageTableView::invertSelectionAction() const
+{
+    return invert_selection_;
+}
+
+QAction *ImageTableView::unselectBelowAction() const
+{
+    return unselect_below_;
+}
+
+QAction *ImageTableView::selectBelowAction() const
+{
+    return select_below_;
+}
+
+QAction *ImageTableView::unselectAboveAction() const
+{
+    return unselect_above_;
+}
+
+QAction *ImageTableView::selectAboveAction() const
+{
+    return select_above_;
+}
+
+QAction *ImageTableView::unselectAllAction() const
+{
+    return unselect_all_;
+}
+
+QAction *ImageTableView::selectAllAction() const
+{
+    return select_all_;
+}

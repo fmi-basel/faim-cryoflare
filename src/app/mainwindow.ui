@@ -29,8 +29,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1522</width>
-    <height>732</height>
+    <width>1599</width>
+    <height>989</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -41,7 +41,7 @@
     <normaloff>:/icons/cryoflare128.png</normaloff>:/icons/cryoflare128.png</iconset>
   </property>
   <widget class="QWidget" name="centralWidget">
-   <layout class="QHBoxLayout" name="horizontalLayout">
+   <layout class="QVBoxLayout" name="verticalLayout_11">
     <item>
      <widget class="QFrame" name="frame">
       <property name="frameShape">
@@ -52,60 +52,319 @@
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_6">
        <item>
-        <widget class="ImageTableView" name="image_list">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-           <horstretch>0</horstretch>
-           <verstretch>1</verstretch>
-          </sizepolicy>
+        <widget class="QTabWidget" name="tabWidget">
+         <property name="tabPosition">
+          <enum>QTabWidget::West</enum>
          </property>
-         <property name="editTriggers">
-          <set>QAbstractItemView::NoEditTriggers</set>
+         <property name="currentIndex">
+          <number>0</number>
          </property>
-         <property name="alternatingRowColors">
-          <bool>true</bool>
-         </property>
-         <property name="selectionBehavior">
-          <enum>QAbstractItemView::SelectItems</enum>
-         </property>
-         <property name="showGrid">
-          <bool>true</bool>
-         </property>
-         <property name="sortingEnabled">
-          <bool>true</bool>
-         </property>
-         <attribute name="horizontalHeaderDefaultSectionSize">
-          <number>20</number>
-         </attribute>
-         <attribute name="horizontalHeaderMinimumSectionSize">
-          <number>20</number>
-         </attribute>
-        </widget>
-       </item>
-       <item>
-        <widget class="HorizontalHeaderView" name="image_list_summary" native="true">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>0</width>
-           <height>18</height>
-          </size>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>2000</width>
-           <height>18</height>
-          </size>
-         </property>
-         <property name="toolTip">
-          <string>S: Column sum
+         <widget class="QWidget" name="Images">
+          <attribute name="title">
+           <string>Images</string>
+          </attribute>
+          <layout class="QVBoxLayout" name="verticalLayout_2">
+           <item>
+            <widget class="QSplitter" name="splitter">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <widget class="QSplitter" name="image_data_splitter">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>1</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <widget class="QWidget" name="image_list_widget" native="true">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                 <horstretch>2</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <layout class="QVBoxLayout" name="verticalLayout">
+                <item>
+                 <widget class="ImageTableView" name="image_list">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                    <horstretch>2</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="editTriggers">
+                   <set>QAbstractItemView::NoEditTriggers</set>
+                  </property>
+                  <property name="alternatingRowColors">
+                   <bool>true</bool>
+                  </property>
+                  <property name="selectionBehavior">
+                   <enum>QAbstractItemView::SelectItems</enum>
+                  </property>
+                  <property name="showGrid">
+                   <bool>true</bool>
+                  </property>
+                  <property name="sortingEnabled">
+                   <bool>true</bool>
+                  </property>
+                  <attribute name="horizontalHeaderDefaultSectionSize">
+                   <number>20</number>
+                  </attribute>
+                  <attribute name="horizontalHeaderMinimumSectionSize">
+                   <number>20</number>
+                  </attribute>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="HorizontalHeaderView" name="image_list_summary" native="true">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+                    <horstretch>2</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="minimumSize">
+                   <size>
+                    <width>0</width>
+                    <height>18</height>
+                   </size>
+                  </property>
+                  <property name="maximumSize">
+                   <size>
+                    <width>2000</width>
+                    <height>18</height>
+                   </size>
+                  </property>
+                  <property name="toolTip">
+                   <string>S: Column sum
 A: Column average</string>
-         </property>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+              <widget class="QTabWidget" name="image_data">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="minimumSize">
+                <size>
+                 <width>570</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="currentIndex">
+                <number>-1</number>
+               </property>
+              </widget>
+             </widget>
+             <widget class="QSplitter" name="chart_splitter">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>1</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>300</height>
+               </size>
+              </property>
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <widget class="ChartView" name="linear_chart">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                 <horstretch>1</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="minimumSize">
+                <size>
+                 <width>100</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="baseSize">
+                <size>
+                 <width>100</width>
+                 <height>0</height>
+                </size>
+               </property>
+              </widget>
+              <widget class="ChartView" name="histogram">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                 <horstretch>1</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="minimumSize">
+                <size>
+                 <width>100</width>
+                 <height>0</height>
+                </size>
+               </property>
+              </widget>
+              <widget class="PositionChartView" name="phase_plate">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                 <horstretch>1</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="minimumSize">
+                <size>
+                 <width>100</width>
+                 <height>0</height>
+                </size>
+               </property>
+              </widget>
+              <widget class="PositionChartView" name="grid_square_chart">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                 <horstretch>1</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="minimumSize">
+                <size>
+                 <width>100</width>
+                 <height>0</height>
+                </size>
+               </property>
+              </widget>
+             </widget>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+         <widget class="QWidget" name="Collections">
+          <attribute name="title">
+           <string>Collections</string>
+          </attribute>
+          <layout class="QHBoxLayout" name="horizontalLayout_5">
+           <item>
+            <widget class="QSplitter" name="splitter_5">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <widget class="QWidget" name="verticalLayoutWidget_2">
+              <layout class="QVBoxLayout" name="verticalLayout_10">
+               <item>
+                <layout class="QHBoxLayout" name="horizontalLayout_3">
+                 <item>
+                  <widget class="QPushButton" name="pushButton_2">
+                   <property name="text">
+                    <string>New</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="pushButton">
+                   <property name="text">
+                    <string>Delete</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QPushButton" name="pushButton_3">
+                   <property name="text">
+                    <string>Run</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <spacer name="horizontalSpacer">
+                   <property name="orientation">
+                    <enum>Qt::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>40</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                </layout>
+               </item>
+               <item>
+                <widget class="QSplitter" name="splitter_4">
+                 <property name="orientation">
+                  <enum>Qt::Vertical</enum>
+                 </property>
+                 <widget class="QTableWidget" name="tableWidget">
+                  <property name="minimumSize">
+                   <size>
+                    <width>100</width>
+                    <height>0</height>
+                   </size>
+                  </property>
+                  <attribute name="horizontalHeaderDefaultSectionSize">
+                   <number>200</number>
+                  </attribute>
+                  <column>
+                   <property name="text">
+                    <string>Description</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>Number of runs</string>
+                   </property>
+                  </column>
+                  <column>
+                   <property name="text">
+                    <string>Last run</string>
+                   </property>
+                  </column>
+                 </widget>
+                 <widget class="QScrollArea" name="scrollArea">
+                  <property name="minimumSize">
+                   <size>
+                    <width>0</width>
+                    <height>700</height>
+                   </size>
+                  </property>
+                  <property name="widgetResizable">
+                   <bool>true</bool>
+                  </property>
+                  <widget class="QWidget" name="scrollAreaWidgetContents">
+                   <property name="geometry">
+                    <rect>
+                     <x>0</x>
+                     <y>0</y>
+                     <width>451</width>
+                     <height>698</height>
+                    </rect>
+                   </property>
+                  </widget>
+                 </widget>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+             <widget class="QWidget" name="widget" native="true">
+              <property name="minimumSize">
+               <size>
+                <width>700</width>
+                <height>0</height>
+               </size>
+              </property>
+             </widget>
+            </widget>
+           </item>
+          </layout>
+         </widget>
         </widget>
        </item>
       </layout>
@@ -118,7 +377,7 @@ A: Column average</string>
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1522</width>
+     <width>1599</width>
      <height>22</height>
     </rect>
    </property>
@@ -132,40 +391,6 @@ A: Column average</string>
    </attribute>
   </widget>
   <widget class="QStatusBar" name="statusBar"/>
-  <widget class="QDockWidget" name="details_dock">
-   <property name="features">
-    <set>QDockWidget::AllDockWidgetFeatures</set>
-   </property>
-   <property name="windowTitle">
-    <string>I&amp;mage Details</string>
-   </property>
-   <attribute name="dockWidgetArea">
-    <number>2</number>
-   </attribute>
-   <widget class="QWidget" name="dockWidgetContents">
-    <layout class="QVBoxLayout" name="verticalLayout_2">
-     <item>
-      <widget class="QTabWidget" name="image_data">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="minimumSize">
-        <size>
-         <width>570</width>
-         <height>0</height>
-        </size>
-       </property>
-       <property name="currentIndex">
-        <number>-1</number>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </widget>
-  </widget>
   <widget class="QDockWidget" name="dockWidget_2">
    <property name="features">
     <set>QDockWidget::DockWidgetFeatureMask</set>
@@ -391,82 +616,6 @@ A: Column average</string>
     </layout>
    </widget>
   </widget>
-  <widget class="QDockWidget" name="linear_chart_dock">
-   <property name="minimumSize">
-    <size>
-     <width>480</width>
-     <height>400</height>
-    </size>
-   </property>
-   <property name="allowedAreas">
-    <set>Qt::BottomDockWidgetArea|Qt::RightDockWidgetArea|Qt::TopDockWidgetArea</set>
-   </property>
-   <property name="windowTitle">
-    <string>&amp;Linear Chart</string>
-   </property>
-   <attribute name="dockWidgetArea">
-    <number>8</number>
-   </attribute>
-   <widget class="QWidget" name="dockWidgetContents_4">
-    <layout class="QVBoxLayout" name="verticalLayout_4">
-     <item>
-      <widget class="ChartView" name="chart">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </widget>
-  </widget>
-  <widget class="QDockWidget" name="histogram_chart_dock">
-   <property name="windowTitle">
-    <string>Histogram &amp;Chart</string>
-   </property>
-   <attribute name="dockWidgetArea">
-    <number>8</number>
-   </attribute>
-   <widget class="QWidget" name="dockWidgetContents_5">
-    <layout class="QVBoxLayout" name="verticalLayout_3">
-     <item>
-      <widget class="ChartView" name="histogram"/>
-     </item>
-    </layout>
-   </widget>
-  </widget>
-  <widget class="QDockWidget" name="phase_plate_dock">
-   <property name="windowTitle">
-    <string>Phase plates</string>
-   </property>
-   <attribute name="dockWidgetArea">
-    <number>8</number>
-   </attribute>
-   <widget class="QWidget" name="dockWidgetContents_2">
-    <layout class="QVBoxLayout" name="verticalLayout">
-     <item>
-      <widget class="PositionChartView" name="phase_plate"/>
-     </item>
-    </layout>
-   </widget>
-  </widget>
-  <widget class="QDockWidget" name="grid_dock">
-   <property name="windowTitle">
-    <string>&amp;Grid squares</string>
-   </property>
-   <attribute name="dockWidgetArea">
-    <number>8</number>
-   </attribute>
-   <widget class="QWidget" name="dockWidgetContents_6">
-    <layout class="QVBoxLayout" name="verticalLayout_5">
-     <item>
-      <widget class="PositionChartView" name="grid_square_chart"/>
-     </item>
-    </layout>
-   </widget>
-  </widget>
   <action name="actionAbout">
    <property name="text">
     <string>About</string>
@@ -670,22 +819,6 @@ A: Column average</string>
    </hints>
   </connection>
   <connection>
-   <sender>start_stop</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>export_data</receiver>
-   <slot>setDisabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>1261</x>
-     <y>86</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>1361</x>
-     <y>86</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>export_data</sender>
    <signal>clicked()</signal>
    <receiver>MainWindow</receiver>
@@ -734,7 +867,7 @@ A: Column average</string>
    </hints>
   </connection>
   <connection>
-   <sender>chart</sender>
+   <sender>linear_chart</sender>
    <signal>selected(float,float,bool)</signal>
    <receiver>MainWindow</receiver>
    <slot>selectFromLinearChart(float,float,bool)</slot>

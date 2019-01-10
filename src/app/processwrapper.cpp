@@ -95,6 +95,9 @@ void ProcessWrapper::onFinished(int exitcode)
     QString shared_result_file_token("SHARED_FILE_EXPORT:");
     QString output;
     QString line;
+    QJsonObject raw_files=task_->data->value("raw_files").toObject();
+    QJsonObject files=task_->data->value("files").toObject();
+    QJsonObject shared_files=task_->data->value("shared_files").toObject();
     do {
         line = output_stream.readLine();
         output.append(line+"\n");
@@ -113,7 +116,8 @@ void ProcessWrapper::onFinished(int exitcode)
                 qDebug() << "invalid result line: " << line;
                 continue;
             }
-            task_->raw_files.insert(splitted[0].trimmed(),splitted[1].trimmed());
+            raw_files.insert(splitted[0].trimmed(),splitted[1].trimmed());
+            //task_->raw_files.insert(splitted[0].trimmed(),splitted[1].trimmed());
         }else if(line.startsWith(result_file_token)){
             line.remove(0,result_file_token.size());
             QStringList splitted=line.split("=");
@@ -121,7 +125,8 @@ void ProcessWrapper::onFinished(int exitcode)
                 qDebug() << "invalid result line: " << line;
                 continue;
             }
-            task_->output_files.insert(splitted[0].trimmed(),splitted[1].trimmed());
+            files.insert(splitted[0].trimmed(),splitted[1].trimmed());
+            //task_->output_files.insert(splitted[0].trimmed(),splitted[1].trimmed());
         }else if(line.startsWith(shared_result_file_token)){
             line.remove(0,shared_result_file_token.size());
             QStringList splitted=line.split("=");
@@ -129,9 +134,13 @@ void ProcessWrapper::onFinished(int exitcode)
                 qDebug() << "invalid result line: " << line;
                 continue;
             }
-            task_->shared_output_files.insert(splitted[0].trimmed(),splitted[1].trimmed());
+            shared_files.insert(splitted[0].trimmed(),splitted[1].trimmed());
+            //task_->shared_output_files.insert(splitted[0].trimmed(),splitted[1].trimmed());
         }
     } while (!line.isNull());
+    task_->data->insert("raw_files",raw_files);
+    task_->data->insert("files",files);
+    task_->data->insert("shared_files",shared_files);
     task_->output=output;
     task_->error=process_->readAllStandardError();
     task_->state=exitcode;
@@ -170,4 +179,9 @@ void ProcessWrapper::timeout()
     terminate();
     process_->waitForFinished();
     start(task_);
+}
+
+TaskPtr ProcessWrapper::task() const
+{
+    return task_;
 }
