@@ -29,6 +29,7 @@
 #include <task.h>
 #include <parallelexporter.h>
 #include <dataptr.h>
+#include "sftpurl.h"
 
 //fw decl
 class FileSystemWatcher;
@@ -47,7 +48,7 @@ public slots:
     void onDirChange(const QString & path);
     void onTaskFinished(const TaskPtr& task, bool gpu);
     void loadSettings();
-    void exportImages(const QUrl& export_path,const QUrl& raw_export_path,const QStringList& image_list, const QStringList& output_keys,const QStringList& raw_keys,const QStringList& shared_keys,bool duplicate_raw );
+    void exportImages(const SftpUrl& export_path,const SftpUrl& raw_export_path,const QStringList& image_list, const QStringList& output_keys,const QStringList& raw_keys,const QStringList& shared_keys,bool duplicate_raw );
     void cancelExport();
     void startTasks();
     QSet<QString> getOutputFilesKeys() const;

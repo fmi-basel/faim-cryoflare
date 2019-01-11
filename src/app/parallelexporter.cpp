@@ -31,7 +31,7 @@
 #include <QSet>
 #include <QtAlgorithms>
 #include "parallelexporter.h"
-ExportWorkerBase::ExportWorkerBase(int id, QSharedPointer<ThreadSafeQueue<WorkItem> > queue, const QString &source, const QUrl &destination, const QStringList &images, Barrier<ThreadSafeQueue<WorkItem> > &b):
+ExportWorkerBase::ExportWorkerBase(int id, QSharedPointer<ThreadSafeQueue<WorkItem> > queue, const QString &source, const SftpUrl &destination, const QStringList &images, Barrier<ThreadSafeQueue<WorkItem> > &b):
     QObject(),
     queue_(queue),
     source_(source),
@@ -100,6 +100,7 @@ QTemporaryFile* ExportWorkerBase::filter_(const QString &source_path) const
             temp_file->write(line);
         }
     }
+    temp_file->flush();
     return temp_file;
 }
 
@@ -114,7 +115,7 @@ void ExportWorkerBase::processNext_()
 }
 
 
-LocalExportWorker::LocalExportWorker(int id, QSharedPointer<ThreadSafeQueue<WorkItem> > queue, const QString &source, const QUrl &destination, const QStringList &images, Barrier<ThreadSafeQueue<WorkItem> > &b):
+LocalExportWorker::LocalExportWorker(int id, QSharedPointer<ThreadSafeQueue<WorkItem> > queue, const QString &source, const SftpUrl &destination, const QStringList &images, Barrier<ThreadSafeQueue<WorkItem> > &b):
     ExportWorkerBase(id,queue,source,destination,images,b)
 {
 
@@ -198,21 +199,15 @@ void LocalExportWorker::createDirectory_(const WorkItem& item)
 }
 
 
-RemoteExportWorker::RemoteExportWorker(int id, QSharedPointer<ThreadSafeQueue<WorkItem> > queue, const QString &source, const QUrl &destination, const QStringList &images, Barrier<ThreadSafeQueue<WorkItem> > &b):
+RemoteExportWorker::RemoteExportWorker(int id, QSharedPointer<ThreadSafeQueue<WorkItem> > queue, const QString &source, const SftpUrl &destination, const QStringList &images, Barrier<ThreadSafeQueue<WorkItem> > &b):
     ExportWorkerBase(id,queue,source,destination,images,b),
-    connection_parameters_(),
+    connection_parameters_(destination.toConnectionParameters()),
     ssh_connection_(nullptr),
     channel_(),
     sftp_ops_(),
     current_item_(),
     temp_files_()
 {
-    connection_parameters_.host = destination_.host();
-    connection_parameters_.userName = destination_.userName();
-    connection_parameters_.password = destination_.password();
-    connection_parameters_.authenticationType = QSsh::SshConnectionParameters::AuthenticationByPassword;
-    connection_parameters_.timeout = 30;
-    connection_parameters_.port = static_cast<quint16>(destination_.port());
 }
 
 void RemoteExportWorker::startImpl_()
@@ -471,7 +466,7 @@ void RemoteExportWorker::fileInfo_(QSsh::SftpJobId job, const QList<QSsh::SftpFi
 
 
 
-ParallelExporter::ParallelExporter(const QString &source, const QUrl &destination, const QStringList& images, int num_threads, QObject *parent):
+ParallelExporter::ParallelExporter(const QString &source, const SftpUrl &destination, const QStringList& images, int num_threads, QObject *parent):
     QObject(parent),
     source_(source),
     destination_(destination),
@@ -550,7 +545,7 @@ void ParallelExporter::addImages(const QStringList &files, bool filter)
     }
 }
 
-QUrl ParallelExporter::destination() const
+SftpUrl ParallelExporter::destination() const
 {
     return destination_;
 }

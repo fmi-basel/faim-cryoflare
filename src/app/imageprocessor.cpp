@@ -232,7 +232,7 @@ void ImageProcessor::startStop(bool start)
         startTasks();
     }else{
         running_state_=false;
-        watcher_->removePath(avg_source_path_);
+        watcher_->removeAllPaths();
         cpu_task_stack_.clear();
         gpu_task_stack_.clear();
         foreach(ProcessWrapper* process, cpu_processes_){
@@ -357,7 +357,7 @@ void ImageProcessor::loadSettings()
 
 }
 
-void ImageProcessor::exportImages(const QUrl &export_path, const QUrl &raw_export_path, const QStringList &image_list, const QStringList &output_keys, const QStringList &raw_keys, const QStringList &shared_keys, bool duplicate_raw)
+void ImageProcessor::exportImages(const SftpUrl &export_path, const SftpUrl &raw_export_path, const QStringList &image_list, const QStringList &output_keys, const QStringList &raw_keys, const QStringList &shared_keys, bool duplicate_raw)
 {
     Settings settings;
     QString export_mode=settings.value("export").toString();
@@ -399,6 +399,7 @@ void ImageProcessor::exportImages(const QUrl &export_path, const QUrl &raw_expor
         process_->write(QString("%1=%2\n").arg("shared").arg(shared_list.join(",")).toLatin1());
         process_->closeWriteChannel();
     }else{
+        bool separate_raw_export=export_path!=raw_export_path;
         int num_processes=settings.value("export_num_processes",1).toInt();
 
         QStringList files;
@@ -420,17 +421,21 @@ void ImageProcessor::exportImages(const QUrl &export_path, const QUrl &raw_expor
             }
             foreach(QString key, raw_files_[image].keys()){
                 if(raw_keys.contains(key)){
-                    raw_files << current_dir+"/"+raw_files_[image][key];
+                    if( separate_raw_export ){
+                        raw_files << current_dir+"/"+raw_files_[image][key];
+                        if( duplicate_raw){
+                            files << current_dir+"/"+raw_files_[image][key];
+                        }
+                    }else{
+                        files << current_dir+"/"+raw_files_[image][key];
+                    }
                 }
             }
         }
-        bool separate_raw_export=export_path!=raw_export_path;
-        if( (!separate_raw_export) || duplicate_raw){
-            files.append(raw_files);
-        }
         QDir parent_dir=QDir::current();
         parent_dir.cdUp();
-        if(!files.empty()){
+        if(!files.empty() || !files_to_filter.empty()){
+            qDebug() << files_to_filter;
             ParallelExporter* exporter=new ParallelExporter(parent_dir.path(),export_path,image_list,num_processes);
             exporter->addImages(files_to_filter,true);
             exporter->addImages(files,false);
@@ -570,7 +575,7 @@ void ImageProcessor::createTaskTree_(const QString &path)
     data->insert("avg_source_path",avg_s_path);
     QStringList stack_frames;
     if(QString("BM-Falcon")==data->value("camera")){
-        data->insert("stack_frames",QString("%1/%2_frames.mrc").arg(stack_s_path).arg(data->value("name")));
+        data->insert("stack_frames",QString("%1/%2_frames.???").arg(stack_s_path).arg(data->value("name")));
     }else if(QString("EF-CCD")==data->value("camera")){
         for(int i=1;i<=data->value("num_frames").toInt();++i){
             stack_frames.append(QString("%1/%2-*-%3.???").arg(stack_s_path).arg(data->value("name")).arg(i,4,10,QChar('0')));

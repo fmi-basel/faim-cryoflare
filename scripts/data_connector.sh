@@ -4,7 +4,7 @@
 ######################## floating point calculator #############################
 
 CALCULATE() {
-python -c "print $1"
+python -c "from math import *;print $1"
 }
 
 
@@ -23,7 +23,8 @@ RELION_WRITE(){
 	local jobfolder
 	printf -v jobfolder "job%03d" $jobid
 	local jobpath=$destination/$jobtype/$jobfolder
-	local starpath=$jobpath/$starname
+	starpath_varname=${jobalias}_${starname/./_}
+	declare  "$starpath_varname=$jobpath/$starname"
 	local default_pipeline="$destination/default_pipeline.star"
 	local gui_projectdir="$destination_path/.gui_projectdir"
 	local jobalias_link=$destination/$jobtype/$jobalias
@@ -42,8 +43,8 @@ RELION_WRITE(){
 	(
 		flock -n 9 || exit 1
      		local tmpfile=`mktemp --tmpdir=$scratch`
-     		if [[ -s $starpath ]]; then
-       			cp $starpath $tmpfile
+     		if [[ -s ${!starpath_varname} ]]; then
+       			cp ${!starpath_varname} $tmpfile
      		else
        			echo -e "\ndata_\n\nloop_" > $tmpfile
                         i=1
@@ -55,9 +56,9 @@ RELION_WRITE(){
 		local imagename=${!datastart##*/}
      		local awk_string=' ! /'$imagename'/ {print} 
                   	     END {print "'${@:$datastart}'"}'
-     		[ $# -ge $datastart ] && awk "$awk_string" < $tmpfile > $starpath
-     		SHARED_FILES  starpath
-	) 9>> $starpath
+     		[ $# -ge $datastart ] && awk "$awk_string" < $tmpfile > ${!starpath_varname}
+     		SHARED_FILES ${starpath_varname} 
+	) 9>> ${!starpath_varname}
 	
 	### update pipeline file ### 
   	(

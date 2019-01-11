@@ -40,12 +40,12 @@ SftpUrl ExportDialog::rawDestinationPath() const
     }
 }
 
-void ExportDialog::setDestinationPath(const QUrl &url)
+void ExportDialog::setDestinationPath(const SftpUrl &url)
 {
     ui->data_path->setRemotePath(url);
 }
 
-void ExportDialog::setRawDestinationPath(const QUrl &url)
+void ExportDialog::setRawDestinationPath(const SftpUrl &url)
 {
     ui->raw_data_path->setRemotePath(url);
 }

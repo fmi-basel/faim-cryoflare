@@ -1025,20 +1025,17 @@ void MainWindow::enableSelection(bool selecting)
 
 void MainWindow::onExportStarted(const QString &message, int num_files)
 {
-    qInfo() << "export started";
     export_progress_dialog_->start(message,num_files);
 }
 
 
 void MainWindow::onExportMessage(int left, const QList<ExportMessage> &messages)
 {
-    qInfo() << "export message" << messages.size();
     export_progress_dialog_->update(messages,left);
 }
 
 void MainWindow::onExportFinished()
 {
-    qInfo() << "export finished";
     export_progress_dialog_->finish();
 }
 

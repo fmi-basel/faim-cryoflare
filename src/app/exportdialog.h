@@ -19,8 +19,8 @@ public:
     ~ExportDialog();
     SftpUrl destinationPath() const;
     SftpUrl rawDestinationPath() const;
-    void setDestinationPath(const QUrl& url);
-    void setRawDestinationPath(const QUrl& url);
+    void setDestinationPath(const SftpUrl& url);
+    void setRawDestinationPath(const SftpUrl& url);
     bool separateRawPath() const;
     void setSeparateRawPath( bool f);
     bool duplicateRaw() const;
