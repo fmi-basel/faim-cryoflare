@@ -19,7 +19,12 @@ unix{
 INCLUDEPATH += $$PWD/../backend
 DEFINES +=  _CRT_SECURE_NO_WARNINGS _CRT_NONSTDC_NO_WARNINGS ZINT_VERSION=\\\"$$VERSION\\\"
 
-TARGET = QtZint
+CONFIG(debug, debug|release) {
+    TARGET = QtZintd
+} else {
+    TARGET = QtZint
+}
+#TARGET = QtZint
 
 
 

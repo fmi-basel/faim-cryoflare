@@ -1,5 +1,10 @@
-TARGET = limereport
+#TARGET = limereport
 
+CONFIG(debug, debug|release) {
+    TARGET = limereportd
+} else {
+    TARGET = limereport
+}
 
 TEMPLATE = lib
 CONFIG += static_build
