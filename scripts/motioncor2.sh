@@ -49,10 +49,11 @@ if FILES_MISSING; then
   mc2_params+="-FtBin $mc2_input_ft_bin "
   mc2_params+="-Gpu $gpu_id  "
   mc2_gain_params=""
-  if [ -z ${copyraw_gain_ref+x} ] && [ -e $copyraw_gain_ref ]; then
+  if [ ! -z ${copyraw_gain_ref+x} ] && [ -e $copyraw_gain_ref ]; then
     mc2_gain_params="-Gain $copyraw_gain_ref "
   fi
   
+  echo will run: MotionCor2 $mc2_params $mc2_gain_params
   RUN MotionCor2 $mc2_params $mc2_gain_params  > $motioncor2_log  2>&1
 fi
 if [ "$mc2_input_ft_bin" -ge "2" ]; then

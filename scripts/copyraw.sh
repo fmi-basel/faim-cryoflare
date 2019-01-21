@@ -25,13 +25,15 @@ mkdir -p $copyraw_movie_dir
 mkdir -p $copyraw_micrographs_dir
 mkdir -p $copyraw_xml_dir
 
+#workaround for lag in OffloadPC
+sleep 10
 
 ######################## define output files ###################################
 
 copyraw_raw_stack=$copyraw_movie_dir/${short_name}.mrcs
 copyraw_xml=$copyraw_xml_dir/${short_name}.xml
 RAW_FILES copyraw_raw_stack copyraw_xml
-if [ -e $gain_ref ] ; then
+if  compgen -G "$gain_ref"  ; then
   copyraw_gain_ref=$copyraw_movie_dir/${short_name}_gainref.mrc
   RAW_FILES copyraw_gain_ref 
 fi
@@ -46,7 +48,8 @@ FILES copyraw_raw_average copyraw_raw_average_jpg copyraw_raw_average_fft_png  c
 ######################## run processing if files are missing ###################
 
 if FILES_MISSING; then
-  if [ -e $gain_ref ] ; then
+  if  compgen -G "$gain_ref"  ; then
+    echo cp $gain_ref $copyraw_gain_ref
     cp $gain_ref $copyraw_gain_ref
   fi
   cp $source_stack $copyraw_raw_stack

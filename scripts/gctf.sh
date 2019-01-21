@@ -61,7 +61,7 @@ if FILES_MISSING; then
   gctf_params=" --gid $gpu_id"
   gctf_params+=" --apix $apix_x"
   gctf_params+=" --kV 300"
-  gctf_params+=" --cs 0.001"
+  gctf_params+=" --cs $gctf_input_c3"
   gctf_params+=" --ac 0.07"
   gctf_params+=" --dstep $dstep" 
   gctf_params+=" --astm 1000"
@@ -89,9 +89,9 @@ if FILES_MISSING; then
     RUN gctf $gctf_params $gctf_defocus_params  $gctf_avg_link  &>> $gctf_log
   fi
   measured_defocus=`cat $gctf_aligned_log|fgrep -v Local|tail -n 20|fgrep -A 1 "Defocus_U"|head -n 2 |tail -n 1|xargs`
-  defocus_u=`echo $measured_defocus|cut -f1 -d" "`
-  defocus_v=`echo $measured_defocus|cut -f2 -d" "`
-  average_defocus=`CALCULATE \($defocus_u+$defocus_v\)/2.0`
+  gctf_defocus_u=`echo $measured_defocus|cut -f1 -d" "`
+  gctf_defocus_v=`echo $measured_defocus|cut -f2 -d" "`
+  average_defocus=`CALCULATE \($gctf_defocus_u+$gctf_defocus_v\)/2.0`
 
   gctf_defocus_params=" --defL `CALCULATE 0.9*$average_defocus`"
   gctf_defocus_params+=" --defH `CALCULATE 1.1*$average_defocus`"
@@ -124,8 +124,8 @@ fi
 ######################## extract output parameters #############################
 
 measured_defocus=`cat $gctf_aligned_log|fgrep -v Local|tail -n 20|fgrep -A 1 "Defocus_U"|head -n 2 |tail -n 1|xargs`
-defocus_u=`echo $measured_defocus|cut -f1 -d" "`
-defocus_v=`echo $measured_defocus|cut -f2 -d" "`
+gctf_defocus_u=`echo $measured_defocus|cut -f1 -d" "`
+gctf_defocus_v=`echo $measured_defocus|cut -f2 -d" "`
 
 gctf_epa_limit_cc=`python - $gctf_epa_log << EOT
 import sys
@@ -144,8 +144,8 @@ gctf_epa_cc=`echo $gctf_epa_limit_cc|cut -f2 -d' '`
 rm $destination_path/micrographs_all_gctf.star >& /dev/null
 
 
-gctf_defocus=`CALCULATE \($defocus_u+$defocus_v\)/2.0`
-gctf_astigmatism=`CALCULATE abs\($defocus_u-$defocus_v\)/2.0`
+gctf_defocus=`CALCULATE \($gctf_defocus_u+$gctf_defocus_v\)/2.0`
+gctf_astigmatism=`CALCULATE abs\($gctf_defocus_u-$gctf_defocus_v\)/2.0`
 gctf_defocus_angle=`echo $measured_defocus|cut -f3 -d" "`
 
 
@@ -164,18 +164,18 @@ rln_inputstar=Import/job001/micrographs.star
 rln_header=(MicrographName CtfImage DefocusU DefocusV DefocusAngle Voltage SphericalAberration AmplitudeContrast Magnification DetectorPixelSize CtfFigureOfMerit CtfMaxResolution)
 
 
-if [ -n "$defocus_u" ] ; then
+if [ -n "$gctf_defocus_u" ] ; then
   if [ $phase_plate == "true" ] ; then
 
     gctf_phase_shift=`echo $measured_defocus|cut -f4 -d" "`
     rln_header+=(PhaseShift)
     RELION_WRITE $destination_path $rln_jobtype $rln_jobid $rln_alias $rln_nodetype $rln_starname $rln_inputstar rln_header[@] $micrographs_dir/${short_name}_DW.mrc $rln_jobtype/$jobfolder/$micrographs_dir/${short_name}.ctf:mrc \
-                                                                                                                             $defocus_u $defocus_v $gctf_defocus_angle 300 0.001 0.07 $magnification $dstep \
+                                                                                                                             $gctf_defocus_u $gctf_defocus_v $gctf_defocus_angle 300 0.001 0.07 $magnification $dstep \
 															     $gctf_epa_cc $gctf_epa_limit $gctf_phase_shift
   else
     gctf_phase_shift=0
     RELION_WRITE $destination_path $rln_jobtype $rln_jobid $rln_alias $rln_nodetype $rln_starname $rln_inputstar rln_header[@] $micrographs_dir/${short_name}_DW.mrc $rln_jobtype/$jobfolder/$micrographs_dir/${short_name}.ctf:mrc \
-                                                                                                                             $defocus_u $defocus_v $gctf_defocus_angle 300 0.001 0.07 $magnification $dstep \
+                                                                                                                             $gctf_defocus_u $gctf_defocus_v $gctf_defocus_angle 300 0.001 0.07 $magnification $dstep \
 															     $gctf_epa_cc $gctf_epa_limit 
 
   fi
@@ -183,7 +183,7 @@ fi
 
 ######################## export result parameters ##############################
 
-RESULTS gctf_epa_limit gctf_epa_cc gctf_defocus gctf_astigmatism gctf_defocus_angle gctf_phase_shift
+RESULTS gctf_epa_limit gctf_epa_cc gctf_defocus gctf_defocus_u gctf_defocus_v gctf_astigmatism gctf_defocus_angle gctf_phase_shift
 
 
 

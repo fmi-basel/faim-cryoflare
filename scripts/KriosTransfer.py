@@ -5,6 +5,8 @@ from PyQt4.QtCore import *
 import os
 from itertools import chain
 
+
+transfer_node="chbscl-1-2a-int.nibr.novartis.net"
 class RSyncProcess(QObject):
 	progress = pyqtSignal()
 	finished = pyqtSignal()
@@ -72,7 +74,9 @@ class RSyncProcess(QObject):
 
 
 	def onProcessStandardError(self):
+		#print "An error occured"
 		print self.process.readAllStandardError()
+		#self.process.terminate()
 
 	def terminate(self):
 		self.process.terminate()
@@ -184,7 +188,7 @@ class Exporter(QObject):
 	
 	def getLogin(self):
                 print "start get login"
-		login_dialog=LoginDialog("moria.nibr.novartis.net")
+		login_dialog=LoginDialog(transfer_node)
 		self.username,self.password=login_dialog.getLogin()
 		if self.username:
                         print "login success"
@@ -214,7 +218,7 @@ class Exporter(QObject):
 		self.progress_dialog.setWindowModality(Qt.WindowModal)
 		self.progress_dialog.canceled.connect(self.onCancel)
 		self.progress_dialog.setValue(0)
-		self.rsync_transfer.start(self.username,self.password,self.data.values(),"moria","/flock/dlab/em/users/"+self.username+"/"+project_dir+"/")
+		self.rsync_transfer.start(self.username,self.password,self.data.values(),transfer_node,"/dlab/em/user_archive/"+self.username+"/"+project_dir+"/")
                 print "copy of intermediate data finished\n"
 
 	def copyRaw(self):
@@ -230,7 +234,7 @@ class Exporter(QObject):
 		else:
 			import time
 			title="Copying raw files to dlab ..."
-			destination_host="moria"
+			destination_host=transfer_node
 			destination="/dlab/em/krios/"+time.strftime("%Y")+"/"+project_dir+"/"
 			username=self.username
 			password=self.password

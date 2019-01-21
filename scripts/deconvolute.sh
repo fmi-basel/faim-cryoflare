@@ -19,25 +19,14 @@ else
     average_var=unblur_aligned_avg # use average from unblur
 fi
 
-gautomatch_boxes_png=${!average_var/.mrc/_boxes.png}
-FILES  gautomatch_boxes_png
+deconvolute_png=${!average_var/.mrc/_deconv.png}
+deconvolute_boxes_png=${!average_var/.mrc/_deconv_boxes.png}
+FILES  deconvolute_png deconvolute_boxes_png
 
 
 ######################## run processing if files are missing ###################
 
 if FILES_MISSING; then
-  full_png=$scratch/${short_name}_gautomatch_full.png
-  RUN e2proc2d.py ${!average_var} $full_png
-  draw_boxes.sh  $full_png $gautomatch_box_file  $gautomatch_rejected_box_file $gautomatch_boxes_png 0x100
+  /programs/x86_64-linux/iplt/0.9.7/bin/iplt /usr/prog/sb/em/sw/cryoflare/1.6/scripts/deconv.py ${!average_var}  $deconvolute_png $apix_x $gctf_defocus_u $gctf_defocus_v $gctf_defocus_angle
+  draw_boxes.sh  $deconvolute_png $gautomatch_box_file  $gautomatch_rejected_box_file $deconvolute_boxes_png 0x0
 fi
-
-
-######################## extract output parameters #############################
-
-gautomatch_num_particles=`cat $gautomatch_box_file|wc -l`
-
-
-
-######################## export result parameters ##############################
-
-RESULTS gautomatch_num_particles 
