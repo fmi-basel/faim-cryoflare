@@ -593,7 +593,7 @@ void MainWindow::updateDetails()
             if(static_cast<VariableType>(type.toInt())==Image){
                 QString path=data->value(label.toString()).toString();
                 QPicture p;
-                if(QFileInfo::exists(path)){
+                if(! path.isEmpty() && QFileInfo::exists(path)){
                     QImageReader reader(path);
                     QSize image_size=reader.size();
                     float scalefactor=std::min(512.0/image_size.width(),512.0/image_size.height());

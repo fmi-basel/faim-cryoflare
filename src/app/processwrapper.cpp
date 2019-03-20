@@ -55,23 +55,25 @@ bool ProcessWrapper::running() const
 void ProcessWrapper::start(const TaskPtr &task)
 {
     task_=task;
-    process_->start(task_->script);
+    QByteArray script_input;
     foreach(QString key,task_->data->keys()){
         QString val=task_->data->value(key).toString();
-        process_->write(QString("%1=%2\n").arg(key,val).toLatin1());
+        script_input.append(QString("%1=%2\n").arg(key,val).toLatin1());
     }
     if(-1!=gpu_id_){
-        process_->write(QString("gpu_id=%1\n").arg(gpu_id_).toLatin1());
+        script_input.append(QString("gpu_id=%1\n").arg(gpu_id_).toLatin1());
     }
     Settings settings;
     settings.beginGroup("ScriptInput");
     settings.beginGroup(task->name);
     foreach(QString name,settings.allKeys()){
         QString value=settings.value(name).toString();
-        process_->write(QString("%1=%2\n").arg(name,value).toLatin1());
+        script_input.append(QString("%1=%2\n").arg(name,value).toLatin1());
     }
     settings.endGroup();
     settings.endGroup();
+    process_->start(task_->script);
+    process_->write(script_input);
     process_->closeWriteChannel();
     if(timeout_>0){
         timeout_timer_->start(timeout_*1000);

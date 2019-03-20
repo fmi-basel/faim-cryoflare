@@ -347,6 +347,7 @@ void ImageProcessor::reprocess(const QVector<DataPtr> &images)
         }
         ptr->insert("raw_files",QJsonObject());
         ptr->insert("files",QJsonObject());
+        ptr->insert("shared_files",QJsonObject());
         createTaskTree(ptr,true);
     }
 }

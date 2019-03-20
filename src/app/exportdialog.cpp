@@ -99,20 +99,28 @@ QStringList ExportDialog::selectedSharedKeys() const
 
 void ExportDialog::verifyDestinations()
 {
-    connection_=new QSsh::SshConnection(destinationPath().toConnectionParameters(),this);
-    connect(connection_,&QSsh::SshConnection::connected,this,&ExportDialog::destinationVerified);
-    connect(connection_,&QSsh::SshConnection::error,this,&ExportDialog::destinationVerificationError);
-    connection_->connectToHost();
+    if(destinationPath().isLocalFile()){
+        destinationVerified();
+    }else{
+        connection_=new QSsh::SshConnection(destinationPath().toConnectionParameters(),this);
+        connect(connection_,&QSsh::SshConnection::connected,this,&ExportDialog::destinationVerified);
+        connect(connection_,&QSsh::SshConnection::error,this,&ExportDialog::destinationVerificationError);
+        connection_->connectToHost();
+    }
 }
 
 void ExportDialog::destinationVerified()
 {
     if(separateRawPath()){
-        connection_->deleteLater();
-        connection_=new QSsh::SshConnection(rawDestinationPath().toConnectionParameters(),this);
-        connect(connection_,&QSsh::SshConnection::connected,this,&ExportDialog::accept);
-        connect(connection_,&QSsh::SshConnection::error,this,&ExportDialog::rawDestinationVerificationError);
-        connection_->connectToHost();
+        if(rawDestinationPath().isLocalFile()){
+            accept();
+        }else{
+            connection_->deleteLater();
+            connection_=new QSsh::SshConnection(rawDestinationPath().toConnectionParameters(),this);
+            connect(connection_,&QSsh::SshConnection::connected,this,&ExportDialog::accept);
+            connect(connection_,&QSsh::SshConnection::error,this,&ExportDialog::rawDestinationVerificationError);
+            connection_->connectToHost();
+        }
     }else{
         accept();
     }
