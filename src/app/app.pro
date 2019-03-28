@@ -47,7 +47,6 @@ version_target.commands = if [ -e aboutdialog.o ];then rm aboutdialog.o 2> /dev/
 QMAKE_EXTRA_TARGETS += version_target
 PRE_TARGETDEPS += $$version_target.target
 
-
 SOURCES += \
     main.cpp\
     mainwindow.cpp \
@@ -90,7 +89,9 @@ SOURCES += \
     collectionstartingcondition.cpp \
     collectiondefinition.cpp \
     jobmanager.cpp \
-    job.cpp
+    job.cpp \
+    flatfolderdatasource.cpp \
+    readepuxml.cpp
 
 
 
@@ -136,7 +137,9 @@ HEADERS  += \
     collectionstartingcondition.h \
     collectiondefinition.h \
     jobmanager.h \
-    job.h
+    job.h \
+    flatfolderdatasource.h \
+    readepuxml.h
 
 
 FORMS    += \
@@ -168,3 +171,5 @@ DISTFILES += \
     license_header.txt
 
 
+QMAKE_LFLAGS_DEBUG += -fsanitize=address -fsanitize=undefined  -static-libasan -static-libubsan
+QMAKE_CXXFLAGS_DEBUG += -fsanitize=address -fsanitize=undefined  -static-libasan -static-libubsan

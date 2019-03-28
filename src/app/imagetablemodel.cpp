@@ -29,14 +29,15 @@ ImageTableModel::ImageTableModel(MetaDataStore& store,QObject *parent):
     QAbstractTableModel(parent),
     meta_data_store_(store),
     columns_(),
-    colors_()
+    colors_(),
+    num_rows_(0)
 {
     connect(&store,&MetaDataStore::newImage,this , &ImageTableModel::imageAdded);
 }
 
 int ImageTableModel::rowCount(const QModelIndex &parent) const
 {
-    return meta_data_store_.size();
+    return num_rows_;
 }
 
 int ImageTableModel::columnCount(const QModelIndex &parent) const
@@ -182,8 +183,9 @@ DataPtr ImageTableModel::image(int row)
 
 void ImageTableModel::imageAdded(const DataPtr &data)
 {
-    beginInsertRows(QModelIndex(),rowCount(QModelIndex()),rowCount(QModelIndex()));
-    endInsertRows();
+   beginInsertRows(QModelIndex(),rowCount(QModelIndex()),rowCount(QModelIndex()));
+   ++num_rows_;
+   endInsertRows();
 }
 
 void ImageTableModel::addColumn(const InputOutputVariable &column, const QColor &color)

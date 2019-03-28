@@ -126,7 +126,7 @@ void FileSystemWatcherImpl::update(){
         }else{
             foreach(QFileInfo info, entry_list){
                 if(info.lastModified()!=dir_file_mod_times_.value(path).value(info.canonicalFilePath())){
-                    emit directoryChanged(path);
+                    emit_dirs << path;
                     dir_file_mod_times_[path][info.canonicalFilePath()]=info.lastModified();
                     break;
                 }

@@ -1,4 +1,6 @@
+#include <QDebug>
 #include <QDir>
+#include <QTimer>
 #include <QDebug>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -12,16 +14,7 @@ MetaDataStore::MetaDataStore(QObject *parent):
     data_source_(nullptr),
     data_()
 {
-    QDir cryoflare_dir(CRYOFLARE_DIRECTORY);
-    foreach(QString file_entry, cryoflare_dir.entryList(QStringList("*.dat"),QDir::Files,QDir::Time | QDir::Reversed)){
-        QFile load_file(cryoflare_dir.filePath(file_entry));
-        if(!load_file.open(QIODevice::ReadOnly)){
-            qWarning() << "Couldn't open file: " << cryoflare_dir.filePath(file_entry);
-            continue;
-        }
-        QJsonDocument load_doc=QJsonDocument::fromBinaryData(load_file.readAll());
-        addImage(DataPtr(new Data(load_doc.object())));
-    }
+     QTimer::singleShot(0,this,&MetaDataStore::readPersistenData);
 }
 
 MetaDataStore::~MetaDataStore()
@@ -184,6 +177,14 @@ void MetaDataStore::saveData(const DataPtr &ptr)
     }
     QJsonDocument save_doc(*ptr.data());
     save_file.write(save_doc.toBinaryData());
+    // save in json text format for debugging
+    QString txt_file_name(QString("%1.json").arg(cryoflare_dir.filePath(ptr->value("short_name").toString())));
+    QFile txt_save_file(txt_file_name);
+    if (!txt_save_file.open(QIODevice::WriteOnly)) {
+        qWarning() << "Couldn't save file: " <<txt_file_name;
+        return;
+    }
+    txt_save_file.write(save_doc.toJson());
 }
 
 void MetaDataStore::addImage(const DataPtr &ptr)
@@ -195,12 +196,33 @@ void MetaDataStore::addImage(const DataPtr &ptr)
             return;
         }
     }
-    ptr->insert("raw_files",QJsonObject());
-    ptr->insert("files",QJsonObject());
-    ptr->insert("shared_files",QJsonObject());
+    //ptr->insert("json_metadata",QString::fromLatin1(QJsonDocument(*ptr).toJson()));
+    if(!ptr->contains("raw_files")){
+        ptr->insert("raw_files",QJsonObject());
+    }
+    if(!ptr->contains("files")){
+        ptr->insert("files",QJsonObject());
+    }
+    if(!ptr->contains("shared_files")){
+        ptr->insert("shared_files",QJsonObject());
+    }
     data_.append(ptr);
     saveData(ptr);
     emit newImage(ptr);
+}
+
+void MetaDataStore::readPersistenData()
+{
+    QDir cryoflare_dir(CRYOFLARE_DIRECTORY);
+    foreach(QString file_entry, cryoflare_dir.entryList(QStringList("*.dat"),QDir::Files,QDir::Time | QDir::Reversed)){
+        QFile load_file(cryoflare_dir.filePath(file_entry));
+        if(!load_file.open(QIODevice::ReadOnly)){
+            qWarning() << "Couldn't open file: " << cryoflare_dir.filePath(file_entry);
+            continue;
+        }
+        QJsonDocument load_doc=QJsonDocument::fromBinaryData(load_file.readAll());
+        addImage(DataPtr(new Data(load_doc.object())));
+    }
 }
 
 QVector<DataPtr> MetaDataStore::images() const

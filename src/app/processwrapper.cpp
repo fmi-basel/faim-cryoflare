@@ -97,9 +97,9 @@ void ProcessWrapper::onFinished(int exitcode)
     QString shared_result_file_token("SHARED_FILE_EXPORT:");
     QString output;
     QString line;
-    QJsonObject raw_files=task_->data->value("raw_files").toObject();
-    QJsonObject files=task_->data->value("files").toObject();
-    QJsonObject shared_files=task_->data->value("shared_files").toObject();
+    QVariantHash raw_files=task_->data->value("raw_files").toObject().toVariantHash();
+    QVariantHash files=task_->data->value("files").toObject().toVariantHash();
+    QVariantHash shared_files=task_->data->value("shared_files").toObject().toVariantHash();
     do {
         line = output_stream.readLine();
         output.append(line+"\n");
@@ -140,9 +140,9 @@ void ProcessWrapper::onFinished(int exitcode)
             //task_->shared_output_files.insert(splitted[0].trimmed(),splitted[1].trimmed());
         }
     } while (!line.isNull());
-    task_->data->insert("raw_files",raw_files);
-    task_->data->insert("files",files);
-    task_->data->insert("shared_files",shared_files);
+    task_->data->insert("raw_files",QJsonObject::fromVariantHash(raw_files));
+    task_->data->insert("files",QJsonObject::fromVariantHash(files));
+    task_->data->insert("shared_files",QJsonObject::fromVariantHash(shared_files));
     task_->output=output;
     task_->error=process_->readAllStandardError();
     task_->state=exitcode;

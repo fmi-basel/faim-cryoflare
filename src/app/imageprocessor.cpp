@@ -308,7 +308,7 @@ void ImageProcessor::startNextExport_()
 
 void ImageProcessor::createTaskTree(DataPtr data, bool force_reprocess)
 {
-    qDebug() << "create task tree for: " << data->value("name").toString();
+    //qDebug() << "create task tree for: " << data->value("name").toString();
     TaskPtr root_task=root_task_->clone();
     root_task->setData(data,force_reprocess);
     enqueueChildren_(root_task);
@@ -370,7 +370,7 @@ void ImageProcessor::enqueueChildren_(const TaskPtr &task)
     for(int i=0;i<task->children.size();++i){
         TaskPtr child=task->children.at(i);
         if(child->data->value(child->taskString()).toString()=="FINISHED"){
-            qDebug() << "skipping finished task: " << child->name << " for " << child->data->value("short_name").toString();
+            //qDebug() << "skipping finished task: " << child->name << " for " << child->data->value("short_name").toString();
             enqueueChildren_(child);
         }else{
             QStack<TaskPtr>& stack=child->gpu?gpu_task_stack_:cpu_task_stack_;

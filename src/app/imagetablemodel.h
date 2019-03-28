@@ -61,6 +61,7 @@ private:
     MetaDataStore& meta_data_store_;
     QList<InputOutputVariable>  columns_;
     QList<QColor> colors_;
+    int num_rows_;
 
 };
 

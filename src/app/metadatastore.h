@@ -40,6 +40,7 @@ signals:
     void stop();
 protected slots:
     void addImage(const DataPtr & ptr);
+    void readPersistenData();
 protected:
     QScopedPointer<DataSourceBase> data_source_;
     QVector<DataPtr> data_;

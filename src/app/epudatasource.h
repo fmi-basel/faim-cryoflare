@@ -21,7 +21,6 @@ public slots:
 protected slots:
     virtual void onDirChanged(const QString & path);
 protected:
-    DataPtr readXML_(const QString&path);
     QScopedPointer<FileSystemWatcher> watcher_;
     QString epu_project_dir_;
     QString movie_dir_;

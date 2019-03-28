@@ -720,8 +720,8 @@ void MainWindow::updatePhasePlateChart()
         bool phase_plate_export_flag=export_val.compare("true", Qt::CaseInsensitive) == 0 || export_val==QString("1") || ui->filter->isChecked()==false;
         if(val.canConvert<float>() && val.toString()!=QString("")){
             float fval=val.toFloat();
-            int phase_plate_num=std::max(1,std::min(6,data->value("phase_plate_num").toInt()));
-            int phase_plate_pos_num=data->value("phase_plate_pos").toInt();
+            int phase_plate_num=std::max(1,std::min(6,data->value("phase_plate_num").toString().toInt()));
+            int phase_plate_pos_num=data->value("phase_plate_pos").toString().toInt();
             if(phase_plate_export_flag && (phase_plate_level_==0 || phase_plate_num==current_phase_plate_)){
                 int index=(phase_plate_level_==0 ? phase_plate_num : phase_plate_pos_num);
                 if(!data_vectors.contains(i)){
@@ -766,23 +766,23 @@ void MainWindow::updateGridSquareChart()
         bool export_flag=export_val.compare("true", Qt::CaseInsensitive) == 0 || export_val==QString("1") || ui->filter->isChecked()==false;
         if(val.canConvert<float>() && val.toString()!=QString("")){
             float fval=val.toFloat();
-            int square_id=data->value("square_id").toInt();
+            int square_id=data->value("square_id").toString().toInt();
             if(chart_current_square_==-1){
                 if(export_flag){
                     if(!data_vectors.contains(square_id)){
                         data_vectors[square_id]=QVector<float>();
                     }
                     data_vectors[square_id].append(fval);
-                    positions[square_id]=QPointF(2e5*data->value("square_X").toDouble(),2e5*data->value("square_Y").toDouble());
+                    positions[square_id]=QPointF(2e5*data->value("square_X").toString().toDouble(),2e5*data->value("square_Y").toString().toDouble());
                 }
             }else{
-                int hole_id=data->value("hole_id").toInt();
+                int hole_id=data->value("hole_id").toString().toInt();
                 if(export_flag &&   square_id==chart_current_square_){
                     if(!data_vectors.contains(hole_id)){
                         data_vectors[hole_id]=QVector<float>();
                     }
                     data_vectors[hole_id].append(fval);
-                    positions[hole_id]=QPointF(10e6*data->value("X").toDouble(),10e6*data->value("Y").toDouble());
+                    positions[hole_id]=QPointF(10e6*data->value("X").toString().toDouble(),10e6*data->value("Y").toString().toDouble());
                 }
             }
         }

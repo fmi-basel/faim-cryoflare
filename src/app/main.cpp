@@ -33,6 +33,7 @@
 #include "filelocker.h"
 #include "metadatastore.h"
 #include "epudatasource.h"
+#include "flatfolderdatasource.h"
 
 QCoreApplication* createApplication(int &argc, char *argv[])
 {
@@ -108,8 +109,21 @@ int main(int argc, char* argv[])
     }
     MetaDataStore* meta_data_store=new MetaDataStore;
     QObject::connect(app.data(),&QCoreApplication::aboutToQuit,meta_data_store,&MetaDataStore::deleteLater);
-    EPUDataSource*  data_source= new EPUDataSource;
-    meta_data_store->setDataSource(data_source);
+    QString import_mode=settings.value("import").toString();
+    DataSourceBase *data_source;
+    if(import_mode=="EPU"){
+        data_source= new EPUDataSource;
+        meta_data_store->setDataSource(data_source);
+    }else if(import_mode=="flat_EPU"){
+        data_source= new FlatFolderDataSource(settings.value("import_image_pattern").toString(),true);
+        meta_data_store->setDataSource(data_source);
+    }else if(import_mode=="json"){
+        data_source= new FlatFolderDataSource(settings.value("import_image_pattern").toString(),false);
+        meta_data_store->setDataSource(data_source);
+    }else{
+        EPUDataSource*  data_source= new EPUDataSource;
+        meta_data_store->setDataSource(data_source);
+    }
     ImageProcessor processor(*meta_data_store);
 
     if (qobject_cast<QApplication *>(app.data())) {
