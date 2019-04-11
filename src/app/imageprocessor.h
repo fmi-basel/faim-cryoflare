@@ -46,6 +46,7 @@ public:
 public slots:
     void startStop(bool start=true);
     void onTaskFinished(const TaskPtr& task, bool gpu);
+    void onTaskError(const TaskPtr& task);
     void loadSettings();
     void exportImages(const SftpUrl& export_path,const SftpUrl& raw_export_path,const QStringList& image_list, const QStringList& output_keys,const QStringList& raw_keys,const QStringList& shared_keys,bool duplicate_raw );
     void cancelExport();

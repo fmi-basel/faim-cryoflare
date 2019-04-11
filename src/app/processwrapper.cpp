@@ -44,6 +44,7 @@ ProcessWrapper::ProcessWrapper(QObject *parent, int timeout, int gpu_id) :
     env.insert("PATH",QCoreApplication::applicationDirPath()+"/scripts:"+path);
     process_->setProcessEnvironment(env);
     connect(timeout_timer_, SIGNAL(timeout()), this, SLOT(timeout()));
+    connect(process_,&QProcess::errorOccurred,this,&ProcessWrapper::onError);
     timeout_timer_->setSingleShot(true);
 }
 
@@ -55,26 +56,7 @@ bool ProcessWrapper::running() const
 void ProcessWrapper::start(const TaskPtr &task)
 {
     task_=task;
-    QByteArray script_input;
-    foreach(QString key,task_->data->keys()){
-        QString val=task_->data->value(key).toString();
-        script_input.append(QString("%1=%2\n").arg(key,val).toLatin1());
-    }
-    if(-1!=gpu_id_){
-        script_input.append(QString("gpu_id=%1\n").arg(gpu_id_).toLatin1());
-    }
-    Settings settings;
-    settings.beginGroup("ScriptInput");
-    settings.beginGroup(task->name);
-    foreach(QString name,settings.allKeys()){
-        QString value=settings.value(name).toString();
-        script_input.append(QString("%1=%2\n").arg(name,value).toLatin1());
-    }
-    settings.endGroup();
-    settings.endGroup();
     process_->start(task_->script);
-    process_->write(script_input);
-    process_->closeWriteChannel();
     if(timeout_>0){
         timeout_timer_->start(timeout_*1000);
     }
@@ -97,9 +79,18 @@ void ProcessWrapper::onFinished(int exitcode)
     QString shared_result_file_token("SHARED_FILE_EXPORT:");
     QString output;
     QString line;
-    QVariantHash raw_files=task_->data->value("raw_files").toObject().toVariantHash();
-    QVariantHash files=task_->data->value("files").toObject().toVariantHash();
-    QVariantHash shared_files=task_->data->value("shared_files").toObject().toVariantHash();
+    QVariantHash raw_files;
+    if(task_->data->contains("raw_files")){
+        raw_files=task_->data->value("raw_files").toObject().toVariantHash();
+    }
+    QVariantHash files;
+    if(task_->data->contains("files")){
+        files=task_->data->value("files").toObject().toVariantHash();
+    }
+    QVariantHash shared_files;
+    if(task_->data->contains("shared_files")){
+        shared_files=task_->data->value("shared_files").toObject().toVariantHash();
+    }
     do {
         line = output_stream.readLine();
         output.append(line+"\n");
@@ -153,7 +144,58 @@ void ProcessWrapper::onFinished(int exitcode)
 
 void ProcessWrapper::onStarted()
 {
+    QByteArray script_input;
+    foreach(QString key,task_->data->keys()){
+        QString val=task_->data->value(key).toString();
+        script_input.append(QString("%1=%2\n").arg(key,val).toLatin1());
+    }
+    if(-1!=gpu_id_){
+        script_input.append(QString("gpu_id=%1\n").arg(gpu_id_).toLatin1());
+    }
+    Settings settings;
+    settings.beginGroup("ScriptInput");
+    settings.beginGroup(task_->name);
+    foreach(QString name,settings.allKeys()){
+        QString value=settings.value(name).toString();
+        script_input.append(QString("%1=%2\n").arg(name,value).toLatin1());
+    }
+    settings.endGroup();
+    settings.endGroup();
+    process_->write(script_input);
+    process_->closeWriteChannel();
     emit started(task_->name,task_->data->value("short_name").toString(),process_->processId());
+}
+
+void ProcessWrapper::onError(QProcess::ProcessError e)
+{
+    QString error_string;
+    switch (e) {
+        case QProcess::FailedToStart:
+            error_string=QString("Task %1 failed to start").arg(task_->script);
+            break;
+        case QProcess::Crashed:
+            error_string=QString("Task %1 crashed.").arg(task_->script);
+            break;
+        case QProcess::Timedout:
+            error_string=QString("Task %1  waitFor...() function timed out.").arg(task_->script);
+            break;
+        case QProcess::WriteError:
+            error_string=QString("An error occurred when attempting to write to task %1.").arg(task_->script);
+            break;
+        case QProcess::ReadError:
+            error_string=QString("An error occurred when attempting to read from task %1.").arg(task_->script);
+            break;
+        case QProcess::UnknownError:
+        default:
+            error_string=QString("Unknown error in task %1.").arg(task_->script);
+            break;
+    }
+    task_->output=process_->readAllStandardOutput();
+    task_->error=process_->readAllStandardError()+"\n"+error_string;
+    task_->state=e;
+    TaskPtr task=task_;
+    task_.clear();
+    emit error(task);
 }
 
 void ProcessWrapper::kill()

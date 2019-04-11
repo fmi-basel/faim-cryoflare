@@ -100,10 +100,28 @@ void ImageProcessor::onTaskFinished(const TaskPtr &task, bool gpu)
     }
     QFile ferr(QDir::current().relativeFilePath(task->name+"_error.log"));
     if (ferr.open(QIODevice::WriteOnly | QIODevice::Append)) {
-        QTextStream stream( &f );
+        QTextStream stream( &ferr );
         stream << task->error << endl;
     }
     task->data->insert(task->taskString(),"FINISHED");
+    meta_data_store_.saveData(task->data);
+    emit dataChanged(task->data);
+}
+
+void ImageProcessor::onTaskError(const TaskPtr &task)
+{
+    startTasks();
+    QFile f(QDir::current().relativeFilePath(task->name+"_out.log"));
+    if (f.open(QIODevice::WriteOnly | QIODevice::Append)) {
+        QTextStream stream( &f );
+        stream << task->output << endl;
+    }
+    QFile ferr(QDir::current().relativeFilePath(task->name+"_error.log"));
+    if (ferr.open(QIODevice::WriteOnly | QIODevice::Append)) {
+        QTextStream stream( &ferr );
+        stream << task->error << endl;
+    }
+    task->data->insert(task->taskString(),"ERROR");
     meta_data_store_.saveData(task->data);
     emit dataChanged(task->data);
 }
@@ -132,6 +150,7 @@ void ImageProcessor::loadSettings()
          ProcessWrapper* wrapper=new ProcessWrapper(this,timeout,-1);
          emit processCreated(wrapper,-1);
          connect(wrapper,SIGNAL(finished(TaskPtr,bool)),this,SLOT(onTaskFinished(TaskPtr,bool)));
+         connect(wrapper,&ProcessWrapper::error,this,&ImageProcessor::onTaskError);
          cpu_processes_.append(wrapper);
 
      }
@@ -140,6 +159,7 @@ void ImageProcessor::loadSettings()
          ProcessWrapper* wrapper=new ProcessWrapper(this,timeout,gpu_id);
          emit processCreated(wrapper,gpu_id);
          connect(wrapper,SIGNAL(finished(TaskPtr,bool)),this,SLOT(onTaskFinished(TaskPtr,bool)));
+         connect(wrapper,&ProcessWrapper::error,this,&ImageProcessor::onTaskError);
          gpu_processes_.append(wrapper);
      }
 
