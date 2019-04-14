@@ -819,7 +819,7 @@ void MainWindow::createProcessIndicator(ProcessWrapper *wrapper, int gpu_id)
     process_indicators_.append(indicator);
     statusBar()->addWidget(indicator);
     connect(wrapper,&ProcessWrapper::started,indicator,&ProcessIndicator::started);
-    connect(wrapper,&ProcessWrapper::stopped,indicator,&ProcessIndicator::finished);
+    connect(wrapper,&ProcessWrapper::finished,indicator,&ProcessIndicator::finished);
 }
 
 void MainWindow::deleteProcessIndicators()

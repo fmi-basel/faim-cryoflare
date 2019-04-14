@@ -87,11 +87,17 @@ void ImageProcessor::startStop(bool start)
     }
 }
 
-void ImageProcessor::onTaskFinished(const TaskPtr &task, bool gpu)
+void ImageProcessor::onTaskFinished(const TaskPtr &task)
 {
-    QString short_name=task->data->value("short_name").toString();
-    enqueueChildren_(task);
-    emit queueCountChanged(cpu_task_stack_.size(),gpu_task_stack_.size());
+    if(task->state==0){
+        //task finished successfully
+        enqueueChildren_(task);
+        emit queueCountChanged(cpu_task_stack_.size(),gpu_task_stack_.size());
+        task->data->insert(task->taskString(),"FINISHED");
+    }else{
+        // task aborted
+        task->data->insert(task->taskString(),"ERROR");
+    }
     startTasks();
     QFile f(QDir::current().relativeFilePath(task->name+"_out.log"));
     if (f.open(QIODevice::WriteOnly | QIODevice::Append)) {
@@ -103,28 +109,10 @@ void ImageProcessor::onTaskFinished(const TaskPtr &task, bool gpu)
         QTextStream stream( &ferr );
         stream << task->error << endl;
     }
-    task->data->insert(task->taskString(),"FINISHED");
     meta_data_store_.saveData(task->data);
     emit dataChanged(task->data);
 }
 
-void ImageProcessor::onTaskError(const TaskPtr &task)
-{
-    startTasks();
-    QFile f(QDir::current().relativeFilePath(task->name+"_out.log"));
-    if (f.open(QIODevice::WriteOnly | QIODevice::Append)) {
-        QTextStream stream( &f );
-        stream << task->output << endl;
-    }
-    QFile ferr(QDir::current().relativeFilePath(task->name+"_error.log"));
-    if (ferr.open(QIODevice::WriteOnly | QIODevice::Append)) {
-        QTextStream stream( &ferr );
-        stream << task->error << endl;
-    }
-    task->data->insert(task->taskString(),"ERROR");
-    meta_data_store_.saveData(task->data);
-    emit dataChanged(task->data);
-}
 
 
 void ImageProcessor::loadSettings()
@@ -149,8 +137,7 @@ void ImageProcessor::loadSettings()
      for(int i=0;i<num_cpu;++i) {
          ProcessWrapper* wrapper=new ProcessWrapper(this,timeout,-1);
          emit processCreated(wrapper,-1);
-         connect(wrapper,SIGNAL(finished(TaskPtr,bool)),this,SLOT(onTaskFinished(TaskPtr,bool)));
-         connect(wrapper,&ProcessWrapper::error,this,&ImageProcessor::onTaskError);
+         connect(wrapper,&ProcessWrapper::finished,this,&ImageProcessor::onTaskFinished);
          cpu_processes_.append(wrapper);
 
      }
@@ -158,8 +145,7 @@ void ImageProcessor::loadSettings()
          int gpu_id=gpu_ids.at(i%gpu_ids.size()).toInt();
          ProcessWrapper* wrapper=new ProcessWrapper(this,timeout,gpu_id);
          emit processCreated(wrapper,gpu_id);
-         connect(wrapper,SIGNAL(finished(TaskPtr,bool)),this,SLOT(onTaskFinished(TaskPtr,bool)));
-         connect(wrapper,&ProcessWrapper::error,this,&ImageProcessor::onTaskError);
+         connect(wrapper,&ProcessWrapper::finished,this,&ImageProcessor::onTaskFinished);
          gpu_processes_.append(wrapper);
      }
 
@@ -390,7 +376,6 @@ void ImageProcessor::enqueueChildren_(const TaskPtr &task)
     for(int i=0;i<task->children.size();++i){
         TaskPtr child=task->children.at(i);
         if(child->data->value(child->taskString()).toString()=="FINISHED"){
-            //qDebug() << "skipping finished task: " << child->name << " for " << child->data->value("short_name").toString();
             enqueueChildren_(child);
         }else{
             QStack<TaskPtr>& stack=child->gpu?gpu_task_stack_:cpu_task_stack_;

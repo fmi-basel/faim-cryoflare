@@ -40,24 +40,25 @@ public:
     TaskPtr task() const;
 
 signals:
-    void finished(const TaskPtr &task, bool gpu=false);
+    void finished(const TaskPtr &task);
     void started(const QString &image, const QString &task,int process_id);
-    void stopped();
     void error(const TaskPtr &task);
 
 public slots:
     void start(const TaskPtr &task);
-    void onFinished(int exitcode);
-    void onStarted();
-    void onError(QProcess::ProcessError e);
     void kill();
     void terminate();
-    void timeout();
+
+private slots:
+    void onStarted_();
+    void onFinished_(int exitcode, QProcess::ExitStatus state);
+    void onError_(QProcess::ProcessError e);
 private:
+    void handleSuccess_();
+    void handleFailure_();
     QProcess *process_;
     TaskPtr task_;
     int timeout_;
-    bool terminated_;
     int gpu_id_;
     QTimer* timeout_timer_;
   

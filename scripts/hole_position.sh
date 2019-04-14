@@ -1,4 +1,4 @@
-#!/bin/bash --noprofile
+#!/bin/bash --noprofile -e
 ################################################################################
 #
 # Author: Andreas Schenk
