@@ -36,7 +36,7 @@ INCLUDEPATH += $$PWD/../external/limereport/limereport
 
 GITVERSION = $$OUT_PWD/version.h
 version_target.target =  $$GITVERSION
-version_target.commands = '$$PWD/git_version.sh \"$$OUT_PWD\" $$GITVERSION'
+version_target.commands = '$$PWD/git_version.sh \"$$PWD\" $$GITVERSION'
 version_target.depends = FORCE
 PRE_TARGETDEPS += $$GITVERSION
 QMAKE_EXTRA_TARGETS += version_target

@@ -1,8 +1,7 @@
 #!/bin/bash
 
 GIT_HEADER="$2"
-
-GIT_VERSION="`git -C \"$1\" describe --always --tags`"
+GIT_VERSION="`git  --git-dir \"${1}/../../.git\" --work-tree \"${1}/../..\" describe --always --tags`"
 if grep --quiet $GIT_VERSION $GIT_HEADER; then
         echo "No need to generate new $GIT_HEADER - git hash is unchanged"
         exit 0;
