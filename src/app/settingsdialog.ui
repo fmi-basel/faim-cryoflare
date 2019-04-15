@@ -43,7 +43,7 @@
    <item row="0" column="0">
     <widget class="QTabWidget" name="settings">
      <property name="currentIndex">
-      <number>2</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="tab">
       <attribute name="title">
@@ -206,7 +206,7 @@
              <bool>false</bool>
             </property>
             <property name="columnCount">
-             <number>4</number>
+             <number>5</number>
             </property>
             <attribute name="headerVisible">
              <bool>false</bool>
@@ -233,6 +233,11 @@
             <column>
              <property name="text">
               <string>GPU task</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>Priority</string>
              </property>
             </column>
             <column>

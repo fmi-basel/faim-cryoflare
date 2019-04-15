@@ -36,6 +36,7 @@ TaskTreeWidgetItem::TaskTreeWidgetItem(QTreeWidget *parent) :
     output_variables(),
     path_widget_(new PathEdit(PathEdit::OpenFileName,"Open script file","","Scripts (*.sh *.csh *.py);;All files (*)")),
     gpu_check_box_(new QCheckBox()),
+    priority_check_box_(new QCheckBox()),
     group_with_parent_(new QCheckBox())
 {
     init_();
@@ -47,6 +48,7 @@ TaskTreeWidgetItem::TaskTreeWidgetItem(QTreeWidgetItem *parent):
     output_variables(),
     path_widget_(new PathEdit(PathEdit::OpenFileName,"Open script file","","Scripts (*.sh *.csh *.py);;All files (*)")),
     gpu_check_box_(new QCheckBox()),
+    priority_check_box_(new QCheckBox()),
     group_with_parent_(new QCheckBox())
 {
     init_();
@@ -65,6 +67,11 @@ QString TaskTreeWidgetItem::script() const
 bool TaskTreeWidgetItem::isGPU() const
 {
     return gpu_check_box_->checkState()==Qt::Checked;
+}
+
+bool TaskTreeWidgetItem::isPriority() const
+{
+    return priority_check_box_->checkState()==Qt::Checked;
 }
 
 bool TaskTreeWidgetItem::groupWithParent() const
@@ -87,6 +94,11 @@ void TaskTreeWidgetItem::setGpu(bool gpu)
     gpu_check_box_->setChecked(gpu);
 }
 
+void TaskTreeWidgetItem::setPriority(bool p)
+{
+    priority_check_box_->setChecked(p);
+}
+
 void TaskTreeWidgetItem::setGroupWithParent(bool group)
 {
     group_with_parent_->setChecked(group);
@@ -97,6 +109,7 @@ void TaskTreeWidgetItem::init_()
 {
     treeWidget()->setItemWidget(this,1,path_widget_);
     treeWidget()->setItemWidget(this,2,gpu_check_box_);
-    treeWidget()->setItemWidget(this,3,group_with_parent_);
+    treeWidget()->setItemWidget(this,3,priority_check_box_);
+    treeWidget()->setItemWidget(this,4,group_with_parent_);
     setFlags(flags() | Qt::ItemIsEditable);
 }

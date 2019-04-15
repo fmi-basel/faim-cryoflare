@@ -1,4 +1,6 @@
-#!/bin/bash --noprofile -e
+#!/bin/bash --noprofile  
+set -u
+set -e
 
 
 ######################## floating point calculator #############################
@@ -167,4 +169,5 @@ trap _terminate INT TERM HUP
 ######################## definition of input parameters ########################
 
 while IFS='=' read k v; do declare $k="$v"; done
+
 

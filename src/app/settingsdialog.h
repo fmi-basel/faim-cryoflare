@@ -42,7 +42,7 @@ class SettingsDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit SettingsDialog(QList<InputOutputVariable> default_columns,LimeReport::ReportEngine *report_engine, QWidget *parent = 0);
+    explicit SettingsDialog(QList<InputOutputVariable> default_columns,LimeReport::ReportEngine *report_engine, QWidget *parent = nullptr);
     void saveSettings();
     void loadSettings();
     ~SettingsDialog();

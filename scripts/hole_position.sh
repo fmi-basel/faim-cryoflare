@@ -1,4 +1,4 @@
-#!/bin/bash --noprofile -e
+#!/bin/bash --noprofile  
 ################################################################################
 #
 # Author: Andreas Schenk
@@ -9,6 +9,8 @@
 # Copyright (C) 2017-2018 by the CryoFlare Authors
 #
 ################################################################################
+set -u
+set -e
 ######################## get parameters from GUI ###############################
 
 . data_connector.sh
@@ -20,7 +22,7 @@ hole_position_image=$destination_path/micrographs_raw/${short_name}_hole_coordin
 
 FILES hole_position_coordinates hole_position_image
 
-metadata=${avg_source_path}/../../../Metadata/${grid_name}/TargetLocation_${hole_id}.dm
+metadata=${avg_source_path}/../../../Metadata/GridSquare_${square_id}/TargetLocation_${hole_id}.dm
 echo $hole_pos_x,$hole_pos_y > $hole_position_coordinates
 scalefactor=0.13340281396560708 # for K2 for now, todo determine dynamically
 x_scaled=`CALCULATE round\($hole_pos_x*$scalefactor\)`

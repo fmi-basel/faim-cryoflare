@@ -23,13 +23,13 @@
 #ifndef IMAGEPROCESSOR_H
 #define IMAGEPROCESSOR_H
 
-#include <QStack>
 #include <QObject>
 #include <QStringList>
 #include <task.h>
 #include <parallelexporter.h>
 #include <dataptr.h>
 #include "sftpurl.h"
+#include "priorityqueue.h"
 
 //fw decl
 class ProcessWrapper;
@@ -72,8 +72,8 @@ private:
 
     QString epu_project_dir_;
     QString movie_dir_;
-    QStack<TaskPtr> cpu_task_stack_;
-    QStack<TaskPtr> gpu_task_stack_;
+    PriorityQueue cpu_pqueue_;
+    PriorityQueue gpu_pqueue_;
     QList<ProcessWrapper*> cpu_processes_;
     QList<ProcessWrapper*> gpu_processes_;
     TaskPtr root_task_;

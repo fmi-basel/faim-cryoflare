@@ -36,8 +36,8 @@ ImageProcessor::ImageProcessor(MetaDataStore &meta_data_store):
     QObject(),
     epu_project_dir_(),
     movie_dir_(),
-    cpu_task_stack_(),
-    gpu_task_stack_(),
+    cpu_pqueue_(),
+    gpu_pqueue_(),
     cpu_processes_(),
     gpu_processes_(),
     root_task_(new Task("General","dummy",DataPtr(new Data))),
@@ -76,12 +76,16 @@ void ImageProcessor::startStop(bool start)
     }else{
         running_state_=false;
         meta_data_store_.stop();
-        cpu_task_stack_.clear();
-        gpu_task_stack_.clear();
+        //cpu_pqueue_.clear();
+        //gpu_pqueue_.clear();
         foreach(ProcessWrapper* process, cpu_processes_){
+            // terminate and re-enqueue task
+            cpu_pqueue_.enqueue(process->task());
             process->terminate();
         }
         foreach(ProcessWrapper* process, gpu_processes_){
+            // terminate and re-enqueue task
+            gpu_pqueue_.enqueue(process->task());
             process->terminate();
         }
     }
@@ -92,7 +96,7 @@ void ImageProcessor::onTaskFinished(const TaskPtr &task)
     if(task->state==0){
         //task finished successfully
         enqueueChildren_(task);
-        emit queueCountChanged(cpu_task_stack_.size(),gpu_task_stack_.size());
+        emit queueCountChanged(cpu_pqueue_.size(),gpu_pqueue_.size());
         task->data->insert(task->taskString(),"FINISHED");
     }else{
         // task aborted
@@ -269,19 +273,19 @@ void ImageProcessor::startTasks()
     }
     bool count_changed=false;
     foreach (ProcessWrapper* proc, cpu_processes_) {
-       if(! proc->running() &&  ! cpu_task_stack_.empty()){
-           proc->start(cpu_task_stack_.pop());
+       if(! proc->running() &&  ! cpu_pqueue_.empty()){
+           proc->start(cpu_pqueue_.dequeue());
            count_changed=true;
        }
     }
     foreach (ProcessWrapper* proc, gpu_processes_) {
-       if(! proc->running() &&  ! gpu_task_stack_.empty()){
-           proc->start(gpu_task_stack_.pop());
+       if(! proc->running() &&  ! gpu_pqueue_.empty()){
+           proc->start(gpu_pqueue_.dequeue());
            count_changed=true;
        }
     }
     if(count_changed){
-        emit queueCountChanged(cpu_task_stack_.size(),gpu_task_stack_.size());
+        emit queueCountChanged(cpu_pqueue_.size(),gpu_pqueue_.size());
     }
 }
 
@@ -318,7 +322,7 @@ void ImageProcessor::createTaskTree(DataPtr data, bool force_reprocess)
     TaskPtr root_task=root_task_->clone();
     root_task->setData(data,force_reprocess);
     enqueueChildren_(root_task);
-    emit queueCountChanged(cpu_task_stack_.size(),gpu_task_stack_.size());
+    emit queueCountChanged(cpu_pqueue_.size(),gpu_pqueue_.size());
     startTasks();
 }
 
@@ -363,7 +367,7 @@ void ImageProcessor::loadTask_(Settings *settings, const TaskPtr &task)
 {
     foreach(QString child_name,settings->childGroups()){
         settings->beginGroup(child_name);
-        TaskPtr child(new Task(child_name,settings->value("script").toString(), DataPtr(new Data()),settings->value("is_gpu").toBool()));
+        TaskPtr child(new Task(child_name,settings->value("script").toString(), DataPtr(new Data()),settings->value("is_gpu").toBool(),settings->value("is_priority").toBool()));
         task->children.append(child);
         loadTask_(settings,child);
         settings->endGroup();
@@ -378,8 +382,8 @@ void ImageProcessor::enqueueChildren_(const TaskPtr &task)
         if(child->data->value(child->taskString()).toString()=="FINISHED"){
             enqueueChildren_(child);
         }else{
-            QStack<TaskPtr>& stack=child->gpu?gpu_task_stack_:cpu_task_stack_;
-            stack.append(child);
+            PriorityQueue& stack=child->gpu?gpu_pqueue_:cpu_pqueue_;
+            stack.enqueue(child);
         }
     }
 }

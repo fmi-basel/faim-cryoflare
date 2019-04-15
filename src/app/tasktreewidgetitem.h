@@ -16,10 +16,12 @@ public:
     QString name() const;
     QString script() const;
     bool isGPU() const;
+    bool isPriority() const;
     bool groupWithParent() const;
     void setName(const QString &name);
     void setScript(const QString& script);
     void setGpu(bool gpu);
+    void setPriority(bool p);
     void setGroupWithParent(bool group);
     QList<InputOutputVariable> input_variables;
     QList<InputOutputVariable> output_variables;
@@ -32,6 +34,7 @@ private:
     void init_();
     PathEdit *path_widget_;
     QCheckBox *gpu_check_box_;
+    QCheckBox *priority_check_box_;
     QCheckBox *group_with_parent_;
 };
 

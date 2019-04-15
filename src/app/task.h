@@ -49,7 +49,7 @@ public:
 class Task
 {
 public:
-    explicit Task(const QString& name_, const QString& script_,DataPtr data_, bool gpu_=0);
+    explicit Task(const QString& name_, const QString& script_, DataPtr data_, bool gpu_=false, bool priority_=false);
     void setData(const DataPtr &data_,bool force_reprocess=false);
     void addColumn(const QString& key, const QString& value);
     void addDetail(const QString& key, const QString &label,const QString& type);
@@ -60,6 +60,7 @@ public:
     QString script;
     DataPtr data;
     bool gpu;
+    bool priority;
     QString output;
     QString error;
     QMap<QString,QString> raw_files;

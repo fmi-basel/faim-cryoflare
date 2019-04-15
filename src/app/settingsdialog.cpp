@@ -43,6 +43,7 @@ void save_task(SETTINGS *settings, QTreeWidgetItem *item)
         settings->beginGroup(name);
         settings->setValue("script",task_item->script());
         settings->setValue("is_gpu",task_item->isGPU());
+        settings->setValue("is_priority",task_item->isPriority());
         settings->setValue("group_with_parent",task_item->groupWithParent());
         QList<QVariant> variant_list;
         foreach(InputOutputVariable v,task_item->input_variables){
@@ -72,6 +73,7 @@ void load_task(SETTINGS *settings, QTreeWidgetItem *parent)
         child->setName(child_name);
         child->setScript(settings->value("script").toString());
         child->setGpu(settings->value("is_gpu").toBool());
+        child->setPriority(settings->value("is_priority").toBool());
         child->setGroupWithParent(settings->value("group_with_parent").toBool());
         QList<QVariant> variant_list=settings->value("input_variables").toList();
         foreach(QVariant v, variant_list){
@@ -382,6 +384,8 @@ void SettingsDialog::updateVariables(QTreeWidgetItem *new_item, QTreeWidgetItem 
             InputOutputVariable::SummaryType summary_type;
             if(combo_box){
                 summary_type=static_cast<InputOutputVariable::SummaryType>(combo_box->currentIndex());
+            }else{
+                summary_type=InputOutputVariable::NO_SUMMARY;
             }
             old_tree_item->output_variables.append(InputOutputVariable(name,variable,type,is_column,summary_type));
         }

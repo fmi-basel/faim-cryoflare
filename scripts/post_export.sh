@@ -1,4 +1,6 @@
-#!/bin/bash --noprofile -e
+#!/bin/bash --noprofile 
+set -e
+set -u
 
 source_dir="$1"
 destination_dir="$2"

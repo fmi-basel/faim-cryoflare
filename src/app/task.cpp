@@ -24,11 +24,12 @@
 
 
 
-Task::Task(const QString &name_, const QString &script_, DataPtr data_, bool gpu_):
+Task::Task(const QString &name_, const QString &script_, DataPtr data_, bool gpu_, bool priority_):
     name(name_),
     script(script_),
     data(data_),
     gpu(gpu_),
+    priority(priority_),
     output(),
     error(),
     raw_files(),

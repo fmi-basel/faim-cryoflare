@@ -91,7 +91,8 @@ SOURCES += \
     jobmanager.cpp \
     job.cpp \
     flatfolderdatasource.cpp \
-    readepuxml.cpp
+    readepuxml.cpp \
+    priorityqueue.cpp
 
 
 
@@ -139,7 +140,8 @@ HEADERS  += \
     jobmanager.h \
     job.h \
     flatfolderdatasource.h \
-    readepuxml.h
+    readepuxml.h \
+    priorityqueue.h
 
 
 FORMS    += \

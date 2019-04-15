@@ -205,6 +205,8 @@ void ProcessWrapper::handleFailure_()
     }else{
         task_->state=-1;
     }
+    task_->error+=process_->readAllStandardError();
+    task_->output+=process_->readAllStandardOutput();
     TaskPtr task=task_;
     task_.clear();
     emit finished(task);
