@@ -83,8 +83,8 @@ if FILES_MISSING; then
   gctf_defocus_params+=" --defH `CALCULATE -2.5*$defocus`"
   gctf_defocus_params+=" --defS 500"
 
-  ln -s ../../../$micrographs_dir/${gautomatch_star_file##*/} $relion_job_micrographs_dir
-  ln -s ../../../$micrographs_dir/${!average_var##*/} $relion_job_micrographs_dir
+  ln -nfs ../../../$micrographs_dir/${gautomatch_star_file##*/} $relion_job_micrographs_dir
+  ln -nfs ../../../$micrographs_dir/${!average_var##*/} $relion_job_micrographs_dir
   if [ $phase_plate == "true" ] ; then
     RUN gctf $gctf_params $gctf_defocus_params $gctf_phase_plate_params $gctf_avg_link &>> $gctf_log
   else
@@ -98,8 +98,8 @@ if FILES_MISSING; then
   gctf_defocus_params=" --defL `CALCULATE 0.9*$average_defocus`"
   gctf_defocus_params+=" --defH `CALCULATE 1.1*$average_defocus`"
   gctf_defocus_params+=" --defS 100"
-  gctf_params+=" --do_local_refine 1"
-  gctf_params+=" --boxsuffix _DW_automatch.star"
+  #gctf_params+=" --do_local_refine 1"
+  #gctf_params+=" --boxsuffix _DW_automatch.star"
   gctf_params+=" --do_EPA 1"
   gctf_params+=" --refine_after_EPA 0"
   gctf_params+=" --do_Hres_ref 1"
@@ -118,13 +118,12 @@ if FILES_MISSING; then
     RUN gctf $gctf_params $gctf_defocus_params  $gctf_avg_link  &>> $gctf_log
   fi
 
-  ln -s ${gctf_diag_file##*/} $gctf_diag_file_mrc
-  RUN e2proc2d.py  --meanshrink 2  $gctf_diag_file_mrc  $gctf_diag_file_png
+  ln -sf ${gctf_diag_file##*/} $gctf_diag_file_mrc
+  RUN e2proc2d.py  --writejunk --meanshrink 2  $gctf_diag_file_mrc  $gctf_diag_file_png
 fi
 
 
 ######################## extract output parameters #############################
-
 measured_defocus=`cat $gctf_aligned_log|fgrep -v Local|tail -n 20|fgrep -A 1 "Defocus_U"|head -n 2 |tail -n 1|xargs`
 gctf_defocus_u=`echo $measured_defocus|cut -f1 -d" "`
 gctf_defocus_v=`echo $measured_defocus|cut -f2 -d" "`
@@ -143,7 +142,7 @@ EOT`
 gctf_epa_limit=`echo $gctf_epa_limit_cc|cut -f1 -d' '`
 gctf_epa_cc=`echo $gctf_epa_limit_cc|cut -f2 -d' '`
 
-rm $destination_path/micrographs_all_gctf.star >& /dev/null
+rm $destination_path/micrographs_all_gctf.star >& /dev/null || :
 
 
 gctf_defocus=`CALCULATE \($gctf_defocus_u+$gctf_defocus_v\)/2.0`
@@ -152,13 +151,11 @@ gctf_defocus_angle=`echo $measured_defocus|cut -f3 -d" "`
 
 
 ######################## decide if image should be excluded from export ########
-
 LIMIT_EXPORT gctf_epa_limit $gctf_input_epa_high $gctf_input_epa_low
 
 
 
 ######################## write Relion star #####################################
-
 rln_alias=gctf
 rln_nodetype=1
 rln_starname=micrographs_ctf.star
@@ -184,7 +181,6 @@ if [ -n "$gctf_defocus_u" ] ; then
 fi
 
 ######################## export result parameters ##############################
-
 RESULTS gctf_epa_limit gctf_epa_cc gctf_defocus gctf_defocus_u gctf_defocus_v gctf_astigmatism gctf_defocus_angle gctf_phase_shift
 
 
