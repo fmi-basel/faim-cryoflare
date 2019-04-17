@@ -114,31 +114,45 @@ void EPUDataSource::onDirChanged(const QString &path)
                         }
                     }
                 }
-                data->insert("square_X",grid_square_data_[square_id]->value("X"));
-                data->insert("square_Y",grid_square_data_[square_id]->value("Y"));
-                data->insert("square_Z",grid_square_data_[square_id]->value("Z"));
-                data->insert("square_A",grid_square_data_[square_id]->value("A"));
-                data->insert("square_B",grid_square_data_[square_id]->value("B"));
-                data->insert("square_image_shift_x",grid_square_data_[square_id]->value("image_shift_x"));
-                data->insert("square_image_shift_y",grid_square_data_[square_id]->value("image_shift_y"));
+                if(grid_square_data_.contains(square_id)){
+                    data->insert("square_X",grid_square_data_[square_id]->value("X"));
+                    data->insert("square_Y",grid_square_data_[square_id]->value("Y"));
+                    data->insert("square_Z",grid_square_data_[square_id]->value("Z"));
+                    data->insert("square_A",grid_square_data_[square_id]->value("A"));
+                    data->insert("square_B",grid_square_data_[square_id]->value("B"));
+                    data->insert("square_image_shift_x",grid_square_data_[square_id]->value("image_shift_x"));
+                    data->insert("square_image_shift_y",grid_square_data_[square_id]->value("image_shift_y"));
+                }else{
+                    data->insert("square_X","0");
+                    data->insert("square_Y","0");
+                    data->insert("square_Z","0");
+                    data->insert("square_A","0");
+                    data->insert("square_B","0");
+                    data->insert("square_image_shift_x","0");
+                    data->insert("square_image_shift_y","0");
+                }
                 // read foil hole metadata
                 QDomDocument fh_meta_dom_document;
                 QString fh_meta_path=QString("%1/Metadata/GridSquare_%2/TargetLocation_%3.dm").arg(epu_project_dir_).arg(data->value("square_id").toString()).arg(data->value("hole_id").toString());
                 QFile fh_meta_file(fh_meta_path);
                 if (!fh_meta_file.open(QIODevice::ReadOnly)){
                     qDebug() << "Cannot open Foil hole meta data: " << fh_meta_path;
-                    continue;
-                }
-                if (!fh_meta_dom_document.setContent(&fh_meta_file)) {
-                    qDebug() << "Cannot parse foil hole meta data: " << fh_meta_path;
-                    fh_meta_file.close();
-                    continue;
+                    data->insert("hole_pos_x","0");
+                    data->insert("hole_pos_y","0");
+                }else{
+                    if (!fh_meta_dom_document.setContent(&fh_meta_file)) {
+                        qDebug() << "Cannot parse foil hole meta data: " << fh_meta_path;
+                        data->insert("hole_pos_x","0");
+                        data->insert("hole_pos_y","0");
+                    }else{
+                        QString hole_pos_x=fh_meta_dom_document.elementsByTagName("a:x").at(0).toElement().text();
+                        data->insert("hole_pos_x",hole_pos_x);
+                        QString hole_pos_y=fh_meta_dom_document.elementsByTagName("a:y").at(0).toElement().text();
+                        data->insert("hole_pos_y",hole_pos_y);
+                    }
                 }
                 fh_meta_file.close();
-                QString hole_pos_x=fh_meta_dom_document.elementsByTagName("a:x").at(0).toElement().text();
-                data->insert("hole_pos_x",hole_pos_x);
-                QString hole_pos_y=fh_meta_dom_document.elementsByTagName("a:y").at(0).toElement().text();
-                data->insert("hole_pos_y",hole_pos_y);
+
                 QString relative_path=QString("%1/GridSquare_%2/Data").arg(data->value("disc_name").toString()).arg(data->value("square_id").toString());
                 QString avg_s_path=QString("%1/%2").arg(epu_project_dir_).arg(relative_path);
                 QString stack_s_path=QString("%1/%2").arg(movie_dir_).arg(relative_path);
