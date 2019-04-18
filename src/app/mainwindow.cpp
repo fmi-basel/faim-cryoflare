@@ -54,6 +54,9 @@
 #include <QPdfWriter>
 #include <QTextDocument>
 #include <QTextTable>
+#include <QInputDialog>
+#include <QJsonArray>
+#include <QJsonDocument>
 #include "scatterplotdialog.h"
 #include "aboutdialog.h"
 #include "exportdialog.h"
@@ -439,9 +442,71 @@ void MainWindow::updateTaskWidget_(Settings *settings, QFormLayout *parent_input
 
 void MainWindow::writeReport()
 {
-    QString file_name = QFileDialog::getSaveFileName(0, "Save Plots",".","Pdf files (*.pdf)");
-    if (!file_name.isEmpty()){
-        report_.printToPDF(file_name);
+    QStringList items;
+    items << "PDF Report" << "CSV" << "filtered CSV" << "JSON"<< "filtered JSON";
+    bool ok;
+    QString item = QInputDialog::getItem(this, "Create report","Report type:", items, 0, false, &ok);
+    if (ok && !item.isEmpty()){
+        if(item=="PDF Report"){
+            QString pdf_file_name = QFileDialog::getSaveFileName(0, "Save Report",".","Pdf files (*.pdf)");
+            if (!pdf_file_name.isEmpty()){
+                report_.printToPDF(pdf_file_name);
+            }
+        }else if(item=="CSV" || item=="filtered CSV"){
+            QString file_name = QFileDialog::getSaveFileName(0, "Save Report",".","CSV files (*.csv)");
+            if (!file_name.isEmpty()){
+                bool filtered=item=="CSV"?false:true;
+                QFile file(file_name);
+                if(!file.open(QIODevice::WriteOnly | QIODevice::Text)){
+                    return;
+                }
+                QTextStream out(&file);
+                QStringList headerdata;
+                for(int column=0;column<model_->columnCount(QModelIndex());++column){
+                    headerdata << model_->headerData(column,Qt::Horizontal,Qt::DisplayRole).toString();
+                }
+                out << headerdata.join(",") << "\n";
+                for(int row=0;row<model_->rowCount();++row){
+                    DataPtr data=model_->image(row);
+                    QString export_val=data->value("export").toString("true");
+                    if(filtered && export_val.compare("true", Qt::CaseInsensitive)!=0 && export_val!=QString("1") ){
+                        continue;
+                    }
+                    QStringList rowdata;
+                    for(int column=0;column<model_->columnCount(QModelIndex());++column){
+                        QVariant val=model_->data(model_->index(row,column),ImageTableModel::SortRole);
+                        rowdata << val.toString();
+                    }
+                    out << rowdata.join(",") << "\n";
+                }
+            }
+
+        }else if(item=="JSON" || item=="filtered JSON"){
+            QString file_name = QFileDialog::getSaveFileName(0, "Save Report",".","JSON files (*.json)");
+            if (!file_name.isEmpty()){
+                bool filtered=item=="JSON"?false:true;
+                QFile file(file_name);
+                if(!file.open(QIODevice::WriteOnly )){
+                    return;
+                }
+                QJsonObject root_object;
+                for(int column=0;column<model_->columnCount(QModelIndex());++column){
+                    QString column_name= model_->headerData(column,Qt::Horizontal,Qt::DisplayRole).toString();
+                    QJsonArray array;
+                    for(int row=0;row<model_->rowCount();++row){
+                        DataPtr data=model_->image(row);
+                        QString export_val=data->value("export").toString("true");
+                        if(filtered && export_val.compare("true", Qt::CaseInsensitive)!=0 && export_val!=QString("1") ){
+                            continue;
+                        }
+                        array.append(QJsonValue::fromVariant(model_->data(model_->index(row,column),ImageTableModel::SortRole)));
+                    }
+                    root_object.insert(column_name,array);
+                }
+                QJsonDocument doc(root_object);
+                file.write(doc.toJson());
+            }
+        }
     }
 }
 
@@ -626,14 +691,11 @@ void MainWindow::updateChart()
         QVariant val=model_->data(model_->index(i,column),ImageTableModel::SortRole);
         DataPtr data=model_->image(i);
         QString export_val=data->value("export").toString("true");
-        bool linear_export_flag=export_val.compare("true", Qt::CaseInsensitive) == 0 || export_val==QString("1") || ui->filter->isChecked()==false;
-        bool chart_export_flag=export_val.compare("true", Qt::CaseInsensitive) == 0 || export_val==QString("1") || ui->filter->isChecked()==false;
+        bool export_flag=export_val.compare("true", Qt::CaseInsensitive) == 0 || export_val==QString("1") || ui->filter->isChecked()==false;
         if(val.canConvert<float>() && val.toString()!=QString("")){
             float fval=val.toFloat();
-            if(linear_export_flag){
+            if(export_flag){
                 datalist.append(QPointF(i,fval));
-            }
-            if(chart_export_flag){
                 histo_datalist.append(fval);
             }
         }
