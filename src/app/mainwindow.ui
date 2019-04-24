@@ -457,124 +457,6 @@ A: Column average</string>
            </item>
           </layout>
          </widget>
-         <widget class="QWidget" name="Collections">
-          <attribute name="title">
-           <string>Collections</string>
-          </attribute>
-          <layout class="QHBoxLayout" name="horizontalLayout_5">
-           <item>
-            <widget class="QSplitter" name="splitter_5">
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-             <widget class="QWidget" name="verticalLayoutWidget_2">
-              <layout class="QVBoxLayout" name="verticalLayout_10">
-               <item>
-                <layout class="QHBoxLayout" name="horizontalLayout_3">
-                 <item>
-                  <widget class="QPushButton" name="pushButton_2">
-                   <property name="text">
-                    <string>New</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QPushButton" name="pushButton">
-                   <property name="text">
-                    <string>Delete</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <widget class="QPushButton" name="pushButton_3">
-                   <property name="text">
-                    <string>Run</string>
-                   </property>
-                  </widget>
-                 </item>
-                 <item>
-                  <spacer name="horizontalSpacer">
-                   <property name="orientation">
-                    <enum>Qt::Horizontal</enum>
-                   </property>
-                   <property name="sizeHint" stdset="0">
-                    <size>
-                     <width>40</width>
-                     <height>20</height>
-                    </size>
-                   </property>
-                  </spacer>
-                 </item>
-                </layout>
-               </item>
-               <item>
-                <widget class="QSplitter" name="splitter_4">
-                 <property name="orientation">
-                  <enum>Qt::Vertical</enum>
-                 </property>
-                 <widget class="QTableWidget" name="tableWidget">
-                  <property name="minimumSize">
-                   <size>
-                    <width>100</width>
-                    <height>0</height>
-                   </size>
-                  </property>
-                  <attribute name="horizontalHeaderDefaultSectionSize">
-                   <number>200</number>
-                  </attribute>
-                  <column>
-                   <property name="text">
-                    <string>Description</string>
-                   </property>
-                  </column>
-                  <column>
-                   <property name="text">
-                    <string>Number of runs</string>
-                   </property>
-                  </column>
-                  <column>
-                   <property name="text">
-                    <string>Last run</string>
-                   </property>
-                  </column>
-                 </widget>
-                 <widget class="QScrollArea" name="scrollArea">
-                  <property name="minimumSize">
-                   <size>
-                    <width>0</width>
-                    <height>700</height>
-                   </size>
-                  </property>
-                  <property name="widgetResizable">
-                   <bool>true</bool>
-                  </property>
-                  <widget class="QWidget" name="scrollAreaWidgetContents">
-                   <property name="geometry">
-                    <rect>
-                     <x>0</x>
-                     <y>0</y>
-                     <width>451</width>
-                     <height>698</height>
-                    </rect>
-                   </property>
-                  </widget>
-                 </widget>
-                </widget>
-               </item>
-              </layout>
-             </widget>
-             <widget class="QWidget" name="widget" native="true">
-              <property name="minimumSize">
-               <size>
-                <width>700</width>
-                <height>0</height>
-               </size>
-              </property>
-             </widget>
-            </widget>
-           </item>
-          </layout>
-         </widget>
         </widget>
        </item>
       </layout>
@@ -812,22 +694,6 @@ A: Column average</string>
    </hints>
   </connection>
   <connection>
-   <sender>image_data</sender>
-   <signal>currentChanged(int)</signal>
-   <receiver>MainWindow</receiver>
-   <slot>updateDetails()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>1168</x>
-     <y>263</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>1339</x>
-     <y>538</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
    <sender>filter</sender>
    <signal>clicked()</signal>
    <receiver>MainWindow</receiver>
@@ -840,38 +706,6 @@ A: Column average</string>
     <hint type="destinationlabel">
      <x>8</x>
      <y>266</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>linear_chart</sender>
-   <signal>selected(float,float,bool)</signal>
-   <receiver>MainWindow</receiver>
-   <slot>selectFromLinearChart(float,float,bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>362</x>
-     <y>936</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>310</x>
-     <y>273</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>histogram</sender>
-   <signal>selected(float,float,bool)</signal>
-   <receiver>MainWindow</receiver>
-   <slot>selectFromHistogramChart(float,float,bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>810</x>
-     <y>936</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>987</x>
-     <y>281</y>
     </hint>
    </hints>
   </connection>
@@ -904,6 +738,54 @@ A: Column average</string>
     <hint type="destinationlabel">
      <x>1180</x>
      <y>-3</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>histogram</sender>
+   <signal>selected(float,float,bool)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>selectFromHistogramChart(float,float,bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>810</x>
+     <y>936</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>987</x>
+     <y>281</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>image_data</sender>
+   <signal>currentChanged(int)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>updateDetails()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1168</x>
+     <y>263</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1339</x>
+     <y>538</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>linear_chart</sender>
+   <signal>selected(float,float,bool)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>selectFromLinearChart(float,float,bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>362</x>
+     <y>936</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>310</x>
+     <y>273</y>
     </hint>
    </hints>
   </connection>
