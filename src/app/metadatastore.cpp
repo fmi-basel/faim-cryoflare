@@ -214,7 +214,7 @@ void MetaDataStore::addImage(const DataPtr &ptr)
 void MetaDataStore::readPersistenData()
 {
     QDir cryoflare_dir(CRYOFLARE_DIRECTORY);
-    foreach(QString file_entry, cryoflare_dir.entryList(QStringList("*.dat"),QDir::Files,QDir::Time | QDir::Reversed)){
+    foreach(QString file_entry, cryoflare_dir.entryList(QStringList("*.dat"),QDir::Files,QDir::Name)){
         QFile load_file(cryoflare_dir.filePath(file_entry));
         if(!load_file.open(QIODevice::ReadOnly)){
             qWarning() << "Couldn't open file: " << cryoflare_dir.filePath(file_entry);
