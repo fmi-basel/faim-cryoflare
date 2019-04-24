@@ -1,4 +1,6 @@
-#!/bin/bash --noprofile
+#!/bin/bash --noprofile  
+set -u
+set -e
 
 image=$1
 boxfile=$2

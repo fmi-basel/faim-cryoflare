@@ -31,6 +31,9 @@
 #include <QtPlugin>
 #include  "settings.h"
 #include "filelocker.h"
+#include "metadatastore.h"
+#include "epudatasource.h"
+#include "flatfolderdatasource.h"
 
 QCoreApplication* createApplication(int &argc, char *argv[])
 {
@@ -79,18 +82,22 @@ int main(int argc, char* argv[])
     QCoreApplication::setApplicationName("CryoFLARE");
 
     Settings settings;
-    if(!settings.loadFromFile(".cryoflare.ini")){
+    QDir cryoflare_dir(CRYOFLARE_DIRECTORY);
+    if(! cryoflare_dir.exists()){
+        QDir(".").mkdir(CRYOFLARE_DIRECTORY);
+    }
+    if(!settings.loadFromFile(CRYOFLARE_INI)){
         if(!settings.loadFromFile(".stack_gui.ini")){
             qWarning() << "No settings found in local directory. Using global settings.";
             settings.loadFromQSettings(QStringList() << "avg_source_dir" << "stack_source_dir");
-            settings.saveToFile(".cryoflare.ini");
+            settings.saveToFile(CRYOFLARE_INI);
         }
     }
-    FileLocker file_locker(".cryoflare.ini");
+    FileLocker file_locker(CRYOFLARE_INI);
     if(!file_locker.tryLock()){
         int owner=file_locker.getLockOwner();
         if(owner==-1){
-            qWarning() << "Can't get lock on .cryoflare.ini. The directory might already be used by a different process. Please use a differnt directory or stop the other process first.";
+            qWarning() << "Can't get lock on CRYOFLARE_INI. The directory might already be used by a different process. Please use a differnt directory or stop the other process first.";
         }else{
             qWarning() << "Directory is already used by process: " << owner << ". Please use a differnt directory or stop the other process first." ;
         }
@@ -100,23 +107,29 @@ int main(int argc, char* argv[])
             return 1;
         }
     }
-    ImageProcessor processor;
+    MetaDataStore* meta_data_store=new MetaDataStore;
+    QObject::connect(app.data(),&QCoreApplication::aboutToQuit,meta_data_store,&MetaDataStore::deleteLater);
+    QString import_mode=settings.value("import").toString();
+    DataSourceBase *data_source;
+    if(import_mode=="EPU"){
+        data_source= new EPUDataSource;
+        meta_data_store->setDataSource(data_source);
+    }else if(import_mode=="flat_EPU"){
+        data_source= new FlatFolderDataSource(settings.value("import_image_pattern").toString(),true);
+        meta_data_store->setDataSource(data_source);
+    }else if(import_mode=="json"){
+        data_source= new FlatFolderDataSource(settings.value("import_image_pattern").toString(),false);
+        meta_data_store->setDataSource(data_source);
+    }else{
+        EPUDataSource*  data_source= new EPUDataSource;
+        meta_data_store->setDataSource(data_source);
+    }
+    ImageProcessor processor(*meta_data_store);
+
     if (qobject_cast<QApplication *>(app.data())) {
          // start GUI version...
         qobject_cast<QApplication *>(app.data())->setStyle(QStyleFactory::create("fusion"));
-        MainWindow w(processor);
-        QObject::connect(&w, SIGNAL(startStop(bool)), &processor, SLOT(startStop(bool)));
-        QObject::connect(&w,&MainWindow::cancelExport,&processor,&ImageProcessor::cancelExport);
-        QObject::connect(&w,SIGNAL(settingsChanged()),&processor,SLOT(loadSettings()));
-
-        QObject::connect(&processor, SIGNAL(newImage(DataPtr)), &w, SLOT(addImage(DataPtr)));
-        QObject::connect(&processor, SIGNAL(dataChanged(DataPtr)), &w, SLOT(onDataChanged(DataPtr)));
-        QObject::connect(&processor,SIGNAL(queueCountChanged(int,int)),&w,SLOT(updateQueueCounts(int,int)));
-        QObject::connect(&processor,SIGNAL(processCreated(ProcessWrapper*,int)),&w,SLOT(createProcessIndicator(ProcessWrapper*,int)));
-        QObject::connect(&processor,SIGNAL(processesDeleted()),&w,SLOT(deleteProcessIndicators()));
-        QObject::connect(&processor,&ImageProcessor::exportStarted,&w,&MainWindow::onExportStarted);
-        QObject::connect(&processor,&ImageProcessor::exportFinished,&w,&MainWindow::onExportFinished);
-        QObject::connect(&processor,&ImageProcessor::exportMessage,&w,&MainWindow::onExportMessage);
+        MainWindow w(*meta_data_store,processor);
         w.init();
         w.show();
         //next line within if to avoid MainWindow going out of scope
@@ -129,10 +142,12 @@ int main(int argc, char* argv[])
                 switch(path_count){
                 case 0:
                     settings.setValue("avg_source_dir",app->arguments()[i]);
+                    data_source->setProjectDir(app->arguments()[i]);
                     path_count=1;
                     break;
                 case 1:
                     settings.setValue("stack_source_dir",app->arguments()[i]);
+                    data_source->setMovieDir(app->arguments()[i]);
                     path_count=2;
                     break;
                 }

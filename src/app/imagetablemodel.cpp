@@ -22,20 +22,22 @@
 
 #include <QBrush>
 #include <QtDebug>
+#include "metadatastore.h"
 #include "imagetablemodel.h"
 
-ImageTableModel::ImageTableModel(QObject *parent):
+ImageTableModel::ImageTableModel(MetaDataStore& store,QObject *parent):
     QAbstractTableModel(parent),
-    data_(),
+    meta_data_store_(store),
     columns_(),
-    colors_()
+    colors_(),
+    num_rows_(0)
 {
-
+    connect(&store,&MetaDataStore::newImage,this , &ImageTableModel::imageAdded);
 }
 
 int ImageTableModel::rowCount(const QModelIndex &parent) const
 {
-    return data_.size();
+    return num_rows_;
 }
 
 int ImageTableModel::columnCount(const QModelIndex &parent) const
@@ -54,7 +56,7 @@ QVariant ImageTableModel::data(const QModelIndex &index, int role) const
 //            return QBrush(QColor(255,255,255));
             return QBrush(QColor(136, 138, 133));
         }
-        QString value=data_.at(index.row())->value("export","true");
+        QString value=meta_data_store_.at(index.row())->value("export").toString("true");
         bool state=value.compare("true", Qt::CaseInsensitive) == 0 || value==QString("1");
         if(role==Qt::CheckStateRole){
             if (state)
@@ -85,7 +87,7 @@ QVariant ImageTableModel::data(const QModelIndex &index, int role) const
     }
     // handle other columns
     if(role==SortRole){
-        QVariant v=data_.at(index.row())->value(columns_[index.column()-1].label);
+        QVariant v=QVariant(meta_data_store_.at(index.row())->value(columns_[index.column()-1].label).toString());
         switch(columns_[index.column()-1].type){
         case String:
             return v;
@@ -108,7 +110,7 @@ QVariant ImageTableModel::data(const QModelIndex &index, int role) const
             break;
         }
     }else if(role==Qt::DisplayRole){
-        return data_.at(index.row())->value(columns_[index.column()-1].label);
+        return meta_data_store_.at(index.row())->value(columns_[index.column()-1].label).toString();
     }else if (role==SummaryRole){
         return columns_[index.column()-1].summary_type;
     }
@@ -119,9 +121,9 @@ bool ImageTableModel::setData(const QModelIndex &index, const QVariant &value, i
 {
     if(role==Qt::CheckStateRole && index.column()==0){
         if(value == Qt::Checked){
-            data_.at(index.row())->insert("export","true");
+            meta_data_store_.at(index.row())->insert("export","true");
         }else{
-            data_.at(index.row())->insert("export","false");
+            meta_data_store_.at(index.row())->insert("export","false");
         }
         emit dataChanged(index,index);
         return true;
@@ -176,14 +178,14 @@ Qt::ItemFlags ImageTableModel::flags(const QModelIndex &index) const
 
 DataPtr ImageTableModel::image(int row)
 {
-    return data_[row];
+    return meta_data_store_.at(row);
 }
 
-void ImageTableModel::addImage(const DataPtr &data)
+void ImageTableModel::imageAdded(const DataPtr &data)
 {
-    beginInsertRows(QModelIndex(),rowCount(QModelIndex()),rowCount(QModelIndex()));
-    data_.append(data);
-    endInsertRows();
+   beginInsertRows(QModelIndex(),rowCount(QModelIndex()),rowCount(QModelIndex()));
+   ++num_rows_;
+   endInsertRows();
 }
 
 void ImageTableModel::addColumn(const InputOutputVariable &column, const QColor &color)
@@ -206,17 +208,9 @@ void ImageTableModel::clearColumns()
 
 void ImageTableModel::onDataChanged(const DataPtr &data)
 {
-    int idx=data_.indexOf(data);
+    int idx=meta_data_store_.indexOf(data);
     if(idx>=0){
         dataChanged(index(idx,0),index(idx,columns_.size()));
     }
 }
 
-void ImageTableModel::clearData()
-{
-    if(! data_.empty()){
-        beginResetModel();
-        data_.clear();
-        endResetModel();
-    }
-}

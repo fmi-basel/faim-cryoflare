@@ -31,12 +31,16 @@ protected slots:
     void modelReady_();
 private:
     void initSftpFileSystemModel_();
+    void tryNextAuth_();
+    void disconnect_();
     Ui::RemoteFileDialog *ui;
     QSsh::SftpFileSystemModel* model_;
     QSortFilterProxyModel* proxy_;
     SftpUrl remote_path_;
     QStringList initial_path_;
     QModelIndex initial_idx_;
+    QStringList default_keys_;
+    bool stored_connection_;
 };
 
 #endif // REMOTEFILEDIALOG_H

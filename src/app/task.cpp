@@ -24,11 +24,12 @@
 
 
 
-Task::Task(const QString &name_, const QString &script_, DataPtr data_, bool gpu_):
+Task::Task(const QString &name_, const QString &script_, DataPtr data_, bool gpu_, bool priority_):
     name(name_),
     script(script_),
     data(data_),
     gpu(gpu_),
+    priority(priority_),
     output(),
     error(),
     raw_files(),
@@ -41,12 +42,14 @@ Task::Task(const QString &name_, const QString &script_, DataPtr data_, bool gpu
 {
 }
 
-void Task::setData(const DataPtr &data_)
+void Task::setData(const DataPtr &data_, bool force_reprocess)
 {
     data=data_;
-    data->insert("tasks_unfinished",1+data->value("tasks_unfinished",0));
+    if(!data->contains(taskString()) || force_reprocess){
+        data->insert(taskString(),"CREATED");
+    }
     foreach(TaskPtr child,children){
-        child->setData(data_);
+        child->setData(data_,force_reprocess);
     }
 }
 
@@ -59,6 +62,11 @@ void Task::addColumn(const QString &key, const QString &value)
 void Task::addDetail(const QString &key,const QString &label, const QString &type)
 {
     display_details.append(DisplayDetail(key,label,type));
+}
+
+QString Task::taskString() const
+{
+    return QString("_CryoFLARE_TASK_%1").arg(name);
 }
 
 QPair<QStringList,QStringList> Task::getDisplayKeys() const

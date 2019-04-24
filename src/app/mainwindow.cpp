@@ -24,6 +24,7 @@
 #include <limits>
 #include "processindicator.h"
 #include "processwrapper.h"
+#include "metadatastore.h"
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "epuimageinfo.h"
@@ -53,17 +54,20 @@
 #include <QPdfWriter>
 #include <QTextDocument>
 #include <QTextTable>
+#include <QInputDialog>
+#include <QJsonArray>
+#include <QJsonDocument>
 #include "scatterplotdialog.h"
 #include "aboutdialog.h"
 #include "exportdialog.h"
 #include "exportprogressdialog.h"
 
-MainWindow::MainWindow(ImageProcessor &processor) :
+MainWindow::MainWindow(MetaDataStore &meta_data_store, ImageProcessor &processor) :
     QMainWindow(),
+    meta_data_store_(meta_data_store),
     processor_(processor),
     ui(new Ui::MainWindow),
-    model_(new ImageTableModel(this)),
-    full_model_(new ImageTableModel(this)),
+    model_(new ImageTableModel(meta_data_store,this)),
     sort_proxy_(new ImageTableSortFilterProxyModel(this)),
     summary_model_(new TableSummaryModel(model_,this)),
     statusbar_queue_count_(new QLabel("CPU queue: 0 / GPU queue: 0")),
@@ -78,8 +82,6 @@ MainWindow::MainWindow(ImageProcessor &processor) :
     current_phase_plate_(-1),
     chart_current_square_(-1),
     default_columns_(),
-    scatter_plot_action_(new QAction("Scatter Plot",this)),
-    run_script_action_(new QAction("Run script",this)),
     report_(),
     export_progress_dialog_(new ExportProgressDialog(this)),
     epu_disk_usage_(new DiskUsageWidget("EPU")),
@@ -90,24 +92,45 @@ MainWindow::MainWindow(ImageProcessor &processor) :
 
 {
     ui->setupUi(this);
+    ui->chart_splitter->setSizes({100,100,100,100});
+    connect(this, SIGNAL(startStop(bool)), &processor_, SLOT(startStop(bool)));
+    connect(this,&MainWindow::cancelExport,&processor_,&ImageProcessor::cancelExport);
+    connect(this,SIGNAL(settingsChanged()),&processor_,SLOT(loadSettings()));
+    connect(&processor_, SIGNAL(dataChanged(DataPtr)), this, SLOT(onDataChanged(DataPtr)));
+    connect(&processor_,SIGNAL(queueCountChanged(int,int)),this,SLOT(updateQueueCounts(int,int)));
+    connect(&processor_,SIGNAL(processCreated(ProcessWrapper*,int)),this,SLOT(createProcessIndicator(ProcessWrapper*,int)));
+    connect(&processor_,SIGNAL(processesDeleted()),this,SLOT(deleteProcessIndicators()));
+    connect(&processor_,&ImageProcessor::exportStarted,this,&MainWindow::onExportStarted);
+    connect(&processor_,&ImageProcessor::exportFinished,this,&MainWindow::onExportFinished);
+    connect(&processor_,&ImageProcessor::exportMessage,this,&MainWindow::onExportMessage);
+
     QString stylesheet;
     stylesheet+="* {color: #e6e6e6; background-color: #40434a} ";
-    stylesheet+="QScrollBar::handle {background-color: rgb(5,97,137) }  ";
+    //stylesheet+="QScrollBar::handle {background-color: rgb(5,97,137) }  ";
+    //stylesheet+="QScrollBar { margin: 0px 20px 0 20px; }  ";
+    //stylesheet+="QScrollBar::add-line {background: none }  ";
+    //stylesheet+="QScrollBar::sub-line {background: none }  ";
+    //stylesheet+="QScrollBar::add-page {background: none }  ";
+    //stylesheet+="QScrollBar::sub-page {background: none) }  ";
+    //stylesheet+=" QScrollBar:horizontal { border: 2px solid grey; background: #32CC99;height: 15px; margin: 0px 20px 0 20px;} QScrollBar::handle:horizontal {    background: white;    min-width: 20px;} QScrollBar::add-line:horizontal {    border: 2px solid grey;    background: #32CC99;    width: 20px;    subcontrol-position: right;    subcontrol-origin: margin;} QScrollBar::sub-line:horizontal {    border: 2px solid grey;    background: #32CC99;    width: 20px;    subcontrol-position: left;    subcontrol-origin: margin;}";
+    //stylesheet+=" QScrollBar:vertical { border: 2px solid grey; background: #32CC99;width: 15px; margin: 20px 0px 20px 0px;} QScrollBar::handle:vertical {    background: white;    min-height: 20px;} QScrollBar::add-line:vertical {    border: 2px solid grey;    background: #32CC99;    height: 20px;    subcontrol-position: boyyom;    subcontrol-origin: margin;} QScrollBar::sub-line:vertical {    border: 2px solid grey;    background: #32CC99;    height: 20px;    subcontrol-position: top;    subcontrol-origin: margin;}";
+    stylesheet+=" QScrollBar:vertical { width: 15px; margin: 15px 0px 15px 0px;} QScrollBar::handle:vertical {border: 1px solid #e6e6e6 ; background-color: rgb(5,97,137)}  QScrollBar::add-line:vertical { height: 15px; subcontrol-position: bottom; subcontrol-origin: margin;} QScrollBar::sub-line:vertical {height: 15px; subcontrol-position: top; subcontrol-origin: margin;}";
+    stylesheet+=" QScrollBar:horizontal { height: 15px; margin: 0px 15px 0px 15px;} QScrollBar::handle:horizontal {border: 1px solid #e6e6e6 ; background-color: rgb(5,97,137)}  QScrollBar::add-line:horizontal { width: 15px; subcontrol-position: right; subcontrol-origin: margin;} QScrollBar::sub-line:horizontal {width: 15px; subcontrol-position: left; subcontrol-origin: margin;}";
     stylesheet+="QLineEdit{background-color: rgb(136, 138, 133)} ";
     stylesheet+="QLineEdit:disabled{background-color: rgb(80, 80, 80)} ";
     stylesheet+="QGraphicsView {padding:0px;margin:0px; border: 1px; border-radius: 5px; background: qlineargradient(x1:0, y1:0, x2:0, y2:1,stop:0 rgb(5,97,137), stop:1 rgb(16,27,50))} ";
     qApp->setStyleSheet(stylesheet);
-    ui->chart->chart()->setTheme(QtCharts::QChart::ChartThemeBlueCerulean);
-    ui->chart->chart()->layout()->setContentsMargins(0,0,0,0);
+    ui->linear_chart->chart()->setTheme(QtCharts::QChart::ChartThemeBlueCerulean);
+    ui->linear_chart->chart()->layout()->setContentsMargins(0,0,0,0);
     ui->histogram->chart()->setTheme(QtCharts::QChart::ChartThemeBlueCerulean);
     ui->histogram->chart()->layout()->setContentsMargins(0,0,0,0);
     ui->image_list_summary->setSibling(ui->image_list);
     ui->image_list_summary->setStyleSheet("QHeaderView::section { padding-left: 1 px}");
     ui->image_list->horizontalHeader()->setStyleSheet("QHeaderView::section { padding-left:  8 px}");
 
-    ui->chart->setRenderHints(QPainter::HighQualityAntialiasing|QPainter::TextAntialiasing|QPainter::SmoothPixmapTransform|QPainter::Antialiasing);
-    ui->chart->setOptimizationFlag(QGraphicsView::DontSavePainterState);
-    ui->chart->setOptimizationFlag(QGraphicsView::DontAdjustForAntialiasing);
+    ui->linear_chart->setRenderHints(QPainter::HighQualityAntialiasing|QPainter::TextAntialiasing|QPainter::SmoothPixmapTransform|QPainter::Antialiasing);
+    ui->linear_chart->setOptimizationFlag(QGraphicsView::DontSavePainterState);
+    ui->linear_chart->setOptimizationFlag(QGraphicsView::DontAdjustForAntialiasing);
     ui->histogram->setRenderHints(QPainter::HighQualityAntialiasing|QPainter::TextAntialiasing|QPainter::SmoothPixmapTransform|QPainter::Antialiasing);
     ui->histogram->setOptimizationFlag(QGraphicsView::DontSavePainterState);
     ui->histogram->setOptimizationFlag(QGraphicsView::DontAdjustForAntialiasing);
@@ -162,21 +185,54 @@ MainWindow::MainWindow(ImageProcessor &processor) :
     }
     phase_plate_position_chart_->addPositions(phase_plate_pos_path,phase_plate_pos_xy_list,true);
     connect(phase_plate_position_chart_,&PositionChart::selectionChanged,this,&MainWindow::phasePlateSelectionChanged);
-
-
-
     connect(&chart_update_timer_, &QTimer::timeout, this, &MainWindow::updateChart);
     QMenu *tools_menu=new QMenu("Tools",this);
-    tools_menu->addAction(scatter_plot_action_);
-    tools_menu->addAction(run_script_action_);
-    connect(scatter_plot_action_, &QAction::triggered, this, &MainWindow::displayScatterPlot);
-     menuBar()->addMenu(tools_menu);
+    QAction* scatter_plot_action=new QAction("Scatter Plot",this);
+    tools_menu->addAction(scatter_plot_action);
+    connect(scatter_plot_action, &QAction::triggered, this, &MainWindow::displayScatterPlot);
+    menuBar()->addMenu(tools_menu);
+    QMenu *select_menu=new QMenu("Select",this);
+    select_menu->addAction(ui->image_list->selectAllAction());
+    select_menu->addAction(ui->image_list->unselectAllAction());
+    select_menu->addAction(ui->image_list->selectAboveAction());
+    select_menu->addAction(ui->image_list->unselectAboveAction());
+    select_menu->addAction(ui->image_list->selectBelowAction());
+    select_menu->addAction(ui->image_list->unselectBelowAction());
+    select_menu->addAction(ui->image_list->invertSelectionAction());
+    menuBar()->addMenu(select_menu);
+    QMenu *process_menu=new QMenu("Process",this);
+    QAction* reprocess_all=new QAction("Reprocess all images",this);
+    connect(reprocess_all,&QAction::triggered,this, &MainWindow::reprocessAll);
+    QAction* reprocess_selected=new QAction("Reprocess selected images",this);
+    connect(reprocess_selected,&QAction::triggered,this, &MainWindow::reprocessSelected);
+    QAction* reprocess_current=new QAction("Reprocess current image",this);
+    connect(reprocess_current,&QAction::triggered,this, &MainWindow::reprocessCurrent);
+    process_menu->addAction(reprocess_all);
+    process_menu->addAction(reprocess_selected);
+    process_menu->addAction(reprocess_current);
+
+    menuBar()->addMenu(process_menu);
     QMenu *window_menu=new QMenu("Window",this);
-    window_menu->addAction(ui->linear_chart_dock->toggleViewAction());
-    window_menu->addAction(ui->histogram_chart_dock->toggleViewAction());
-    window_menu->addAction(ui->phase_plate_dock->toggleViewAction());
-    window_menu->addAction(ui->grid_dock->toggleViewAction());
-    window_menu->addAction(ui->details_dock->toggleViewAction());
+    QAction* hide_action=new QAction("Linear Chart");
+    hide_action->setCheckable(true);
+    hide_action->setChecked(true);
+    connect(hide_action,&QAction::triggered,ui->linear_chart,&ChartView::setVisible);
+    window_menu->addAction(hide_action);
+    hide_action=new QAction("Histogram Chart");
+    hide_action->setCheckable(true);
+    hide_action->setChecked(true);
+    connect(hide_action,&QAction::triggered,ui->histogram,&ChartView::setVisible);
+    window_menu->addAction(hide_action);
+    hide_action=new QAction("Phase Plate Chart");
+    hide_action->setCheckable(true);
+    hide_action->setChecked(true);
+    connect(hide_action,&QAction::triggered,ui->phase_plate,&ChartView::setVisible);
+    window_menu->addAction(hide_action);
+    hide_action=new QAction("Grid Square Chart");
+    hide_action->setCheckable(true);
+    hide_action->setChecked(true);
+    connect(hide_action,&QAction::triggered,ui->grid_square_chart,&ChartView::setVisible);
+    window_menu->addAction(hide_action);
     menuBar()->addMenu(window_menu);
     QMenu *help_menu=new QMenu("Help",this);
     QAction* about_action=help_menu->addAction("About");
@@ -199,8 +255,10 @@ MainWindow::MainWindow(ImageProcessor &processor) :
                      << InputOutputVariable("Grid square id","square_id",Float)
                      << InputOutputVariable("X","X",Float)
                      << InputOutputVariable("Y","Y",Float)
-                     << InputOutputVariable("Z","Z",Float);
-    report_.dataManager()->addModel("Images",full_model_,false);
+                     << InputOutputVariable("Z","Z",Float)
+                    << InputOutputVariable("Hole Position X","hole_pos_x",Float)
+                    << InputOutputVariable("Hole Position Y","hole_pos_y",Float);
+    report_.dataManager()->addModel("Images",model_,false);
     connect(export_progress_dialog_,&ExportProgressDialog::rejected,this,&MainWindow::cancelExport);
 }
 
@@ -237,12 +295,6 @@ void MainWindow::onStackSourceDirBrowse()
 }
 
 
-void MainWindow::addImage(const DataPtr &data)
-{
-    model_->addImage(data);
-    full_model_->addImage(data);
-}
-
 void MainWindow::onDataChanged(const DataPtr &data)
 {
     model_->onDataChanged(data);
@@ -256,14 +308,15 @@ void MainWindow::updateTaskWidgets()
         delete widget_ptr;
     }
     model_->clearColumns();
-    full_model_->clearColumns();
     Settings *settings=new Settings;
     settings->beginGroup("DefaultColumns");
+    int col_num=1;
     Q_FOREACH(InputOutputVariable column, default_columns_){
-        full_model_->addColumn(column);
-        if(settings->value(column.label,true).toBool()){
-            model_->addColumn(column);
+        model_->addColumn(column);
+        if(! settings->value(column.label,true).toBool()){
+            ui->image_list->hideColumn(col_num);
         }
+        ++col_num;
     }
     settings->endGroup();
     settings->beginGroup("Tasks");
@@ -340,15 +393,14 @@ void MainWindow::updateTaskWidget_(Settings *settings, QFormLayout *parent_input
         bool color_set=false;
         foreach(QVariant v,variant_list){
             InputOutputVariable iov(v);
-            full_model_->addColumn(iov);
-            if(iov.in_column){
-                if(!color_set){
-                    color_set=true;
-                    color_idx+=1;
-                    color_idx%=colors.size();
-                }
-                model_->addColumn(iov,colors[color_idx]);
-            }else{
+            if(!color_set){
+                color_set=true;
+                color_idx+=1;
+                color_idx%=colors.size();
+            }
+            model_->addColumn(iov,colors[color_idx]);
+            if(! iov.in_column){
+                ui->image_list->hideColumn(model_->columnCount(QModelIndex())-1);
                 QLabel *label=new QLabel();
                 label->setProperty("type",iov.type);
                 label->setProperty("label",iov.label);
@@ -390,9 +442,71 @@ void MainWindow::updateTaskWidget_(Settings *settings, QFormLayout *parent_input
 
 void MainWindow::writeReport()
 {
-    QString file_name = QFileDialog::getSaveFileName(0, "Save Plots",".","Pdf files (*.pdf)");
-    if (!file_name.isEmpty()){
-        report_.printToPDF(file_name);
+    QStringList items;
+    items << "PDF Report" << "CSV" << "filtered CSV" << "JSON"<< "filtered JSON";
+    bool ok;
+    QString item = QInputDialog::getItem(this, "Create report","Report type:", items, 0, false, &ok);
+    if (ok && !item.isEmpty()){
+        if(item=="PDF Report"){
+            QString pdf_file_name = QFileDialog::getSaveFileName(0, "Save Report",".","Pdf files (*.pdf)");
+            if (!pdf_file_name.isEmpty()){
+                report_.printToPDF(pdf_file_name);
+            }
+        }else if(item=="CSV" || item=="filtered CSV"){
+            QString file_name = QFileDialog::getSaveFileName(0, "Save Report",".","CSV files (*.csv)");
+            if (!file_name.isEmpty()){
+                bool filtered=item=="CSV"?false:true;
+                QFile file(file_name);
+                if(!file.open(QIODevice::WriteOnly | QIODevice::Text)){
+                    return;
+                }
+                QTextStream out(&file);
+                QStringList headerdata;
+                for(int column=0;column<model_->columnCount(QModelIndex());++column){
+                    headerdata << model_->headerData(column,Qt::Horizontal,Qt::DisplayRole).toString();
+                }
+                out << headerdata.join(",") << "\n";
+                for(int row=0;row<model_->rowCount();++row){
+                    DataPtr data=model_->image(row);
+                    QString export_val=data->value("export").toString("true");
+                    if(filtered && export_val.compare("true", Qt::CaseInsensitive)!=0 && export_val!=QString("1") ){
+                        continue;
+                    }
+                    QStringList rowdata;
+                    for(int column=0;column<model_->columnCount(QModelIndex());++column){
+                        QVariant val=model_->data(model_->index(row,column),ImageTableModel::SortRole);
+                        rowdata << val.toString();
+                    }
+                    out << rowdata.join(",") << "\n";
+                }
+            }
+
+        }else if(item=="JSON" || item=="filtered JSON"){
+            QString file_name = QFileDialog::getSaveFileName(0, "Save Report",".","JSON files (*.json)");
+            if (!file_name.isEmpty()){
+                bool filtered=item=="JSON"?false:true;
+                QFile file(file_name);
+                if(!file.open(QIODevice::WriteOnly )){
+                    return;
+                }
+                QJsonObject root_object;
+                for(int column=0;column<model_->columnCount(QModelIndex());++column){
+                    QString column_name= model_->headerData(column,Qt::Horizontal,Qt::DisplayRole).toString();
+                    QJsonArray array;
+                    for(int row=0;row<model_->rowCount();++row){
+                        DataPtr data=model_->image(row);
+                        QString export_val=data->value("export").toString("true");
+                        if(filtered && export_val.compare("true", Qt::CaseInsensitive)!=0 && export_val!=QString("1") ){
+                            continue;
+                        }
+                        array.append(QJsonValue::fromVariant(model_->data(model_->index(row,column),ImageTableModel::SortRole)));
+                    }
+                    root_object.insert(column_name,array);
+                }
+                QJsonDocument doc(root_object);
+                file.write(doc.toJson());
+            }
+        }
     }
 }
 
@@ -400,14 +514,14 @@ void MainWindow::onAvgSourceDirTextChanged(const QString &dir)
 {
     Settings settings;
     settings.setValue("avg_source_dir",ui->avg_source_dir->text());
-    settings.saveToFile(".cryoflare.ini", QStringList(), QStringList() << "avg_source_dir");
+    settings.saveToFile(CRYOFLARE_INI, QStringList(), QStringList() << "avg_source_dir");
 }
 
 void MainWindow::onStackSourceDirTextChanged(const QString &dir)
 {
     Settings settings;
     settings.setValue("stack_source_dir",ui->stack_source_dir->text());
-    settings.saveToFile(".cryoflare.ini", QStringList(), QStringList() << "stack_source_dir");
+    settings.saveToFile(CRYOFLARE_INI, QStringList(), QStringList() << "stack_source_dir");
 }
 
 void MainWindow::updateDetailsfromModel(const QModelIndex &topLeft, const QModelIndex &bottomRight)
@@ -440,7 +554,7 @@ void MainWindow::onSettings()
     if (QDialog::Accepted==settings_dialog.exec()){
         settings_dialog.saveSettings();
         Settings settings;
-        settings.saveToFile(".cryoflare.ini");
+        settings.saveToFile(CRYOFLARE_INI);
         if(QFileInfo::exists(settings.value("report_template").toString())){
           report_.loadFromFile(settings.value("report_template").toString());
         }
@@ -473,14 +587,14 @@ void MainWindow::inputDataChanged()
         }
         settings.endGroup();
         settings.endGroup();
-        settings.saveToFile(".cryoflare.ini", QStringList(), QStringList() << "ScriptInput/"+task.toString()+"/"+label.toString());
+        settings.saveToFile(CRYOFLARE_INI, QStringList(), QStringList() << "ScriptInput/"+task.toString()+"/"+label.toString());
     }
 }
 
 void MainWindow::onExport()
 {
     Settings settings;
-    ExportDialog dialog(processor_.getRawFilesKeys().toList(),processor_.getOutputFilesKeys().toList(),processor_.getSharedFilesKeys().toList());
+    ExportDialog dialog(meta_data_store_.rawKeys().toList(),meta_data_store_.outputKeys().toList(),meta_data_store_.sharedKeys().toList());
     dialog.setDuplicateRaw(settings.value("duplicate_raw_export").toBool());
     dialog.setSeparateRawPath(settings.value("separate_raw_export").toBool());
     dialog.setDestinationPath(QUrl::fromUserInput(settings.value("export_path").toString()));
@@ -491,9 +605,9 @@ void MainWindow::onExport()
         QStringList images;
         for(int i=0;i<model_->rowCount();++i){
             DataPtr data=model_->image(i);
-            QString export_val=data->value("export","true");
+            QString export_val=data->value("export").toString("true");
             if ((export_val.compare("true", Qt::CaseInsensitive) == 0 || export_val==QString("1")) && data->value("tasks_unfinished").toInt()<=0){
-                images<<data->value("short_name");
+                images<<data->value("short_name").toString();
             }
         }
         settings.setValue("export_path",dialog.destinationPath().toString(QUrl::RemovePassword));
@@ -503,7 +617,7 @@ void MainWindow::onExport()
             settings.setValue("raw_export_path",dialog.rawDestinationPath().toString(QUrl::RemovePassword));
         }
 
-        settings.saveToFile(".cryoflare.ini", QStringList(), QStringList() << "export_path" << "raw_export_path" << "separate_raw_export" << "duplicate_raw_export");
+        settings.saveToFile(CRYOFLARE_INI, QStringList(), QStringList() << "export_path" << "raw_export_path" << "separate_raw_export" << "duplicate_raw_export");
 
          processor_.exportImages(dialog.destinationPath(),dialog.rawDestinationPath(),images,dialog.selectedOutputKeys(),dialog.selectedRawKeys(),dialog.selectedSharedKeys(),dialog.duplicateRaw());
     }
@@ -542,9 +656,9 @@ void MainWindow::updateDetails()
                 continue;
             }
             if(static_cast<VariableType>(type.toInt())==Image){
-                QString path=data->value(label.toString());
+                QString path=data->value(label.toString()).toString();
                 QPicture p;
-                if(QFileInfo::exists(path)){
+                if(! path.isEmpty() && QFileInfo::exists(path)){
                     QImageReader reader(path);
                     QSize image_size=reader.size();
                     float scalefactor=std::min(512.0/image_size.width(),512.0/image_size.height());
@@ -557,7 +671,7 @@ void MainWindow::updateDetails()
                 }
                 qlabel->setPicture(p);
             }else if(static_cast<VariableType>(type.toInt())==String || static_cast<VariableType>(type.toInt())==Float || static_cast<VariableType>(type.toInt())==Int){
-                qlabel->setText(data->value(label.toString()));
+                qlabel->setText(data->value(label.toString()).toString());
             }
         }
     }
@@ -576,15 +690,12 @@ void MainWindow::updateChart()
     for(int i=0;i<model_->rowCount();++i){
         QVariant val=model_->data(model_->index(i,column),ImageTableModel::SortRole);
         DataPtr data=model_->image(i);
-        QString export_val=data->value("export","true");
-        bool linear_export_flag=export_val.compare("true", Qt::CaseInsensitive) == 0 || export_val==QString("1") || ui->filter->isChecked()==false;
-        bool chart_export_flag=export_val.compare("true", Qt::CaseInsensitive) == 0 || export_val==QString("1") || ui->filter->isChecked()==false;
+        QString export_val=data->value("export").toString("true");
+        bool export_flag=export_val.compare("true", Qt::CaseInsensitive) == 0 || export_val==QString("1") || ui->filter->isChecked()==false;
         if(val.canConvert<float>() && val.toString()!=QString("")){
             float fval=val.toFloat();
-            if(linear_export_flag){
+            if(export_flag){
                 datalist.append(QPointF(i,fval));
-            }
-            if(chart_export_flag){
                 histo_datalist.append(fval);
             }
         }
@@ -628,7 +739,7 @@ void MainWindow::updateChart()
     }
 
     QColor color(23,159,223);
-    QtCharts::QChart *chart = ui->chart->chart();
+    QtCharts::QChart *chart = ui->linear_chart->chart();
     chart->removeAllSeries();
     foreach( QList<QPointF> line, line_list){
         QtCharts::QLineSeries *series = new QtCharts::QLineSeries();
@@ -667,12 +778,12 @@ void MainWindow::updatePhasePlateChart()
     for(int i=0;i<model_->rowCount();++i){
         QVariant val=model_->data(model_->index(i,column),ImageTableModel::SortRole);
         DataPtr data=model_->image(i);
-        QString export_val=data->value("export","true");
+        QString export_val=data->value("export").toString("true");
         bool phase_plate_export_flag=export_val.compare("true", Qt::CaseInsensitive) == 0 || export_val==QString("1") || ui->filter->isChecked()==false;
         if(val.canConvert<float>() && val.toString()!=QString("")){
             float fval=val.toFloat();
-            int phase_plate_num=std::max(1,std::min(6,data->value("phase_plate_num").toInt()));
-            int phase_plate_pos_num=data->value("phase_plate_pos").toInt();
+            int phase_plate_num=std::max(1,std::min(6,data->value("phase_plate_num").toString().toInt()));
+            int phase_plate_pos_num=data->value("phase_plate_pos").toString().toInt();
             if(phase_plate_export_flag && (phase_plate_level_==0 || phase_plate_num==current_phase_plate_)){
                 int index=(phase_plate_level_==0 ? phase_plate_num : phase_plate_pos_num);
                 if(!data_vectors.contains(i)){
@@ -713,27 +824,27 @@ void MainWindow::updateGridSquareChart()
     for(int i=0;i<model_->rowCount();++i){
         QVariant val=model_->data(model_->index(i,column),ImageTableModel::SortRole);
         DataPtr data=model_->image(i);
-        QString export_val=data->value("export","true");
+        QString export_val=data->value("export").toString("true");
         bool export_flag=export_val.compare("true", Qt::CaseInsensitive) == 0 || export_val==QString("1") || ui->filter->isChecked()==false;
         if(val.canConvert<float>() && val.toString()!=QString("")){
             float fval=val.toFloat();
-            int square_id=data->value("square_id").toInt();
+            int square_id=data->value("square_id").toString().toInt();
             if(chart_current_square_==-1){
                 if(export_flag){
                     if(!data_vectors.contains(square_id)){
                         data_vectors[square_id]=QVector<float>();
                     }
                     data_vectors[square_id].append(fval);
-                    positions[square_id]=QPointF(2e5*data->value("square_X").toFloat(),2e5*data->value("square_Y").toFloat());
+                    positions[square_id]=QPointF(2e5*data->value("square_X").toString().toDouble(),2e5*data->value("square_Y").toString().toDouble());
                 }
             }else{
-                int hole_id=data->value("hole_id").toInt();
+                int hole_id=data->value("hole_id").toString().toInt();
                 if(export_flag &&   square_id==chart_current_square_){
                     if(!data_vectors.contains(hole_id)){
                         data_vectors[hole_id]=QVector<float>();
                     }
                     data_vectors[hole_id].append(fval);
-                    positions[hole_id]=QPointF(10e6*data->value("X").toFloat(),10e6*data->value("Y").toFloat());
+                    positions[hole_id]=QPointF(10e6*data->value("X").toString().toDouble(),10e6*data->value("Y").toString().toDouble());
                 }
             }
         }
@@ -770,7 +881,7 @@ void MainWindow::createProcessIndicator(ProcessWrapper *wrapper, int gpu_id)
     process_indicators_.append(indicator);
     statusBar()->addWidget(indicator);
     connect(wrapper,&ProcessWrapper::started,indicator,&ProcessIndicator::started);
-    connect(wrapper,&ProcessWrapper::stopped,indicator,&ProcessIndicator::finished);
+    connect(wrapper,&ProcessWrapper::finished,indicator,&ProcessIndicator::finished);
 }
 
 void MainWindow::deleteProcessIndicators()
@@ -865,8 +976,6 @@ void MainWindow::onStartStopButton(bool start)
         epu_disk_usage_->start(ui->avg_source_dir->text());
         movie_disk_usage_->start(ui->stack_source_dir->text());
         local_disk_usage_->start(".");
-        full_model_->clearData();
-        model_->clearData();
         last_image_timer_->reset();
     }else{
         last_image_timer_->stop();
@@ -935,12 +1044,12 @@ void MainWindow::phasePlateSelectionFinished(QRect rubberBandRect, QPointF fromS
         for(int i=0;i<model_->rowCount();++i){
             DataPtr data=model_->image(i);
             if(invert){
-                if(ids.contains(data->value(tag))){
+                if(ids.contains(data->value(tag).toString())){
                     data->insert("export",0);
                     onDataChanged(data);
                 }
             }else{
-                if(!ids.contains(data->value(tag))){
+                if(!ids.contains(data->value(tag).toString())){
                     data->insert("export",0);
                     onDataChanged(data);
                 }
@@ -994,12 +1103,12 @@ void MainWindow::gridSquareSelectionFinished(QRect rubberBandRect, QPointF fromS
         for(int i=0;i<model_->rowCount();++i){
             DataPtr data=model_->image(i);
             if(invert){
-                if(ids.contains(data->value(tag))){
+                if(ids.contains(data->value(tag).toString())){
                     data->insert("export",0);
                     onDataChanged(data);
                 }
             }else{
-                if(!ids.contains(data->value(tag))){
+                if(!ids.contains(data->value(tag).toString())){
                     data->insert("export",0);
                     onDataChanged(data);
                 }
@@ -1017,7 +1126,7 @@ void MainWindow::displayScatterPlot()
 
 void MainWindow::enableSelection(bool selecting)
 {
-    ui->chart->enableSelection(selecting);
+    ui->linear_chart->enableSelection(selecting);
     ui->histogram->enableSelection(selecting);
     ui->phase_plate->enableSelection(selecting);
     ui->grid_square_chart->enableSelection(selecting);
@@ -1037,5 +1146,23 @@ void MainWindow::onExportMessage(int left, const QList<ExportMessage> &messages)
 void MainWindow::onExportFinished()
 {
     export_progress_dialog_->finish();
+}
+
+void MainWindow::reprocessAll()
+{
+    processor_.reprocess(meta_data_store_.images());
+}
+
+void MainWindow::reprocessSelected()
+{
+    processor_.reprocess(meta_data_store_.selected());
+}
+
+void MainWindow::reprocessCurrent()
+{
+    QVector<DataPtr> current;
+    int current_row=sort_proxy_->mapToSource(ui->image_list->currentIndex()).row();
+    current.append(meta_data_store_.at(current_row));
+    processor_.reprocess(current);
 }
 

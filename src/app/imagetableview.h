@@ -29,7 +29,14 @@ class ImageTableView : public QTableView
 {
     Q_OBJECT
 public:
-    explicit ImageTableView(QWidget *parent = 0);
+    explicit ImageTableView(QWidget *parent = nullptr);
+    QAction *selectAllAction() const;
+    QAction *unselectAllAction() const;
+    QAction *selectAboveAction() const;
+    QAction *unselectAboveAction() const;
+    QAction *selectBelowAction() const;
+    QAction *unselectBelowAction() const;
+    QAction *invertSelectionAction() const;
 
 signals:
 

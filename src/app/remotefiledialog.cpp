@@ -4,6 +4,8 @@
 #include "../external/qssh/sshconnection.h"
 #include "sshauthenticationstore.h"
 #include "sshauthenticationdialog.h"
+#include <QFileInfo>
+#include <QDir>
 
 RemoteFileDialog::RemoteFileDialog(const SftpUrl &remote_path, QWidget *parent) :
     QDialog(parent),
@@ -12,7 +14,9 @@ RemoteFileDialog::RemoteFileDialog(const SftpUrl &remote_path, QWidget *parent) 
     proxy_(new QSortFilterProxyModel(this)),
     remote_path_(remote_path),
     initial_path_(remote_path_.path().split("/",QString::SkipEmptyParts)),
-    initial_idx_()
+    initial_idx_(),
+    default_keys_(),
+    stored_connection_(false)
 {
     ui->setupUi(this);
     ui->tree->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
@@ -63,20 +67,23 @@ RemoteFileDialog::~RemoteFileDialog()
 
 void RemoteFileDialog::connectToHost(bool con)
 {
+    qDebug() << "connect to host: " << con;
     if(con){
-        //connect
-        ui->message->setText("Connecting ...");
-        remote_path_.setHost(ui->host->text());
-        remote_path_.setUserName(ui->user->text());
-        remote_path_.setPort(ui->port->text().toInt());
-        SshAuthenticationStore store;
-        if(store.contains(remote_path_.toConnectionParameters())){
-            model_->setSshConnection(store.retrieve(remote_path_.toConnectionParameters()));
+        ui->connect->setText("Disconnect");
+        default_keys_.clear();
+        QStringList default_paths;
+        default_paths << QDir::homePath()+"/.ssh/id_dsa";
+        default_paths << QDir::homePath()+"/.ssh/id_ecdsa";
+        default_paths << QDir::homePath()+ "/.ssh/id_ed25519";
+        default_paths << QDir::homePath()+"/.ssh/id_rsa";
+        foreach(QString path,default_paths){
+            if(QFileInfo::exists(path)){
+                default_keys_ << path;
+            }
         }
-        model_->setSshConnection(remote_path_.toConnectionParameters());
-
+        tryNextAuth_();
     }else{
-        //disconnect
+        disconnect_();
     }
 }
 
@@ -89,20 +96,13 @@ void RemoteFileDialog::onConnectionEstablished()
 
 void RemoteFileDialog::onConnectionError(const QString &error)
 {
+    initSftpFileSystemModel_();
     if(error==tr("Server rejected password.") || error==tr("Server rejected key.")){
-        initSftpFileSystemModel_();
-        SshAuthenticationDialog::auth_type auth=SshAuthenticationDialog::getSshAuthentication(QString("Authentication for: %1").arg(remote_path_.toString(QUrl::RemovePassword)));
-        if(auth.second!=""){
-            remote_path_.setAuthType(auth.first);
-            if(auth.first==QSsh::SshConnectionParameters::AuthenticationByPassword){
-                remote_path_.setPassword(auth.second);
-            }else{
-                remote_path_.setKey(auth.second);
-            }
-            connectToHost(true);
-        }
+        qDebug() << "connection error: " <<error;
+        tryNextAuth_();
     }else{
         ui->message->setText("Connection Error: "+error);
+        disconnect_();
     }
 }
 
@@ -114,9 +114,6 @@ void RemoteFileDialog::modelReady_()
             initial_idx_=model_->index(0,0);
         }
         if(model_->isFetching(initial_idx_)){
-        //    return;
-        //}
-        //if(model_->wasFetched(idx)){
             QString folder=initial_path_.takeFirst();
             bool found=false;
             for(int i=0;i<model_->rowCount(initial_idx_);++i){
@@ -145,6 +142,7 @@ void RemoteFileDialog::modelReady_()
 void RemoteFileDialog::initSftpFileSystemModel_()
 {
     if(model_){
+        model_->shutDown();
         model_->deleteLater();
     }
     model_=new QSsh::SftpFileSystemModel(this);
@@ -154,4 +152,51 @@ void RemoteFileDialog::initSftpFileSystemModel_()
     connect(model_,&QSsh::SftpFileSystemModel::dirListed,this,&RemoteFileDialog::modelReady_);
     ui->tree->setModel(proxy_);
     proxy_->sort(1);
+}
+
+void RemoteFileDialog::tryNextAuth_()
+{
+    //connect
+    qDebug() << "try next auth: " << default_keys_.size();
+    ui->message->setText("Connecting ...");
+    remote_path_.setHost(ui->host->text());
+    remote_path_.setUserName(ui->user->text());
+    remote_path_.setPort(ui->port->text().toInt());
+    SshAuthenticationStore store;
+    if(store.contains(remote_path_.toConnectionParameters()) && !stored_connection_){
+        default_keys_.clear();
+        model_->setSshConnection(store.retrieve(remote_path_.toConnectionParameters()));
+        stored_connection_=true;
+    }else{
+        stored_connection_=false;
+        if(!default_keys_.empty()){
+            QString next_key=default_keys_.back();
+            default_keys_.pop_back();
+            remote_path_.setAuthType(QSsh::SshConnectionParameters::AuthenticationByKey);
+            remote_path_.setKey(next_key);
+            model_->setSshConnection(remote_path_.toConnectionParameters());
+        }else{
+            SshAuthenticationDialog::auth_type auth=SshAuthenticationDialog::getSshAuthentication(QString("Authentication for: %1").arg(remote_path_.toString(QUrl::RemovePassword)));
+            if(auth.second!=""){
+                remote_path_.setAuthType(auth.first);
+                if(auth.first==QSsh::SshConnectionParameters::AuthenticationByPassword){
+                    remote_path_.setPassword(auth.second);
+                }else{
+                    remote_path_.setKey(auth.second);
+                }
+                model_->setSshConnection(remote_path_.toConnectionParameters());
+            }else{
+                disconnect_();
+                ui->message->setText("Disconnected");
+            }
+        }
+    }
+}
+
+void RemoteFileDialog::disconnect_()
+{
+    initSftpFileSystemModel_();
+    ui->message->setText("Disconnected");
+    ui->connect->setText("Connect");
+    ui->connect->setChecked(false);
 }

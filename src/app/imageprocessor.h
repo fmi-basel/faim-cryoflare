@@ -23,37 +23,35 @@
 #ifndef IMAGEPROCESSOR_H
 #define IMAGEPROCESSOR_H
 
-#include <QStack>
 #include <QObject>
 #include <QStringList>
 #include <task.h>
 #include <parallelexporter.h>
 #include <dataptr.h>
 #include "sftpurl.h"
+#include "priorityqueue.h"
 
 //fw decl
-class FileSystemWatcher;
 class ProcessWrapper;
 class Settings;
 class QProcess;
+class MetaDataStore;
 
 class ImageProcessor: public QObject
 {
     Q_OBJECT
 public:
-    ImageProcessor();
+    ImageProcessor(MetaDataStore &meta_data_store);
     ~ImageProcessor();
 public slots:
     void startStop(bool start=true);
-    void onDirChange(const QString & path);
-    void onTaskFinished(const TaskPtr& task, bool gpu);
+    void onTaskFinished(const TaskPtr& task);
     void loadSettings();
     void exportImages(const SftpUrl& export_path,const SftpUrl& raw_export_path,const QStringList& image_list, const QStringList& output_keys,const QStringList& raw_keys,const QStringList& shared_keys,bool duplicate_raw );
     void cancelExport();
     void startTasks();
-    QSet<QString> getOutputFilesKeys() const;
-    QSet<QString> getRawFilesKeys() const;
-    QSet<QString> getSharedFilesKeys() const;
+    void createTaskTree(DataPtr data, bool force_reprocess=false);
+    void reprocess(const QVector<DataPtr>& images);
 signals:
     void newImage(DataPtr data);
     void dataChanged(DataPtr data);
@@ -69,29 +67,21 @@ protected slots:
     void exportFinished_();
 private:
     void startNextExport_();
-    void updateDisc_(const QString& disc);
-    void updateGridSquare_(const QString& grid_square);
-    void updateImages_(const QString& grid_square);
-    void createTaskTree_(const QString& path);
     void loadTask_(Settings *setting,const TaskPtr& task);
+    void enqueueChildren_(const TaskPtr& task);
 
-    FileSystemWatcher* watcher_;
-    QString avg_source_path_;
-    QString stack_source_path_;
-    QStringList grid_squares_;
-    QStringList images_;
-    QStack<TaskPtr> cpu_task_stack_;
-    QStack<TaskPtr> gpu_task_stack_;
+    QString epu_project_dir_;
+    QString movie_dir_;
+    PriorityQueue cpu_pqueue_;
+    PriorityQueue gpu_pqueue_;
     QList<ProcessWrapper*> cpu_processes_;
     QList<ProcessWrapper*> gpu_processes_;
     TaskPtr root_task_;
-    QHash<QString,QMap<QString,QString> > raw_files_;
-    QHash<QString,QMap<QString,QString> > output_files_;
-    QMap<QString,QString> shared_output_files_;
     QQueue<ParallelExporter*> exporters_;
     ParallelExporter* current_exporter_;
     QProcess* process_;
     bool running_state_;
+    MetaDataStore& meta_data_store_;
 
 
 };

@@ -43,6 +43,7 @@ void save_task(SETTINGS *settings, QTreeWidgetItem *item)
         settings->beginGroup(name);
         settings->setValue("script",task_item->script());
         settings->setValue("is_gpu",task_item->isGPU());
+        settings->setValue("is_priority",task_item->isPriority());
         settings->setValue("group_with_parent",task_item->groupWithParent());
         QList<QVariant> variant_list;
         foreach(InputOutputVariable v,task_item->input_variables){
@@ -72,6 +73,7 @@ void load_task(SETTINGS *settings, QTreeWidgetItem *parent)
         child->setName(child_name);
         child->setScript(settings->value("script").toString());
         child->setGpu(settings->value("is_gpu").toBool());
+        child->setPriority(settings->value("is_priority").toBool());
         child->setGroupWithParent(settings->value("group_with_parent").toBool());
         QList<QVariant> variant_list=settings->value("input_variables").toList();
         foreach(QVariant v, variant_list){
@@ -99,6 +101,16 @@ void save_to_settings(SETTINGS* settings, Ui::SettingsDialog* ui){
     settings->setValue("gpu_ids", ui->gpu_ids->text());
     settings->setValue("timeout", ui->timeout->value());
     settings->setValue("histogram_bins", ui->histogram_bins->value());
+    settings->setValue("import_image_pattern",ui->import_image_pattern->text());
+    if(ui->import_epu->isChecked()){
+        settings->setValue("import","EPU");
+    }
+    if(ui->import_flat_xml->isChecked()){
+        settings->setValue("import","flat_EPU");
+    }
+    if(ui->import_json->isChecked()){
+        settings->setValue("import","json");
+    }
     settings->setValue("export_pre_script", ui->export_pre_script->path());
     settings->setValue("export_post_script", ui->export_post_script->path());
     settings->setValue("export_custom_script", ui->export_custom_script->path());
@@ -136,6 +148,17 @@ void load_from_settings(SETTINGS* settings, Ui::SettingsDialog* ui){
     ui->gpu_ids->setText(settings->value("gpu_ids").toString());
     ui->timeout->setValue(settings->value("timeout").toInt());
     ui->histogram_bins->setValue(settings->value("histogram_bins").toInt());
+    ui->import_image_pattern->setText(settings->value("import_image_pattern").toString());
+    QString import_mode=settings->value("import").toString();
+    if(import_mode=="EPU"){
+        ui->import_epu->setChecked(true);
+    }else if(import_mode=="flat_EPU"){
+        ui->import_flat_xml->setChecked(true);
+    }else if(import_mode=="json"){
+        ui->import_json->setChecked(true);
+    }else{
+        ui->import_epu->setChecked(true);
+    }
     ui->export_pre_script->setPath(settings->value("export_pre_script").toString());
     ui->export_post_script->setPath(settings->value("export_post_script").toString());
     ui->export_num_processes->setValue(settings->value("export_num_processes").toInt());
@@ -361,6 +384,8 @@ void SettingsDialog::updateVariables(QTreeWidgetItem *new_item, QTreeWidgetItem 
             InputOutputVariable::SummaryType summary_type;
             if(combo_box){
                 summary_type=static_cast<InputOutputVariable::SummaryType>(combo_box->currentIndex());
+            }else{
+                summary_type=InputOutputVariable::NO_SUMMARY;
             }
             old_tree_item->output_variables.append(InputOutputVariable(name,variable,type,is_column,summary_type));
         }

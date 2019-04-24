@@ -69,6 +69,7 @@ public:
     virtual bool wasFetched(const QModelIndex &parent) const;
     virtual bool isFetching(const QModelIndex &parent) const;
     virtual void fetch(const QModelIndex &parent);
+    void shutDown();
 signals:
      /*
       * E.g. "Permission denied". Note that this can happen without direct user intervention,
@@ -107,7 +108,6 @@ private:
     QModelIndex parent(const QModelIndex &child) const;
 
     void statRootDirectory();
-    void shutDown();
 
     Internal::SftpFileSystemModelPrivate * const d;
 };

@@ -32,8 +32,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1358</width>
-    <height>902</height>
+    <width>1344</width>
+    <height>913</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -43,7 +43,7 @@
    <item row="0" column="0">
     <widget class="QTabWidget" name="settings">
      <property name="currentIndex">
-      <number>0</number>
+      <number>1</number>
      </property>
      <widget class="QWidget" name="tab">
       <attribute name="title">
@@ -178,6 +178,12 @@
       <layout class="QVBoxLayout" name="verticalLayout">
        <item>
         <widget class="QGroupBox" name="groupBox_3">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>1</verstretch>
+          </sizepolicy>
+         </property>
          <property name="title">
           <string>Tasks</string>
          </property>
@@ -200,7 +206,7 @@
              <bool>false</bool>
             </property>
             <property name="columnCount">
-             <number>4</number>
+             <number>5</number>
             </property>
             <attribute name="headerVisible">
              <bool>false</bool>
@@ -227,6 +233,11 @@
             <column>
              <property name="text">
               <string>GPU task</string>
+             </property>
+            </column>
+            <column>
+             <property name="text">
+              <string>Priority</string>
              </property>
             </column>
             <column>
@@ -319,12 +330,249 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="tab_3">
+     <widget class="QWidget" name="tab_export">
       <attribute name="title">
-       <string>Export</string>
+       <string>Import/Export</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout">
-       <item row="6" column="0">
+       <item row="0" column="0">
+        <widget class="QGroupBox" name="groupBox_import">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="toolTip">
+          <string>Changing the import will nee restart of the program</string>
+         </property>
+         <property name="title">
+          <string>Import</string>
+         </property>
+         <layout class="QFormLayout" name="formLayout">
+          <item row="0" column="0" colspan="2">
+           <widget class="QGroupBox" name="groupBox_data_type">
+            <property name="title">
+             <string>Data structure</string>
+            </property>
+            <layout class="QHBoxLayout" name="horizontalLayout_6">
+             <item>
+              <widget class="QRadioButton" name="import_epu">
+               <property name="text">
+                <string>EPU</string>
+               </property>
+               <property name="checked">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QRadioButton" name="import_flat_xml">
+               <property name="text">
+                <string>Flat folder with EPU metadata</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QRadioButton" name="import_json">
+               <property name="text">
+                <string>Flat folder with Json metadata</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="label_10">
+            <property name="text">
+             <string>Image pattern:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QLineEdit" name="import_image_pattern">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>*.mrc</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QGroupBox" name="groupBox_export">
+         <property name="title">
+          <string>Export</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_5">
+          <item row="0" column="0">
+           <layout class="QHBoxLayout" name="horizontalLayout_4">
+            <item>
+             <widget class="QLabel" name="label_4">
+              <property name="text">
+               <string>Number of processes:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QSpinBox" name="export_num_processes">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                <horstretch>1</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="value">
+               <number>1</number>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+          <item row="0" column="1">
+           <widget class="QGroupBox" name="groupBox_4">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="title">
+             <string>Export type</string>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_4">
+             <item>
+              <widget class="QRadioButton" name="export_copy">
+               <property name="text">
+                <string>Copy data</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QRadioButton" name="export_move">
+               <property name="text">
+                <string>&amp;Move data</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QRadioButton" name="export_custom1">
+               <property name="text">
+                <string>Use custom script per image</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QRadioButton" name="export_custom2">
+               <property name="text">
+                <string>Use global custom script </string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item row="1" column="0" colspan="2">
+           <widget class="QGroupBox" name="groupBox_5">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="title">
+             <string>Scripts</string>
+            </property>
+            <layout class="QGridLayout" name="gridLayout_2">
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_5">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="text">
+                <string>Custom export script:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="PathEdit" name="export_custom_script" native="true">
+               <property name="enabled">
+                <bool>true</bool>
+               </property>
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                 <horstretch>1</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QLabel" name="label_6">
+               <property name="text">
+                <string>Pre export script:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="0">
+              <widget class="QLabel" name="label_7">
+               <property name="text">
+                <string>Post export script:</string>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="PathEdit" name="export_pre_script" native="true"/>
+             </item>
+             <item row="2" column="1">
+              <widget class="PathEdit" name="export_post_script" native="true"/>
+             </item>
+             <item row="3" column="0">
+              <widget class="QCheckBox" name="ask_destination">
+               <property name="text">
+                <string>Ask for destination directory</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item row="2" column="0" colspan="2">
+           <widget class="QGroupBox" name="groupBox_6">
+            <property name="title">
+             <string>Report</string>
+            </property>
+            <layout class="QHBoxLayout" name="horizontalLayout_5">
+             <item>
+              <widget class="PathEdit" name="report_template" native="true"/>
+             </item>
+             <item>
+              <widget class="QPushButton" name="design_report">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="text">
+                <string>Design</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item row="2" column="0">
         <spacer name="verticalSpacer">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -336,166 +584,6 @@
           </size>
          </property>
         </spacer>
-       </item>
-       <item row="1" column="0">
-        <layout class="QHBoxLayout" name="horizontalLayout_4">
-         <item>
-          <widget class="QLabel" name="label_4">
-           <property name="text">
-            <string>Number of processes:</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QSpinBox" name="export_num_processes">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-             <horstretch>1</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="value">
-            <number>1</number>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item row="4" column="0" colspan="2">
-        <widget class="QGroupBox" name="groupBox_5">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="title">
-          <string>Scripts</string>
-         </property>
-         <layout class="QGridLayout" name="gridLayout_2">
-          <item row="0" column="0">
-           <widget class="QLabel" name="label_5">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="text">
-             <string>Custom export script:</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="1">
-           <widget class="PathEdit" name="export_custom_script" native="true">
-            <property name="enabled">
-             <bool>true</bool>
-            </property>
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-              <horstretch>1</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="0">
-           <widget class="QLabel" name="label_6">
-            <property name="text">
-             <string>Pre export script:</string>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="0">
-           <widget class="QLabel" name="label_7">
-            <property name="text">
-             <string>Post export script:</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="1">
-           <widget class="PathEdit" name="export_pre_script" native="true"/>
-          </item>
-          <item row="2" column="1">
-           <widget class="PathEdit" name="export_post_script" native="true"/>
-          </item>
-          <item row="3" column="0">
-           <widget class="QCheckBox" name="ask_destination">
-            <property name="text">
-             <string>Ask for destination directory</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item row="1" column="1" rowspan="2">
-        <widget class="QGroupBox" name="groupBox_4">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="title">
-          <string>Export type</string>
-         </property>
-         <layout class="QVBoxLayout" name="verticalLayout_4">
-          <item>
-           <widget class="QRadioButton" name="export_copy">
-            <property name="text">
-             <string>Copy data</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QRadioButton" name="export_move">
-            <property name="text">
-             <string>&amp;Move data</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QRadioButton" name="export_custom1">
-            <property name="text">
-             <string>Use custom script per image</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QRadioButton" name="export_custom2">
-            <property name="text">
-             <string>Use global custom script </string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item row="5" column="0" colspan="2">
-        <widget class="QGroupBox" name="groupBox_6">
-         <property name="title">
-          <string>Report</string>
-         </property>
-         <layout class="QHBoxLayout" name="horizontalLayout_5">
-          <item>
-           <widget class="PathEdit" name="report_template" native="true"/>
-          </item>
-          <item>
-           <widget class="QPushButton" name="design_report">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="text">
-             <string>Design</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
        </item>
       </layout>
      </widget>
@@ -565,8 +653,8 @@
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>601</x>
-     <y>891</y>
+     <x>1030</x>
+     <y>1010</y>
     </hint>
     <hint type="destinationlabel">
      <x>157</x>
@@ -581,8 +669,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>669</x>
-     <y>891</y>
+     <x>1098</x>
+     <y>1010</y>
     </hint>
     <hint type="destinationlabel">
      <x>286</x>
@@ -597,8 +685,8 @@
    <slot>loadFromFile()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>63</x>
-     <y>891</y>
+     <x>73</x>
+     <y>1010</y>
     </hint>
     <hint type="destinationlabel">
      <x>4</x>
@@ -614,7 +702,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>175</x>
-     <y>891</y>
+     <y>1010</y>
     </hint>
     <hint type="destinationlabel">
      <x>117</x>
@@ -629,12 +717,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>776</x>
-     <y>171</y>
+     <x>1299</x>
+     <y>473</y>
     </hint>
     <hint type="destinationlabel">
-     <x>783</x>
-     <y>213</y>
+     <x>806</x>
+     <y>627</y>
     </hint>
    </hints>
   </connection>
@@ -645,12 +733,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>905</x>
-     <y>142</y>
+     <x>1299</x>
+     <y>444</y>
     </hint>
     <hint type="destinationlabel">
-     <x>897</x>
-     <y>208</y>
+     <x>920</x>
+     <y>627</y>
     </hint>
    </hints>
   </connection>
@@ -661,12 +749,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>974</x>
-     <y>143</y>
+     <x>1299</x>
+     <y>444</y>
     </hint>
     <hint type="destinationlabel">
-     <x>534</x>
-     <y>85</y>
+     <x>667</x>
+     <y>421</y>
     </hint>
    </hints>
   </connection>
@@ -677,8 +765,8 @@
    <slot>saveAsDefaults()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>251</x>
-     <y>874</y>
+     <x>297</x>
+     <y>1010</y>
     </hint>
     <hint type="destinationlabel">
      <x>3</x>
@@ -693,8 +781,8 @@
    <slot>resetToDefaults()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>324</x>
-     <y>879</y>
+     <x>422</x>
+     <y>1010</y>
     </hint>
     <hint type="destinationlabel">
      <x>293</x>
@@ -709,12 +797,60 @@
    <slot>designReport()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1272</x>
-     <y>394</y>
+     <x>1299</x>
+     <y>690</y>
     </hint>
     <hint type="destinationlabel">
      <x>1355</x>
      <y>400</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>import_epu</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>import_image_pattern</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>76</x>
+     <y>122</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>180</x>
+     <y>176</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>import_flat_xml</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>import_image_pattern</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>566</x>
+     <y>116</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>551</x>
+     <y>173</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>import_json</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>import_image_pattern</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1001</x>
+     <y>131</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>986</x>
+     <y>173</y>
     </hint>
    </hints>
   </connection>

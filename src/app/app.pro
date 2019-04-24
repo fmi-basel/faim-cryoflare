@@ -30,23 +30,16 @@ PRE_TARGETDEPS += ../external/botan2/libbotan2.a
 PRE_TARGETDEPS += ../external/qssh/libqssh.a
 PRE_TARGETDEPS += ../external/limereport/3rdparty/libQtZint.a
 PRE_TARGETDEPS += ../external/limereport/limereport/liblimereport.a
-#LIBS += -L$$OUT_PWD/../external/limereport/limereport/ -llimereport
-#LIBS += -L$$OUT_PWD/../external/limereport/3rdparty/ -lQtZint
 INCLUDEPATH += $$PWD/../external/limereport/limereport
 
 
-GIT_VERSION = $$system(git --git-dir $$PWD/../../.git --work-tree $$PWD/../.. describe --always --tags)
-GIT_VERSION ~= s/-/"."
-GIT_VERSION ~= s/g/""
 
-DEFINES += GIT_VERSION=\\\"$$GIT_VERSION\\\"
-
-version_target.target = aboutdialog.hh
+GITVERSION = $$OUT_PWD/version.h
+version_target.target =  $$GITVERSION
+version_target.commands = '$$PWD/git_version.sh \"$$PWD\" $$GITVERSION'
 version_target.depends = FORCE
-version_target.commands = if [ -e aboutdialog.o ];then rm aboutdialog.o 2> /dev/null;fi
+PRE_TARGETDEPS += $$GITVERSION
 QMAKE_EXTRA_TARGETS += version_target
-PRE_TARGETDEPS += $$version_target.target
-
 
 SOURCES += \
     main.cpp\
@@ -82,7 +75,18 @@ SOURCES += \
     sshauthenticationstore.cpp \
     sftpurl.cpp \
     diskusagewidget.cpp \
-    lastimagetimer.cpp
+    lastimagetimer.cpp \
+    metadatastore.cpp \
+    datasourcebase.cpp \
+    epudatasource.cpp \
+    collection.cpp \
+    collectionstartingcondition.cpp \
+    collectiondefinition.cpp \
+    jobmanager.cpp \
+    job.cpp \
+    flatfolderdatasource.cpp \
+    readepuxml.cpp \
+    priorityqueue.cpp
 
 
 
@@ -120,7 +124,18 @@ HEADERS  += \
     sshauthenticationstore.h \
     sftpurl.h \
     diskusagewidget.h \
-    lastimagetimer.h
+    lastimagetimer.h \
+    metadatastore.h \
+    datasourcebase.h \
+    epudatasource.h \
+    collection.h \
+    collectionstartingcondition.h \
+    collectiondefinition.h \
+    jobmanager.h \
+    job.h \
+    flatfolderdatasource.h \
+    readepuxml.h \
+    priorityqueue.h
 
 
 FORMS    += \
@@ -148,6 +163,10 @@ static {
 RESOURCES += \
     app.qrc
 
-DISTFILES +=
+DISTFILES += \
+    license_header.txt \
+    git_versio.sh
 
 
+QMAKE_LFLAGS_DEBUG += -fsanitize=address -fsanitize=undefined  -static-libasan -static-libubsan
+QMAKE_CXXFLAGS_DEBUG += -fsanitize=address -fsanitize=undefined  -static-libasan -static-libubsan

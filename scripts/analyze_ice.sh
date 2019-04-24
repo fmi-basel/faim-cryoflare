@@ -1,4 +1,6 @@
-#!/bin/bash --noprofile
+#!/bin/bash --noprofile  
+set -u
+set -e
 ######################## get parameters from GUI ###############################
 
 . data_connector.sh

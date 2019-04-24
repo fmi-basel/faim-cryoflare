@@ -51,20 +51,20 @@ class QFormLayout;
 class QVBoxLayout;
 class ProcessIndicator;
 class ExportProgressDialog;
+class MetaDataStore;
 
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    explicit MainWindow(ImageProcessor& processor);
+    explicit MainWindow(MetaDataStore& meta_data_store,ImageProcessor& processor);
     ~MainWindow();
     void init();
     void updateTaskWidgets();
 public slots:
     void onAvgSourceDirBrowse();
     void onStackSourceDirBrowse();
-    void addImage(const DataPtr &data);
     void onDataChanged(const DataPtr &data);
     void onAvgSourceDirTextChanged(const QString & dir);
     void onStackSourceDirTextChanged(const QString & dir);
@@ -96,6 +96,9 @@ public slots:
     void onExportStarted(const QString& message, int num_files);
     void onExportMessage(int left, const QList<ExportMessage>& messages);
     void onExportFinished();
+    void reprocessAll();
+    void reprocessSelected();
+    void reprocessCurrent();
 
 signals:
     void startStop(bool start);
@@ -105,11 +108,10 @@ private slots:
 
 private:
     void updateTaskWidget_(Settings *settings, QFormLayout *parent_input_layout, QFormLayout *parent_output_layout);
+    MetaDataStore & meta_data_store_;
     ImageProcessor& processor_;
     Ui::MainWindow *ui;
     ImageTableModel *model_;
-    //used for report builder: TODO merge with model_
-    ImageTableModel *full_model_;
     ImageTableSortFilterProxyModel *sort_proxy_;
     TableSummaryModel* summary_model_;
     QLabel *statusbar_queue_count_;
@@ -124,8 +126,6 @@ private:
     int current_phase_plate_;
     int chart_current_square_;
     QList<InputOutputVariable> default_columns_;
-    QAction* scatter_plot_action_;
-    QAction* run_script_action_;
     LimeReport::ReportEngine report_;
     ExportProgressDialog* export_progress_dialog_;
     DiskUsageWidget* epu_disk_usage_;
