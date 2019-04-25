@@ -123,7 +123,7 @@ void ProcessWrapper::onError_(QProcess::ProcessError e)
     }
     task_->error+=error_string;
     if(running()){
-        process_->terminate();
+        terminate();
     }else{
         handleFailure_();
     }
@@ -222,7 +222,9 @@ void ProcessWrapper::kill()
 
 void ProcessWrapper::terminate()
 {
-    process_->terminate();
+    if(running()){
+        process_->terminate();
+    }
 }
 
 

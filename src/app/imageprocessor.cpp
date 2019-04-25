@@ -76,17 +76,23 @@ void ImageProcessor::startStop(bool start)
     }else{
         running_state_=false;
         meta_data_store_.stop();
-        //cpu_pqueue_.clear();
-        //gpu_pqueue_.clear();
         foreach(ProcessWrapper* process, cpu_processes_){
             // terminate and re-enqueue task
-            cpu_pqueue_.enqueue(process->task());
-            process->terminate();
+            if(process->task()!=nullptr){
+                cpu_pqueue_.enqueue(process->task());
+            }
+            if(process->running()){
+                process->terminate();
+            }
         }
         foreach(ProcessWrapper* process, gpu_processes_){
             // terminate and re-enqueue task
-            gpu_pqueue_.enqueue(process->task());
-            process->terminate();
+            if(process->task()!=nullptr){
+                gpu_pqueue_.enqueue(process->task());
+            }
+            if(process->running()){
+                process->terminate();
+            }
         }
     }
 }
