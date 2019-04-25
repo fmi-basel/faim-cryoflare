@@ -76,7 +76,11 @@
        </property>
        <property name="icon">
         <iconset resource="app.qrc">
-         <normaloff>:/icons/view-filter.png</normaloff>:/icons/view-filter.png</iconset>
+         <normaloff>:/icons/view-filter.png</normaloff>
+         <normalon>:/icons/view-no-filter.png</normalon>:/icons/view-filter.png</iconset>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
