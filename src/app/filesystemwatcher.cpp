@@ -26,7 +26,6 @@
 
 FileSystemWatcher::FileSystemWatcher(QObject *parent) :
     QObject(parent),
-    timer_(new QTimer),
     thread_(new QThread),
     impl_(new FileSystemWatcherImpl)
 {
@@ -36,7 +35,6 @@ FileSystemWatcher::FileSystemWatcher(QObject *parent) :
 
 FileSystemWatcher::FileSystemWatcher(const QStringList &paths, QObject *parent):
     QObject(parent),
-    timer_(new QTimer),
     thread_(new QThread),
     impl_(new FileSystemWatcherImpl)
 {
@@ -51,17 +49,11 @@ FileSystemWatcher::~FileSystemWatcher()
 
 void FileSystemWatcher::init_impl()
 {
-    timer_->setInterval(5000);
-    connect(thread_, SIGNAL(started()), timer_, SLOT(start()));
-    connect(thread_, SIGNAL(finished()), timer_, SLOT(deleteLater()));
+    connect(thread_, SIGNAL(started()), impl_, SLOT(start()));
     connect(thread_, SIGNAL(finished()), impl_, SLOT(deleteLater()));
-    connect(timer_, SIGNAL(timeout()), impl_, SLOT(update()));
-
-    timer_->moveToThread(thread_);
     impl_->moveToThread(thread_);
     connect(impl_, SIGNAL(directoryChanged(const QString &)), this, SIGNAL(directoryChanged(const QString &)));
     connect(impl_, SIGNAL(fileChanged(const QString &)), this, SIGNAL(fileChanged(const QString &)));
-    connect(this,&FileSystemWatcher::destroyed,timer_,&QTimer::deleteLater);
     connect(this,&FileSystemWatcher::destroyed,impl_,&FileSystemWatcherImpl::deleteLater);
     connect(this,&FileSystemWatcher::destroyed,thread_,&QThread::deleteLater);
     thread_->start();

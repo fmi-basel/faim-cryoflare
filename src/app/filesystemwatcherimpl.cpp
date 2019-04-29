@@ -21,19 +21,29 @@
 //------------------------------------------------------------------------------
 
 #include <QtDebug>
+#include <QMutexLocker>
 #include "filesystemwatcherimpl.h"
 
 FileSystemWatcherImpl::FileSystemWatcherImpl(QObject *parent) :
-    QObject(parent)
+    QObject(parent),
+    timer_(new QTimer(this)),
+    files_(),
+    dirs_(),
+    file_mod_times_(),
+    dir_file_mod_times_(),
+    mutex()
 {
+    timer_->setInterval(5000);
+    timer_->setSingleShot(true);
+    connect(timer_, &QTimer::timeout, this, &FileSystemWatcherImpl::update);
 }
 
 void FileSystemWatcherImpl::addPath(const QString &path)
 {
-    bool emit_signal=false;
-    mutex.lock();
     QFileInfo finfo(path);
+    bool emit_signal=false;
     if( finfo.exists()){
+        QMutexLocker locker(&mutex);
         if(finfo.isDir()){
             dirs_.append(path);
             dir_file_mod_times_[path]=QHash<QString,QDateTime>();
@@ -50,8 +60,6 @@ void FileSystemWatcherImpl::addPath(const QString &path)
             file_mod_times_[path]=info.lastModified();
         }
     }
-
-    mutex.unlock();
     //emit only after unlocking mutex to avoid deadlocks
     if(emit_signal){
         emit directoryChanged(path);
@@ -67,23 +75,21 @@ void FileSystemWatcherImpl::addPaths(const QStringList &paths)
 
 QStringList FileSystemWatcherImpl::directories() const
 {
-    mutex.lock();
+    QMutexLocker locker(&mutex);
     QStringList result=dirs_;
-    mutex.unlock();
     return result;
 }
 
 QStringList FileSystemWatcherImpl::files() const
 {
-    mutex.lock();
+    QMutexLocker locker(&mutex);
     QStringList result=files_;
-    mutex.unlock();
     return result;
 }
 
 void FileSystemWatcherImpl::removePath(const QString &path)
 {
-    mutex.lock();
+    QMutexLocker locker(&mutex);
     if(dirs_.removeOne(path)){
         dir_file_mod_times_.remove(path);
     }else{
@@ -91,7 +97,6 @@ void FileSystemWatcherImpl::removePath(const QString &path)
             file_mod_times_.remove(path);
         }
     }
-    mutex.unlock();
 }
 
 void FileSystemWatcherImpl::removePaths(const QStringList &paths)
@@ -103,12 +108,16 @@ void FileSystemWatcherImpl::removePaths(const QStringList &paths)
 
 void FileSystemWatcherImpl::removeAllPaths()
 {
-    mutex.lock();
+    QMutexLocker locker(&mutex);
     dirs_.clear();
     dir_file_mod_times_.clear();
     files_.clear();
     file_mod_times_.clear();
-    mutex.unlock();
+}
+
+void FileSystemWatcherImpl::start()
+{
+    timer_->start();
 }
 
 void FileSystemWatcherImpl::update(){
@@ -142,6 +151,7 @@ void FileSystemWatcherImpl::update(){
         }
     }
     mutex.unlock();
+    timer_->start();
     //emit only after unlocking mutex to avoid deadlocks
     foreach(QString path,emit_dirs){
         emit directoryChanged(path);

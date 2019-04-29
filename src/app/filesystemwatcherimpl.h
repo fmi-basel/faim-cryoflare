@@ -28,12 +28,14 @@
 #include <QDir>
 #include <QMutex>
 #include <QDateTime>
+#include <QTimer>
+
 
 class FileSystemWatcherImpl : public QObject
 {
     Q_OBJECT
 public:
-    explicit FileSystemWatcherImpl(QObject *parent = 0);
+    explicit FileSystemWatcherImpl(QObject *parent = nullptr);
 
     void addPath(const QString & path);
 
@@ -53,9 +55,11 @@ signals:
     void fileChanged(const QString & path);
 
 public slots:
+    void start();
     void update();
 
 protected:
+    QTimer *timer_;
     QStringList files_;
     QStringList dirs_;
     QHash<QString,QDateTime> file_mod_times_;

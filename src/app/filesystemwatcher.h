@@ -24,7 +24,6 @@
 #define FILESYSTEMWATCHER_H
 
 #include <QObject>
-#include <QTimer>
 #include <QThread>
 
 
@@ -51,7 +50,6 @@ signals:
 public slots:
 protected:
     void init_impl();
-    QTimer *timer_;
     QThread *thread_;
     FileSystemWatcherImpl* impl_;
 

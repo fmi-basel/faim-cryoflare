@@ -1,3 +1,4 @@
+#include <QTimer>
 #include <QDebug>
 #include <QJsonDocument>
 #include <QDateTime>
