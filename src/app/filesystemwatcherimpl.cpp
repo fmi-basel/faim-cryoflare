@@ -22,6 +22,7 @@
 
 #include <QtDebug>
 #include <QMutexLocker>
+#include <QMutableMapIterator>
 #include "filesystemwatcherimpl.h"
 
 FileSystemWatcherImpl::FileSystemWatcherImpl(QObject *parent) :
@@ -29,8 +30,7 @@ FileSystemWatcherImpl::FileSystemWatcherImpl(QObject *parent) :
     timer_(new QTimer(this)),
     files_(),
     dirs_(),
-    file_mod_times_(),
-    dir_file_mod_times_(),
+    mod_times_(),
     mutex()
 {
     timer_->setInterval(5000);
@@ -43,21 +43,28 @@ void FileSystemWatcherImpl::addPath(const QString &path)
     QFileInfo finfo(path);
     bool emit_signal=false;
     if( finfo.exists()){
-        QMutexLocker locker(&mutex);
         if(finfo.isDir()){
-            dirs_.append(path);
-            dir_file_mod_times_[path]=QHash<QString,QDateTime>();
+            QMap<QString,QDateTime> mod_times_local;
             QFileInfoList child_items=QDir(path).entryInfoList(QDir::AllEntries|QDir::NoDotAndDotDot);
             foreach(QFileInfo info, child_items){
-                dir_file_mod_times_[path][info.canonicalFilePath()]=info.lastModified();
+                mod_times_local[info.canonicalFilePath()]=info.lastModified();
             }
             if(child_items.size()>0){
                 emit_signal=true;
             }
+            QMutexLocker locker(&mutex);
+            dirs_.append(path);
+            dirs_.sort();
+            foreach(QString key, mod_times_local.keys()){
+                mod_times_[key]=mod_times_local.value(key);
+            }
         }else{
-            files_.append(path);
             QFileInfo info(path);
-            file_mod_times_[path]=info.lastModified();
+            QDateTime modified=info.lastModified();
+            QMutexLocker locker(&mutex);
+            files_.append(path);
+            files_.sort();
+            mod_times_[path]=modified;
         }
     }
     //emit only after unlocking mutex to avoid deadlocks
@@ -91,10 +98,16 @@ void FileSystemWatcherImpl::removePath(const QString &path)
 {
     QMutexLocker locker(&mutex);
     if(dirs_.removeOne(path)){
-        dir_file_mod_times_.remove(path);
+        QMutableMapIterator<QString, QDateTime> it(mod_times_);
+        while (it.hasNext()) {
+            it.next();
+            if (it.key().startsWith(path) && ! files_.contains(it.key())){
+                it.remove();
+            }
+        }
     }else{
         if(files_.removeOne(path)){
-            file_mod_times_.remove(path);
+            mod_times_.remove(path);
         }
     }
 }
@@ -110,9 +123,8 @@ void FileSystemWatcherImpl::removeAllPaths()
 {
     QMutexLocker locker(&mutex);
     dirs_.clear();
-    dir_file_mod_times_.clear();
     files_.clear();
-    file_mod_times_.clear();
+    mod_times_.clear();
 }
 
 void FileSystemWatcherImpl::start()
@@ -124,31 +136,43 @@ void FileSystemWatcherImpl::update(){
     QStringList emit_dirs;
     QStringList emit_files;
     mutex.lock();
-    foreach(QString path,dirs_){
+    QStringList dirs_local=dirs_;
+    QStringList files_local=files_;
+    QMap<QString,QDateTime> mod_times_local=mod_times_;
+    QMap<QString,QDateTime> mod_times_updates;
+    mutex.unlock();
+    // make sure that mutex is ulocked for filesystem access, as filesystem might potentially hang
+    foreach(QString path,dirs_local){
         QFileInfoList entry_list=QDir(path).entryInfoList(QDir::AllEntries|QDir::NoDotAndDotDot);
-        if(entry_list.size()!=dir_file_mod_times_.value(path).size()){
+        bool has_changes=false;
+        foreach(QFileInfo info, entry_list){
+            QString child_path=info.canonicalFilePath();
+            QDateTime last_modified=info.lastModified();
+            if(! mod_times_local.contains(child_path) || mod_times_local.value(child_path)!=last_modified){
+                has_changes=true;
+                mod_times_updates[child_path]=last_modified;
+            }
+        }
+        if(has_changes){
             emit_dirs<<path;
-            dir_file_mod_times_[path]=QHash<QString,QDateTime>();
-            foreach(QFileInfo info, entry_list){
-                dir_file_mod_times_[path][info.canonicalFilePath()]=info.lastModified();
-            }
-        }else{
-            foreach(QFileInfo info, entry_list){
-                if(info.lastModified()!=dir_file_mod_times_.value(path).value(info.canonicalFilePath())){
-                    emit_dirs << path;
-                    dir_file_mod_times_[path][info.canonicalFilePath()]=info.lastModified();
-                    break;
-                }
-            }
         }
-
     }
-    foreach(QString path,files_){
+    foreach(QString path,files_local){
         QFileInfo info(path);
-        if(file_mod_times_.value(path)!=info.lastModified()){
+        if(mod_times_local.value(path)!=info.lastModified()){
             emit_files<<path;
-            file_mod_times_[path]=info.lastModified();
+            mod_times_updates[path]=info.lastModified();
         }
+    }
+    mutex.lock();
+    //update from local values as long as lists were not changed in between
+    if(dirs_ == dirs_local && files_ ==files_local){
+        foreach(QString key, mod_times_updates.keys()){
+            mod_times_[key]=mod_times_updates.value(key);
+        }
+    }else{
+        emit_dirs.clear();
+        emit_files.clear();
     }
     mutex.unlock();
     timer_->start();

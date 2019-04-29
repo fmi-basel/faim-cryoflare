@@ -25,6 +25,7 @@
 
 #include <QObject>
 #include <QHash>
+#include <QMap>
 #include <QDir>
 #include <QMutex>
 #include <QDateTime>
@@ -62,8 +63,7 @@ protected:
     QTimer *timer_;
     QStringList files_;
     QStringList dirs_;
-    QHash<QString,QDateTime> file_mod_times_;
-    QHash<QString,QHash<QString,QDateTime> > dir_file_mod_times_;
+    QMap<QString,QDateTime> mod_times_;
     mutable QMutex mutex;
 };
 
