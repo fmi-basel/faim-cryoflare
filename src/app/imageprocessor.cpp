@@ -112,12 +112,12 @@ void ImageProcessor::onTaskFinished(const TaskPtr &task)
     QFile f(QDir::current().relativeFilePath(task->name+"_out.log"));
     if (f.open(QIODevice::WriteOnly | QIODevice::Append)) {
         QTextStream stream( &f );
-        stream << task->output << endl;
+        stream << task->output;
     }
     QFile ferr(QDir::current().relativeFilePath(task->name+"_error.log"));
     if (ferr.open(QIODevice::WriteOnly | QIODevice::Append)) {
         QTextStream stream( &ferr );
-        stream << task->error << endl;
+        stream << task->error;
     }
     meta_data_store_.saveData(task->data);
     emit dataChanged(task->data);
