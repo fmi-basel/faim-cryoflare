@@ -190,6 +190,9 @@ void MetaDataStore::saveData(const DataPtr &ptr)
 void MetaDataStore::addImage(const DataPtr &ptr)
 {
     QString name=ptr->value("name").toString();
+    if(!ptr->contains("export")){
+        ptr->insert("export","true");
+    }
     foreach(DataPtr entry, data_){
         if(name==entry->value("name").toString()){
             //skip already existing entries
