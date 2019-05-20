@@ -11,8 +11,8 @@ def _export_files_(*args):
         export_string=args[0]
         for name in args[1:]:
             if name in vars(__main__):
-                print "%s:%s" % (export_string,str(__main__[name]))
-                _exported_files_.append(__main__[name])
+                print "%s:%s=%s" % (export_string,name,str(vars(__main__)[name]))
+                _exported_files_.append(vars(__main__)[name])
             else:
                 print "WARNING: file %s not defined" % (name)
 
@@ -29,6 +29,8 @@ def SHARED_FILES(*args):
 
 
 def _cleanup_():
+    sys.stderr.flush()
+    sys.stdout.flush()
     shutil.rmtree(scratch)
 
 def FILES_MISSING():
