@@ -43,6 +43,8 @@ ProcessWrapper::ProcessWrapper(QObject *parent, int timeout, int gpu_id) :
     QProcessEnvironment env=QProcessEnvironment::systemEnvironment();
     QString path=env.value("PATH");
     env.insert("PATH",QCoreApplication::applicationDirPath()+"/scripts:"+path);
+    QString pythonpath=env.value("PYTHONPATH");
+    env.insert("PYTHONPATH",QCoreApplication::applicationDirPath()+"/scripts:"+pythonpath);
     process_->setProcessEnvironment(env);
     timeout_timer_->setSingleShot(true);
 }
@@ -205,8 +207,12 @@ void ProcessWrapper::handleFailure_()
     }else{
         task_->state=-1;
     }
-    if(! process_->atEnd()){
+    process_->setReadChannel(QProcess::StandardError);
+    if(process_->bytesAvailable()>0){
         task_->error+=process_->readAllStandardError();
+    }
+    process_->setReadChannel(QProcess::StandardOutput);
+    if(process_->bytesAvailable()>0){
         task_->output+=process_->readAllStandardOutput();
     }
     TaskPtr task=task_;
