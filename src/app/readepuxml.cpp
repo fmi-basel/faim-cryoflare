@@ -15,9 +15,11 @@ DataPtr readEPUXML(const QString &path)
     result->insert("xml_file",path);
     result->insert("name",name);
     QStringList splitted_name=name.split("_");
-    if(splitted_name.size()>=2){
+    if(splitted_name.size()>=7){
         //original EPU file not from flat folder
         result->insert("hole_id",splitted_name.at(1));
+        result->insert("template_id",splitted_name.at(3));
+        result->insert("acquisition_id",splitted_name.at(4));
     }
 
     QDomDocument dom_document;
