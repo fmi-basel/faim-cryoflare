@@ -11,12 +11,6 @@ set -e
 module purge
 module load gautomatch
 
-
-######################## create destination folders ############################
-
-mkdir -p $destination_path/
-
-
 ######################## define output files ###################################
 
 if [ -n "motioncor2_aligned_avg" ]; then

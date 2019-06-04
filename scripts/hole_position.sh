@@ -17,8 +17,8 @@ set -e
 
 
 
-hole_position_coordinates=$destination_path/micrographs_raw/${short_name}_hole_coordinates.txt
-hole_position_image=$destination_path/micrographs_raw/${short_name}_hole_coordinates.png
+hole_position_coordinates=micrographs_raw/${short_name}_hole_coordinates.txt
+hole_position_image=micrographs_raw/${short_name}_hole_coordinates.png
 
 FILES hole_position_coordinates hole_position_image
 

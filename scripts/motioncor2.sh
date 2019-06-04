@@ -14,20 +14,20 @@ module load motioncor2/1.0.5
 
 ######################## create destination folders ############################
 
-mkdir -p $destination_path/micrographs_mc2 
+mkdir -p micrographs_mc2 
 
 
 
 ######################## define output files ###################################
 
-motioncor2_log=$destination_path/micrographs_mc2/${short_name}_motioncor2.log
-motioncor2_aligned_avg=$destination_path/micrographs_mc2/${short_name}.mrc
-motioncor2_aligned_avg_dw=$destination_path/micrographs_mc2/${short_name}_DW.mrc
+motioncor2_log=micrographs_mc2/${short_name}_motioncor2.log
+motioncor2_aligned_avg=micrographs_mc2/${short_name}.mrc
+motioncor2_aligned_avg_dw=micrographs_mc2/${short_name}_DW.mrc
 FILES motioncor2_log motioncor2_aligned_avg motioncor2_aligned_avg_dw 
 
 
 ######################## define additional parameters ##########################
-dose_per_frame=`CALCULATE "$dose/$num_frames"`
+dose_per_frame=`CALCULATE "$mc2_input_dose/$num_frames"`
 bft="300"
 iter=4
 

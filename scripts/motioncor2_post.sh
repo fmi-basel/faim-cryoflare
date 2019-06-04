@@ -14,12 +14,12 @@ module load eman2/2.2
 ######################## define output files ###################################
 
 
-patch_full_log=$destination_path/micrographs_mc2/${short_name}_motioncor2.log0-Patch-Full.log
+patch_full_log=micrographs_mc2/${short_name}_motioncor2.log0-Patch-Full.log
 
-motioncor2_aligned_avg_dw_png=$destination_path/micrographs_mc2/${short_name}.png
-motioncor2_aligned_avg_dw_fft_thumbnail=$destination_path/micrographs_mc2/${short_name}_fft.png
-motioncor2_shift_plot=$destination_path/micrographs_mc2/${short_name}_shift.png
-motioncor2_shift_amp_plot=$destination_path/micrographs_mc2/${short_name}_shift_amp.png
+motioncor2_aligned_avg_dw_png=micrographs_mc2/${short_name}.png
+motioncor2_aligned_avg_dw_fft_thumbnail=micrographs_mc2/${short_name}_fft.png
+motioncor2_shift_plot=micrographs_mc2/${short_name}_shift.png
+motioncor2_shift_amp_plot=micrographs_mc2/${short_name}_shift_amp.png
 FILES motioncor2_aligned_avg_dw_png motioncor2_aligned_avg_dw_fft_thumbnail motioncor2_shift_plot motioncor2_shift_amp_plot
 
 
@@ -108,7 +108,7 @@ rln_nodetype=1
 rln_starname=micrographs.star
 rln_inputstar=""
 rln_header=(MicrographName)
-RELION_WRITE "$destination_path" "$rln_jobtype" "$rln_jobid" "$rln_alias" "$rln_nodetype" "$rln_starname" "$rln_inputstar" "rln_header[@]" "micrographs_mc2/${short_name}_DW.mrc"
+RELION_WRITE "." "$rln_jobtype" "$rln_jobid" "$rln_alias" "$rln_nodetype" "$rln_starname" "$rln_inputstar" "rln_header[@]" "micrographs_mc2/${short_name}_DW.mrc"
 
 
 ######################## export result parameters ##############################

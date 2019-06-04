@@ -17,23 +17,23 @@ module load imod
 
 ######################## create destination folders ############################
 
-mkdir -p $destination_path/movies_raw
-mkdir -p $destination_path/micrographs_raw
-mkdir -p $destination_path/xml
+mkdir -p movies_raw
+mkdir -p micrographs_raw
+mkdir -p xml
 
 
 
 ######################## define output files ###################################
 
-unpack_raw_stack=$destination_path/movies_raw/${short_name}_movie.mrcs
-unpack_xml=$destination_path/xml/${short_name}.xml
+unpack_raw_stack=movies_raw/${short_name}_movie.mrcs
+unpack_xml=xml/${short_name}.xml
 RAW_FILES unpack_raw_stack unpack_xml
 
-unpack_raw_average=$destination_path/micrographs_raw/${short_name}.mrc
-unpack_raw_average_jpg=$destination_path/micrographs_raw/${short_name}.jpg
-unpack_raw_average_fft_png=$destination_path/micrographs_raw/${short_name}_fft.png
-unpack_log=$destination_path/movies_raw/${short_name}_unpack.log
-unpack_ice_ratio_log=$destination_path/movies_raw/${short_name}_ice_ratio.log
+unpack_raw_average=micrographs_raw/${short_name}.mrc
+unpack_raw_average_jpg=micrographs_raw/${short_name}.jpg
+unpack_raw_average_fft_png=micrographs_raw/${short_name}_fft.png
+unpack_log=movies_raw/${short_name}_unpack.log
+unpack_ice_ratio_log=movies_raw/${short_name}_ice_ratio.log
 FILES unpack_log unpack_raw_average unpack_raw_average_jpg unpack_ice_ratio_log unpack_raw_average_fft_png
 
 
@@ -87,7 +87,7 @@ rln_nodetype=0
 rln_starname=movies.star
 rln_inputstar=""
 rln_header=(MicrographMovieName)
-RELION_WRITE "$destination_path" "$rln_jobtype" "$rln_jobid" "$rln_alias"  "$rln_nodetype" "$rln_starname" "$rln_inputstar" "rln_header[@]" "movies_raw/${short_name}_movie.mrcs"
+RELION_WRITE "." "$rln_jobtype" "$rln_jobid" "$rln_alias"  "$rln_nodetype" "$rln_starname" "$rln_inputstar" "rln_header[@]" "movies_raw/${short_name}_movie.mrcs"
 
 
 ######################## export result parameters ##############################

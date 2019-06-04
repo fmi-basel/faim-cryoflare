@@ -28,7 +28,7 @@ RELION_WRITE(){
 	starpath_varname=${jobalias}_${starname/./_}
 	declare  "$starpath_varname=$jobpath/$starname"
 	local default_pipeline="$destination/default_pipeline.star"
-	local gui_projectdir="$destination_path/.gui_projectdir"
+	local gui_projectdir=".gui_projectdir"
 	local jobalias_link=$destination/$jobtype/$jobalias
 	### create folders and aliases ###
 	mkdir -p $destination/$jobtype/$jobfolder

@@ -27,7 +27,7 @@ rln_jobtype=CtfFind
 rln_jobid=6
 
 printf -v jobfolder "job%03d" $rln_jobid
-relion_job_micrographs_dir=$destination_path/$rln_jobtype/$jobfolder/$micrographs_dir
+relion_job_micrographs_dir=$rln_jobtype/$jobfolder/$micrographs_dir
 mkdir -p $relion_job_micrographs_dir
 
 
@@ -142,7 +142,7 @@ EOT`
 gctf_epa_limit=`echo $gctf_epa_limit_cc|cut -f1 -d' '`
 gctf_epa_cc=`echo $gctf_epa_limit_cc|cut -f2 -d' '`
 
-rm $destination_path/micrographs_all_gctf.star >& /dev/null || :
+rm micrographs_all_gctf.star >& /dev/null || :
 
 
 gctf_defocus=`CALCULATE \($gctf_defocus_u+$gctf_defocus_v\)/2.0`
@@ -168,12 +168,12 @@ if [ -n "$gctf_defocus_u" ] ; then
 
     gctf_phase_shift=`echo $measured_defocus|cut -f4 -d" "`
     rln_header+=(PhaseShift)
-    RELION_WRITE $destination_path $rln_jobtype $rln_jobid $rln_alias $rln_nodetype $rln_starname $rln_inputstar rln_header[@] $micrographs_dir/${short_name}_DW.mrc $rln_jobtype/$jobfolder/$micrographs_dir/${short_name}.ctf:mrc \
+    RELION_WRITE . $rln_jobtype $rln_jobid $rln_alias $rln_nodetype $rln_starname $rln_inputstar rln_header[@] $micrographs_dir/${short_name}_DW.mrc $rln_jobtype/$jobfolder/$micrographs_dir/${short_name}.ctf:mrc \
                                                                                                                              $gctf_defocus_u $gctf_defocus_v $gctf_defocus_angle 300 0.001 0.07 $magnification $dstep \
 															     $gctf_epa_cc $gctf_epa_limit $gctf_phase_shift
   else
     gctf_phase_shift=0
-    RELION_WRITE $destination_path $rln_jobtype $rln_jobid $rln_alias $rln_nodetype $rln_starname $rln_inputstar rln_header[@] $micrographs_dir/${short_name}_DW.mrc $rln_jobtype/$jobfolder/$micrographs_dir/${short_name}.ctf:mrc \
+    RELION_WRITE . $rln_jobtype $rln_jobid $rln_alias $rln_nodetype $rln_starname $rln_inputstar rln_header[@] $micrographs_dir/${short_name}_DW.mrc $rln_jobtype/$jobfolder/$micrographs_dir/${short_name}.ctf:mrc \
                                                                                                                              $gctf_defocus_u $gctf_defocus_v $gctf_defocus_angle 300 0.001 0.07 $magnification $dstep \
 															     $gctf_epa_cc $gctf_epa_limit 
 

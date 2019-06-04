@@ -13,7 +13,7 @@ module load eman2/2.2
 
 ######################## define output files ###################################
 
-analyze_ice_ice_ratio_log=$destination_path/movies_raw/${short_name}_ice_ratio.log
+analyze_ice_ice_ratio_log=movies_raw/${short_name}_ice_ratio.log
 FILES analyze_ice_ice_ratio_log
 
 ######################## run processing if files are missing ###################

@@ -15,27 +15,27 @@ module load unblur
 
 ######################## create destination folders ############################
 
-mkdir -p $destination_path/movies_unblur
-mkdir -p $destination_path/micrographs_unblur
-mkdir -p $destination_path/micrographs_unblur_dw
+mkdir -p movies_unblur
+mkdir -p micrographs_unblur
+mkdir -p micrographs_unblur_dw
 
 
 
 ######################## define output files ###################################
 
-unblur_aligned_stack=$destination_path/movies_unblur/${short_name}_movie.mrc
-unblur_log=$destination_path/movies_unblur/${short_name}_unblur.log
-unblur_shift_txt=$destination_path/movies_unblur/${short_name}_shift.txt
-unblur_shift_plot=$destination_path/movies_unblur/${short_name}_shift.png
-unblur_frc_txt=$destination_path/movies_unblur/${short_name}_frc.txt
+unblur_aligned_stack=movies_unblur/${short_name}_movie.mrc
+unblur_log=movies_unblur/${short_name}_unblur.log
+unblur_shift_txt=movies_unblur/${short_name}_shift.txt
+unblur_shift_plot=movies_unblur/${short_name}_shift.png
+unblur_frc_txt=movies_unblur/${short_name}_frc.txt
 
-unblur_aligned_avg=$destination_path/micrographs_unblur/${short_name}.mrc
-unblur_aligned_avg_png=$destination_path/micrographs_unblur/${short_name}.png
-unblur_aligned_avg_fft_thumbnail=$destination_path/micrographs_unblur/${short_name}_fft.png
+unblur_aligned_avg=micrographs_unblur/${short_name}.mrc
+unblur_aligned_avg_png=micrographs_unblur/${short_name}.png
+unblur_aligned_avg_fft_thumbnail=micrographs_unblur/${short_name}_fft.png
 
-unblur_aligned_avg_dw=$destination_path/micrographs_unblur_dw/${short_name}.mrc
-unblur_aligned_avg_png_dw=$destination_path/micrographs_unblur_dw/${short_name}.png
-unblur_aligned_avg_fft_thumbnail_dw=$destination_path/micrographs_unblur_dw/${short_name}_fft.png
+unblur_aligned_avg_dw=micrographs_unblur_dw/${short_name}.mrc
+unblur_aligned_avg_png_dw=micrographs_unblur_dw/${short_name}.png
+unblur_aligned_avg_fft_thumbnail_dw=micrographs_unblur_dw/${short_name}_fft.png
 
 FILES unblur_aligned_stack unblur_log unblur_shift_txt unblur_shift_plot unblur_frc_txt unblur_aligned_avg unblur_aligned_avg_png unblur_aligned_avg_fft_thumbnail unblur_aligned_avg_dw unblur_aligned_avg_png_dw unblur_aligned_avg_fft_thumbnail_dw 
 
@@ -160,18 +160,18 @@ rln_header=(MicrographName)
 
 rln_jobid=1
 rln_alias=micrographs_unblur
-RELION_WRITE $destination_path $rln_jobtype $rln_jobid $rln_alias $rln_nodetype $rln_starname $rln_inputstar rln_header[@] micrographs_unblur/${short_name}.mrc
+RELION_WRITE . $rln_jobtype $rln_jobid $rln_alias $rln_nodetype $rln_starname $rln_inputstar rln_header[@] micrographs_unblur/${short_name}.mrc
 
 rln_jobid=2
 rln_alias=micrographs_unblur_dw
-RELION_WRITE $destination_path $rln_jobtype $rln_jobid $rln_alias $rln_nodetype $rln_starname $rln_inputstar rln_header[@] micrographs_unblur_dw/${short_name}.mrc
+RELION_WRITE . $rln_jobtype $rln_jobid $rln_alias $rln_nodetype $rln_starname $rln_inputstar rln_header[@] micrographs_unblur_dw/${short_name}.mrc
 
 rln_nodetype=0
 rln_starname=movies.star
 rln_header=(MicrographMovieName)
 rln_jobid=3
 rln_alias=movies_unblur
-RELION_WRITE $destination_path $rln_jobtype $rln_jobid $rln_alias $rln_nodetype $rln_starname $rln_inputstar rln_header[@] movies_unblur/${short_name}_movie.mrcs
+RELION_WRITE . $rln_jobtype $rln_jobid $rln_alias $rln_nodetype $rln_starname $rln_inputstar rln_header[@] movies_unblur/${short_name}_movie.mrcs
 
 
 ######################## export result parameters ##############################
