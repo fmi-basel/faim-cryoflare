@@ -178,13 +178,13 @@ void MetaDataStore::saveData(const DataPtr &ptr)
     QJsonDocument save_doc(*ptr.data());
     save_file.write(save_doc.toBinaryData());
     // save in json text format for debugging
-    QString txt_file_name(QString("%1.json").arg(cryoflare_dir.filePath(ptr->value("short_name").toString())));
-    QFile txt_save_file(txt_file_name);
-    if (!txt_save_file.open(QIODevice::WriteOnly)) {
-        qWarning() << "Couldn't save file: " <<txt_file_name;
-        return;
-    }
-    txt_save_file.write(save_doc.toJson());
+    //QString txt_file_name(QString("%1.json").arg(cryoflare_dir.filePath(ptr->value("short_name").toString())));
+    //QFile txt_save_file(txt_file_name);
+    //if (!txt_save_file.open(QIODevice::WriteOnly)) {
+    //    qWarning() << "Couldn't save file: " <<txt_file_name;
+    //    return;
+    //}
+    //txt_save_file.write(save_doc.toJson());
 }
 
 void MetaDataStore::addImage(const DataPtr &ptr)
