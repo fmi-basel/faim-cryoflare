@@ -13,9 +13,14 @@ module load eman2/2.2
 
 
 ######################## define additional parameters ##########################
-gain_ref=$stack_source_path/FoilHole_${hole_id}_Data_${template_id}_${acquisition_id}_????????_??????-gain-ref.MRC
-echo ${gain_ref}
-source_stack=$stack_source_path/FoilHole_${hole_id}_Data_${template_id}_${acquisition_id}_????????_??????-??????.mrc
+
+if [ "$camera" == "EF-CCD" ]; then
+  gain_ref=$stack_source_path/FoilHole_${hole_id}_Data_${template_id}_${acquisition_id}_????????_??????-gain-ref.MRC
+  source_stack=$stack_source_path/FoilHole_${hole_id}_Data_${template_id}_${acquisition_id}_????????_??????-??????.mrc
+else
+  gain_ref=None
+  source_stack=$stack_source_path/FoilHole_${hole_id}_Data_${template_id}_${acquisition_id}_????????_??????_Fractions.mrc
+fi
 
 copyraw_movie_dir=movies_raw/
 copyraw_micrographs_dir=micrographs_raw/
