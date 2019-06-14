@@ -11,7 +11,7 @@ TableSummaryModel::TableSummaryModel(ImageTableModel *model,QObject * parent):
     connect(&update_timer_, &QTimer::timeout, this, &TableSummaryModel::update);
 }
 
-QVariant TableSummaryModel::data(const QModelIndex &index, int role) const
+QVariant TableSummaryModel::data(const QModelIndex &/*index*/, int /*role*/) const
 {
     return QVariant();
 }
@@ -56,7 +56,7 @@ QVariant TableSummaryModel::headerData(int section, Qt::Orientation orientation,
     }     return model_->headerData(section,orientation,role);
 }
 
-int TableSummaryModel::rowCount(const QModelIndex &parent) const
+int TableSummaryModel::rowCount(const QModelIndex &/*parent*/) const
 {
     return 0;
 }
@@ -66,7 +66,7 @@ int TableSummaryModel::columnCount(const QModelIndex &parent) const
     return model_->columnCount(parent);
 }
 
-void TableSummaryModel::sourceDataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles)
+void TableSummaryModel::sourceDataChanged(const QModelIndex &/*topLeft*/, const QModelIndex &/*bottomRight*/, const QVector<int> &/*roles*/)
 {
     update_timer_.start();
 }

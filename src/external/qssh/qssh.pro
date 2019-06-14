@@ -10,6 +10,7 @@ TARGET = qssh
 TEMPLATE = lib
 DEFINES += QSSH_LIBRARY
 CONFIG += staticlib
+CONFIG += warn_off
 
 PRE_TARGETDEPS = ../botan2/libbotan2.a
 INCLUDEPATH += ../botan2

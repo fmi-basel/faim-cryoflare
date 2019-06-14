@@ -320,7 +320,7 @@ void MainWindow::updateTaskWidgets()
     }
     settings->endGroup();
     settings->beginGroup("Tasks");
-    updateTaskWidget_(settings,NULL,NULL);
+    updateTaskWidget_(settings,nullptr,nullptr);
     settings->endGroup();
     delete settings;
 }
@@ -378,7 +378,7 @@ void MainWindow::updateTaskWidget_(Settings *settings, QFormLayout *parent_input
                 sp_widget->setDecimals(5);
                 local_widget=sp_widget;
                 connect(local_widget,SIGNAL(valueChanged(double)),this,SLOT(inputDataChanged()));
-                sp_widget->setValue(script_input_settings.value(settings_key).toFloat());
+                sp_widget->setValue(script_input_settings.value(settings_key).toDouble());
             }else{
                 continue;
             }
@@ -448,12 +448,12 @@ void MainWindow::writeReport()
     QString item = QInputDialog::getItem(this, "Create report","Report type:", items, 0, false, &ok);
     if (ok && !item.isEmpty()){
         if(item=="PDF Report"){
-            QString pdf_file_name = QFileDialog::getSaveFileName(0, "Save Report",".","Pdf files (*.pdf)");
+            QString pdf_file_name = QFileDialog::getSaveFileName(nullptr, "Save Report",".","Pdf files (*.pdf)");
             if (!pdf_file_name.isEmpty()){
                 report_.printToPDF(pdf_file_name);
             }
         }else if(item=="CSV" || item=="filtered CSV"){
-            QString file_name = QFileDialog::getSaveFileName(0, "Save Report",".","CSV files (*.csv)");
+            QString file_name = QFileDialog::getSaveFileName(nullptr, "Save Report",".","CSV files (*.csv)");
             if (!file_name.isEmpty()){
                 bool filtered=item=="CSV"?false:true;
                 QFile file(file_name);
@@ -482,7 +482,7 @@ void MainWindow::writeReport()
             }
 
         }else if(item=="JSON" || item=="filtered JSON"){
-            QString file_name = QFileDialog::getSaveFileName(0, "Save Report",".","JSON files (*.json)");
+            QString file_name = QFileDialog::getSaveFileName(nullptr, "Save Report",".","JSON files (*.json)");
             if (!file_name.isEmpty()){
                 bool filtered=item=="JSON"?false:true;
                 QFile file(file_name);
@@ -510,14 +510,14 @@ void MainWindow::writeReport()
     }
 }
 
-void MainWindow::onAvgSourceDirTextChanged(const QString &dir)
+void MainWindow::onAvgSourceDirTextChanged(const QString &/*dir*/)
 {
     Settings settings;
     settings.setValue("avg_source_dir",ui->avg_source_dir->text());
     settings.saveToFile(CRYOFLARE_INI, QStringList(), QStringList() << "avg_source_dir");
 }
 
-void MainWindow::onStackSourceDirTextChanged(const QString &dir)
+void MainWindow::onStackSourceDirTextChanged(const QString &/*dir*/)
 {
     Settings settings;
     settings.setValue("stack_source_dir",ui->stack_source_dir->text());
@@ -533,7 +533,7 @@ void MainWindow::updateDetailsfromModel(const QModelIndex &topLeft, const QModel
     }
 }
 
-void MainWindow::updateDetailsfromView(const QModelIndex &topLeft, const QModelIndex &bottomRight)
+void MainWindow::updateDetailsfromView(const QModelIndex &/*topLeft*/, const QModelIndex &/*bottomRight*/)
 {
     static int previous_row=-1,previous_column=-1;
     int current_row=sort_proxy_->mapToSource(ui->image_list->currentIndex()).row();
@@ -661,7 +661,7 @@ void MainWindow::updateDetails()
                 if(! path.isEmpty() && QFileInfo::exists(path)){
                     QImageReader reader(path);
                     QSize image_size=reader.size();
-                    float scalefactor=std::min(512.0/image_size.width(),512.0/image_size.height());
+                    double scalefactor=std::min(512.0/image_size.width(),512.0/image_size.height());
                     int reduced_x=static_cast<int>(scalefactor*image_size.width());
                     int reduced_y=static_cast<int>(scalefactor*image_size.height());
                     reader.setScaledSize(QSize(reduced_x,reduced_y));
@@ -686,14 +686,14 @@ void MainWindow::updateChart()
         return;
     }
     QList<QPointF> datalist;
-    QList<float> histo_datalist;
+    QList<double> histo_datalist;
     for(int i=0;i<model_->rowCount();++i){
         QVariant val=model_->data(model_->index(i,column),ImageTableModel::SortRole);
         DataPtr data=model_->image(i);
         QString export_val=data->value("export").toString("true");
         bool export_flag=export_val.compare("true", Qt::CaseInsensitive) == 0 || export_val==QString("1") || ui->filter->isChecked()==false;
         if(val.canConvert<float>() && val.toString()!=QString("")){
-            float fval=val.toFloat();
+            qreal fval=val.toDouble();
             if(export_flag){
                 datalist.append(QPointF(i,fval));
                 histo_datalist.append(fval);
@@ -704,8 +704,8 @@ void MainWindow::updateChart()
     int histogram_bins=settings.value("histogram_bins",256).toInt();
     auto chart_min_max = std::minmax_element(histo_datalist.begin(), histo_datalist.end());
     histogram_min_=*chart_min_max.first;
-    float histogram_max=*chart_min_max.second;
-    float last_idx=0;
+    double histogram_max=*chart_min_max.second;
+    double last_idx=0;
     QList<QPointF> series;
     QList<QList<QPointF> > line_list;
     for(int i=0;i<datalist.size();++i){
@@ -720,20 +720,20 @@ void MainWindow::updateChart()
         line_list.append(series);
     }
 
-    QVector<float> buckets(histogram_bins);
+    QVector<double> buckets(histogram_bins);
     if(histogram_max>histogram_min_){
         histogram_bucket_size_=(histogram_max-histogram_min_)/histogram_bins;
     }else{
         histogram_bucket_size_=0.01;
     }
     while (!histo_datalist.isEmpty()){
-        float datapoint=histo_datalist.takeFirst();
+        double datapoint=histo_datalist.takeFirst();
         int bucket_id=std::max(0,std::min(histogram_bins-1,static_cast<int>(floor((datapoint-histogram_min_)/histogram_bucket_size_))));
         buckets[bucket_id]+=1.0;
     }
     histogram_=buckets;
     QList<QPointF> histogram;
-    float half_gap=0.05;
+    double half_gap=0.05;
     for(int i=0;i<histogram_bins;++i){
         histogram << QPointF(histogram_min_+(i+half_gap)*histogram_bucket_size_,0) << QPointF(histogram_min_+(i+half_gap)*histogram_bucket_size_,buckets[i]) << QPointF(histogram_min_+(i+1.0-half_gap)*histogram_bucket_size_,buckets[i]) << QPointF(histogram_min_+(i+1.0-half_gap)*histogram_bucket_size_,0);
     }
@@ -793,13 +793,13 @@ void MainWindow::updatePhasePlateChart()
             }
         }
     }
-    QHash<int,float> data_vectors_avg;
+    QHash<int,double> data_vectors_avg;
     for(int i=0;i<data_vectors.size();++i){
         if(data_vectors[i].size()>0){
             int n = 0;
             double mean = 0.0;
             for (int j=0;j<data_vectors[i].size();++j) {
-                float delta = data_vectors[i][j] - mean;
+                double delta = data_vectors[i][j] - mean;
                 mean += delta/++n;
             }
             data_vectors_avg[i]=mean;
@@ -849,7 +849,7 @@ void MainWindow::updateGridSquareChart()
             }
         }
     }
-    QHash<int,float> averages;
+    QHash<int,double> averages;
     for(QHash<int,QPointF>::const_iterator i = positions.constBegin();i != positions.constEnd();++i) {
         int n = 0;
         double avg = 0.0;
@@ -894,7 +894,7 @@ void MainWindow::deleteProcessIndicators()
 
 }
 
-void MainWindow::displayLinearChartDetails(const QPointF &point, bool state)
+void MainWindow::displayLinearChartDetails(const QPointF &/*point*/, bool state)
 {
     if(state){
         //ui->linear_chart_details->setText(QString("Image: %1, Value: %2").arg(static_cast<int>(point.x())).arg(point.y()));
@@ -903,10 +903,10 @@ void MainWindow::displayLinearChartDetails(const QPointF &point, bool state)
     }
 }
 
-void MainWindow::displayHistogramChartDetails(const QPointF &point, bool state)
+void MainWindow::displayHistogramChartDetails(const QPointF &/*point*/, bool state)
 {
     if(state){
-        int bucket_id=std::min(histogram_.size()-1,static_cast<int>((point.x()-histogram_min_)/histogram_bucket_size_));
+        //int bucket_id=std::min(histogram_.size()-1,static_cast<int>((point.x()-histogram_min_)/histogram_bucket_size_));
         //ui->histogram_chart_details->setText(QString("Bin: %1-%2, Value: %3").arg(histogram_min_+histogram_bucket_size_*bucket_id).arg(histogram_min_+histogram_bucket_size_*(bucket_id+1)).arg(histogram_[bucket_id]));
     }else{
         //ui->histogram_chart_details->setText("");
@@ -1018,7 +1018,7 @@ void MainWindow::phasePlateSelectionChanged()
     }
 }
 
-void MainWindow::phasePlateSelectionFinished(QRect rubberBandRect, QPointF fromScenePoint, QPointF toScenePoint)
+void MainWindow::phasePlateSelectionFinished(QRect rubberBandRect, QPointF /*fromScenePoint*/, QPointF /*toScenePoint*/)
 {
     if(rubberBandRect==QRect()){
         bool invert=QGuiApplication::queryKeyboardModifiers()  & Qt::ShiftModifier;
@@ -1080,7 +1080,7 @@ void MainWindow::gridSquareSelectionChanged()
     }
 }
 
-void MainWindow::gridSquareSelectionFinished(QRect rubberBandRect, QPointF fromScenePoint, QPointF toScenePoint)
+void MainWindow::gridSquareSelectionFinished(QRect rubberBandRect, QPointF /*fromScenePoint*/, QPointF /*toScenePoint*/)
 {
     if(rubberBandRect==QRect()){
         bool invert=QGuiApplication::queryKeyboardModifiers()  & Qt::ShiftModifier;

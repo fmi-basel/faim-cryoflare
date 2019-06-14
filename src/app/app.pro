@@ -168,5 +168,5 @@ DISTFILES += \
     git_versio.sh
 
 
-QMAKE_LFLAGS_DEBUG += -fsanitize=address -fsanitize=undefined  -static-libasan -static-libubsan
-QMAKE_CXXFLAGS_DEBUG += -fsanitize=address -fsanitize=undefined  -static-libasan -static-libubsan
+#QMAKE_LFLAGS_DEBUG += -fsanitize=address -fsanitize=undefined  -static-libasan -static-libubsan
+#QMAKE_CXXFLAGS_DEBUG += -fsanitize=address -fsanitize=undefined  -static-libasan -static-libubsan

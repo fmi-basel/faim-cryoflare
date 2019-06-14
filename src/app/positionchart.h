@@ -32,17 +32,17 @@ class PositionChart : public QGraphicsScene
 public:
     PositionChart(QObject *parent = Q_NULLPTR);
     void addPositions(const QPainterPath & path=QPainterPath(), const QHash<int,QPointF>& pos=QHash<int,QPointF>(), bool back=false);
-    void setMinMaxValue(float minval, float maxval);
-    void setValues(const QHash<int,float> &values);
+    void setMinMaxValue(double minval, double maxval);
+    void setValues(const QHash<int,double> &values);
     void clear();
-    QColor colorAt(float value);
+    QColor colorAt(double value);
     QGraphicsSimpleTextItem* min_label;
     QGraphicsSimpleTextItem* max_label;
 private:
     QHash<int,QGraphicsPathItem*> items_;
     QGradientStops gradient_stops_;
-    float minval_;
-    float valrange_;
+    double minval_;
+    double valrange_;
 };
 
 #endif // POSITIONCHART_H

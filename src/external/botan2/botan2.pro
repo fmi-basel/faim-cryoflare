@@ -9,6 +9,7 @@ QT       -= core gui
 TARGET = botan2
 TEMPLATE = lib
 CONFIG += staticlib
+CONFIG += warn_off
 
 QMAKE_CXXFLAGS += -march=native
 #QMAKE_CXXFLAGS += -march=skylake

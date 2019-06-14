@@ -5,7 +5,7 @@ Job::Job()
 
 }
 
-void Job::start(const QVector<int> &cpu_ids_, const QVector<int> &gpu_ids_)
+void Job::start(const QVector<int> &/*cpu_ids_*/, const QVector<int> &/*gpu_ids_*/)
 {
 
 }

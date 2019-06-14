@@ -31,7 +31,7 @@ int JobManager::numCoresFree_(QList<Core>& core_list) const
     return n;
 }
 
-void JobManager::jobFinished(const Job &j)
+void JobManager::jobFinished(const Job &/*j*/)
 {
 
 }

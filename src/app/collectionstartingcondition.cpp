@@ -7,5 +7,5 @@ CollectionStartingCondition::CollectionStartingCondition(QObject *parent) : QObj
 
 bool CollectionStartingCondition::fullfilled() const
 {
-
+    return true;
 }

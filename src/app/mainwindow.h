@@ -117,9 +117,9 @@ private:
     QLabel *statusbar_queue_count_;
     QTimer chart_update_timer_;
     QList<ProcessIndicator*> process_indicators_;
-    float histogram_min_;
-    float histogram_bucket_size_;
-    QVector<float> histogram_;
+    double histogram_min_;
+    double histogram_bucket_size_;
+    QVector<double> histogram_;
     PositionChart* phase_plate_chart_;
     PositionChart* phase_plate_position_chart_;
     int phase_plate_level_;

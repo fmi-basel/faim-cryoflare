@@ -78,7 +78,7 @@ void ProcessIndicator::enterEvent(QEvent *event)
     timer_.start(1000);
 }
 
-void ProcessIndicator::leaveEvent(QEvent *event)
+void ProcessIndicator::leaveEvent(QEvent */*event*/)
 {
     timer_.stop();
     QToolTip::hideText();

@@ -72,7 +72,7 @@ void PositionChart::addPositions(const QPainterPath & path, const QHash<int, QPo
     setSceneRect(itemsBoundingRect());
 }
 
-void PositionChart::setMinMaxValue(float minval, float maxval)
+void PositionChart::setMinMaxValue(double minval, double maxval)
 {
     minval_=minval;
     min_label->setText(QString("%1").arg(minval));
@@ -81,11 +81,11 @@ void PositionChart::setMinMaxValue(float minval, float maxval)
     setSceneRect(itemsBoundingRect());
 }
 
-void PositionChart::setValues(const QHash<int, float> &values)
+void PositionChart::setValues(const QHash<int, double> &values)
 {
-    float minval=std::numeric_limits<float>::max();
-    float maxval=std::numeric_limits<float>::lowest();
-    foreach(float val, values){
+    double minval=std::numeric_limits<double>::max();
+    double maxval=std::numeric_limits<double>::lowest();
+    foreach(double val, values){
         minval=minval>val?val:minval;
         maxval=maxval<val?val:maxval;
     }
@@ -93,7 +93,7 @@ void PositionChart::setValues(const QHash<int, float> &values)
     foreach(QGraphicsPathItem* item,items_){
         item->setBrush(QBrush());
     }
-    for(QHash<int,float>::const_iterator i = values.constBegin();i != values.constEnd();++i) {
+    for(QHash<int,double>::const_iterator i = values.constBegin();i != values.constEnd();++i) {
         if(items_.contains(i.key())){
             items_[i.key()]->setBrush(QBrush(colorAt(i.value())));
         }
@@ -106,19 +106,19 @@ void PositionChart::clear()
     items_.clear();
 }
 
-QColor PositionChart::colorAt(float value)
+QColor PositionChart::colorAt(double value)
 {
     if(qIsNaN(value)){
         return QColor::fromRgbF(1.0,1.0,1.0,1.0);
     }
-    float relval=std::max(0.0f,std::min(1.0f,(value-minval_)/valrange_));
-    if(relval==1.0f){
+    double relval=std::max(0.0,std::min(1.0,(value-minval_)/valrange_));
+    if(relval==1.0){
         return gradient_stops_.last().second;
     }
-    float interval=1.0/(gradient_stops_.size()-1);
+    double interval=1.0/(gradient_stops_.size()-1);
     int index=static_cast<int>(relval/interval);
-    float rel_offset=relval-index*interval;
-    float irel_offset=1.0-rel_offset;
+    double rel_offset=relval-index*interval;
+    double irel_offset=1.0-rel_offset;
     QColor start=gradient_stops_[index].second;
     QColor end=gradient_stops_[index+1].second;
     qreal red=std::max(0.0,std::min(1.0,start.redF()*irel_offset+end.redF()*rel_offset));

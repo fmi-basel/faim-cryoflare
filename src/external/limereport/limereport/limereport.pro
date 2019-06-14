@@ -8,6 +8,7 @@ CONFIG(debug, debug|release) {
 
 TEMPLATE = lib
 CONFIG += static_build
+CONFIG += warn_off
 
 contains(CONFIG, static_build){
     CONFIG += staticlib

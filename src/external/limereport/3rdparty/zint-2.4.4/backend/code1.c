@@ -124,7 +124,7 @@ int dq4bi(unsigned char source[], int sourcelen, int position)
 int c1_look_ahead_test(unsigned char source[], int sourcelen, int position, int current_mode, int gs1)
 {
 	float ascii_count, c40_count, text_count, edi_count, byte_count;
-	char reduced_char;
+    unsigned char reduced_char;
 	int done, best_scheme, best_count, sp;
 	
 	/* Step J */
@@ -211,36 +211,36 @@ int c1_look_ahead_test(unsigned char source[], int sourcelen, int position, int 
 	
 	if(sp == sourcelen) {
 		/* Step K */
-		best_count = edi_count;
+        best_count = (int)edi_count;
 		
 		if(text_count <= best_count) {
-			best_count = text_count;
+            best_count = (int)text_count;
 			best_scheme = C1_TEXT;
 		}
 		
 		if(c40_count <= best_count) {
-			best_count = c40_count;
+            best_count =(int) c40_count;
 			best_scheme = C1_C40;
 		}
 		
 		if(ascii_count <= best_count) {
-			best_count = ascii_count;
+            best_count = (int)ascii_count;
 			best_scheme = C1_ASCII;
 		}
 		
 		if(byte_count <= best_count) {
-			best_count = byte_count;
+            best_count = (int)byte_count;
 			best_scheme = C1_BYTE;
 		}
 	} else {
 		/* Step Q */
 		
-		if(((edi_count + 1.0 <= ascii_count) && (edi_count + 1.0 <= c40_count)) &&
-			((edi_count + 1.0 <= byte_count) && (edi_count + 1.0 <= text_count))) {
+        if(((edi_count + 1.0f <= ascii_count) && (edi_count + 1.0f <= c40_count)) &&
+            ((edi_count + 1.0f <= byte_count) && (edi_count + 1.0f <= text_count))) {
 				best_scheme = C1_EDI;
 		}
 		
-		if((c40_count + 1.0 <= ascii_count) && (c40_count + 1.0 <= text_count)) {
+        if((c40_count + 1.0f <= ascii_count) && (c40_count + 1.0f <= text_count)) {
 			
 			if(c40_count < edi_count) {
 				best_scheme = C1_C40;
@@ -256,18 +256,18 @@ int c1_look_ahead_test(unsigned char source[], int sourcelen, int position, int 
 			}
 		}
 		
-		if(((text_count + 1.0 <= ascii_count) && (text_count + 1.0 <= c40_count)) &&
-			((text_count + 1.0 <= byte_count) && (text_count + 1.0 <= edi_count))) {
+        if(((text_count + 1.0f <= ascii_count) && (text_count + 1.0f <= c40_count)) &&
+            ((text_count + 1.0f <= byte_count) && (text_count + 1.0f <= edi_count))) {
 				best_scheme = C1_TEXT;
 		}
 		
-		if(((ascii_count + 1.0 <= byte_count) && (ascii_count + 1.0 <= c40_count)) &&
-			((ascii_count + 1.0 <= text_count) && (ascii_count + 1.0 <= edi_count))) {
+        if(((ascii_count + 1.0f <= byte_count) && (ascii_count + 1.0f <= c40_count)) &&
+            ((ascii_count + 1.0f <= text_count) && (ascii_count + 1.0f <= edi_count))) {
 				best_scheme = C1_ASCII;
 		}
 		
-		if(((byte_count + 1.0 <= ascii_count) && (byte_count + 1.0 <= c40_count)) &&
-			((byte_count + 1.0 <= text_count) && (byte_count + 1.0 <= edi_count))) {
+        if(((byte_count + 1.0f <= ascii_count) && (byte_count + 1.0f <= c40_count)) &&
+            ((byte_count + 1.0f <= text_count) && (byte_count + 1.0f <= edi_count))) {
 				best_scheme = C1_BYTE;
 		}
 	}
@@ -290,11 +290,11 @@ int c1_encode(struct zint_symbol *symbol, unsigned char source[], unsigned int t
 	sp = 0;
 	tp = 0;
 	latch = 0;
-	memset(c40_buffer, 0, 6);
+    memset(c40_buffer, 0, 6*sizeof (int));
 	c40_p = 0;
-	memset(text_buffer, 0, 6);
+    memset(text_buffer, 0, 6*sizeof (int));
 	text_p = 0;
-	memset(edi_buffer, 0, 6);
+    memset(edi_buffer, 0, 6*sizeof (int));
 	edi_p = 0;
 	strcpy(decimal_binary, "");
 	
@@ -593,7 +593,7 @@ int c1_encode(struct zint_symbol *symbol, unsigned char source[], unsigned int t
 		}
 		
 		if(current_mode == C1_EDI) { /* Step E - EDI Encodation */
-			int value = 0, done = 0, latch = 0;
+            int value = 0, latch = 0;
 			
 			next_mode = C1_EDI;
 			if(edi_p == 0) {
@@ -605,7 +605,7 @@ int c1_encode(struct zint_symbol *symbol, unsigned char source[], unsigned int t
 					}
 				
 					if (j == 12) { 
-						next_mode = C1_ASCII; done = 1;
+                        next_mode = C1_ASCII;
 					}
 				}
 				
@@ -626,7 +626,7 @@ int c1_encode(struct zint_symbol *symbol, unsigned char source[], unsigned int t
 					}
 				
 					if ((j == 8) && latch) { 
-						next_mode = C1_ASCII; done = 1;
+                        next_mode = C1_ASCII;
 					}
 				}
 				
@@ -686,7 +686,7 @@ int c1_encode(struct zint_symbol *symbol, unsigned char source[], unsigned int t
 				
 			if(decimal_count != 3) {
 				int bits_left_in_byte, target_count;
-				int sub_target;
+                unsigned int sub_target;
 				/* Finish Decimal mode and go back to ASCII */
 				
 				concat(decimal_binary, "111111"); /* Unlatch */
@@ -777,7 +777,7 @@ int c1_encode(struct zint_symbol *symbol, unsigned char source[], unsigned int t
 			}
 			
 			if(strlen(decimal_binary) >= 24) {
-				int target1 = 0, target2 = 0, target3 = 0;
+                unsigned int target1 = 0, target2 = 0, target3 = 0;
 				char temp_binary[40];
 				
 				/* Binary buffer is full - transfer to target */
@@ -811,7 +811,7 @@ int c1_encode(struct zint_symbol *symbol, unsigned char source[], unsigned int t
 				
 				strcpy(temp_binary, "");
 				if(strlen(decimal_binary) > 24) { 
-                    for(i = 0; i <= (strlen(decimal_binary) - 24); i++) {
+                    for(unsigned long i = 0; i <= (strlen(decimal_binary) - 24); i++) {
 						temp_binary[i] = decimal_binary[i + 24];
 					}
 					strcpy(decimal_binary, temp_binary);

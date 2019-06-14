@@ -35,12 +35,12 @@ ImageTableModel::ImageTableModel(MetaDataStore& store,QObject *parent):
     connect(&store,&MetaDataStore::newImage,this , &ImageTableModel::imageAdded);
 }
 
-int ImageTableModel::rowCount(const QModelIndex &parent) const
+int ImageTableModel::rowCount(const QModelIndex &/*parent*/) const
 {
     return num_rows_;
 }
 
-int ImageTableModel::columnCount(const QModelIndex &parent) const
+int ImageTableModel::columnCount(const QModelIndex &/*parent*/) const
 {
     return columns_.size()+1;
 }
@@ -181,7 +181,7 @@ DataPtr ImageTableModel::image(int row)
     return meta_data_store_.at(row);
 }
 
-void ImageTableModel::imageAdded(const DataPtr &data)
+void ImageTableModel::imageAdded(const DataPtr &/*data*/)
 {
    beginInsertRows(QModelIndex(),rowCount(QModelIndex()),rowCount(QModelIndex()));
    ++num_rows_;

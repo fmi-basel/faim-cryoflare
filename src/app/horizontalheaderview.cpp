@@ -15,14 +15,14 @@ void HorizontalHeaderView::setSibling(QTableView *sibling)
     sibling_=sibling;
 }
 
-void HorizontalHeaderView::siblingSectionResized(int logicalIndex, int oldSize, int newSize)
+void HorizontalHeaderView::siblingSectionResized(int logicalIndex, int /*oldSize*/, int newSize)
 {
     reset();
     QHeaderView::resizeSection(logicalIndex,newSize);
     scrolled(sibling_->horizontalScrollBar()->value());
 }
 
-void HorizontalHeaderView::scrolled(int logical_index)
+void HorizontalHeaderView::scrolled(int /*logical_index*/)
 {
     setOffset(-1-sibling_->verticalHeader()->geometry().width()-sibling_->horizontalHeader()->sectionViewportPosition(0));
 }

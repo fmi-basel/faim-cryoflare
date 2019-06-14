@@ -47,7 +47,7 @@ void PositionChartView::enableSelection(bool selection)
     }
 }
 
-void PositionChartView::resizeEvent(QResizeEvent *event)
+void PositionChartView::resizeEvent(QResizeEvent */*event*/)
 {
     if(! scene()){
         return;

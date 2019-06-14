@@ -55,7 +55,7 @@ void MetaDataStore::clear()
     data_.clear();
 }
 
-QStringList MetaDataStore::rawFiles(const QStringList& image_list, const QStringList &key_list, bool finished_only) const
+QStringList MetaDataStore::rawFiles(const QStringList& /*image_list*/, const QStringList &key_list, bool finished_only) const
 {
     QStringList result;
     foreach(DataPtr ptr, data_){
@@ -78,7 +78,7 @@ QStringList MetaDataStore::rawFiles(const QStringList& image_list, const QString
     return result;
 }
 
-QStringList MetaDataStore::outputFiles(const QStringList& image_list, const QStringList& key_list, bool finished_only) const
+QStringList MetaDataStore::outputFiles(const QStringList& /*image_list*/, const QStringList& key_list, bool finished_only) const
 {
     QStringList result;
     foreach(DataPtr ptr, data_){

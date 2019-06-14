@@ -17,10 +17,8 @@ lessThan(QT_MAJOR_VERSION, 5){
 }
 
 CONFIG(release, debug|release){
-    message(Release)
     BUILD_TYPE = release
 }else{
-    message(Debug)
     BUILD_TYPE = debug
 }
 
@@ -39,7 +37,6 @@ greaterThan(QT_MAJOR_VERSION, 4) {
     DEFINES+=HAVE_QT5
     QT+= printsupport widgets
     contains(QT,uitools){
-        message(uitools)
         DEFINES += HAVE_UI_LOADER
     }
 }
@@ -47,7 +44,6 @@ greaterThan(QT_MAJOR_VERSION, 4) {
 lessThan(QT_MAJOR_VERSION, 5){
     DEFINES+=HAVE_QT4
     CONFIG(uitools){
-        message(uitools)
         DEFINES += HAVE_UI_LOADER
     }
 }

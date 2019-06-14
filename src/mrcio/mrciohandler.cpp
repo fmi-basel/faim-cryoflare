@@ -32,6 +32,22 @@ public:
 
 QDataStream &operator<<(QDataStream& s, const MRCHeader& h)
 {
+    s <<"NXYZ: "<< h.NX <<","<< h.NY <<","<< h.NZ<<"\n";
+    s <<"MODE: "<< h.MODE<<"\n";
+    s <<"NXYZSTART: "<< h.NXSTART <<","<< h.NYSTART <<","<< h.NZSTART<<"\n";
+    s <<"MXYZ: "<< h.MX <<","<< h.MY <<","<< h.MZ<<"\n";
+    s <<"CELLA: "<< h.CELL_A <<","<< h.CELL_B <<","<< h.CELL_C<<"\n";
+    s <<"CELLB: "<< h.CELL_ALPHA <<","<< h.CELL_BETA <<","<< h.CELL_GAMMA<<"\n";
+    s <<"MAPCRS: "<< h.MAPC <<","<< h.MAPR <<","<< h.MAPS<<"\n";
+    s <<"DMINMAXMEAN: "<< h.DMIN <<","<< h.DMAX <<","<< h.DMEAN<<"\n";
+    s <<"ISPG: "<< h.ISPG<<"\n";
+    s <<"NSYMBT: "<< h.NSYMBT<<"\n";
+    s <<"EXTRA: "<< h.EXTRA1 <<","<< h.EXTRA2 <<","<< h.EXTTYP <<","<< h.NVERSION<<"\n";
+    s <<"ORIGINXYZ: "<< h.ORIGIN_X <<","<< h.ORIGIN_Y <<","<< h.ORIGIN_Z<<"\n";
+    s <<"MAP: "<< h.MAP<<"\n";
+    s <<"MACHST: "<< h.MACHST<<"\n";
+    s <<"RMS: "<< h.RMS<<"\n";
+    s <<"NLABL: "<< h.NLABL<<"\n";
     return s;
 }
 
@@ -133,7 +149,7 @@ bool MRCIOHandler::read(QImage *image)
     return input.status() == QDataStream::Ok;
 }
 
-bool MRCIOHandler::write(const QImage &image)
+bool MRCIOHandler::write(const QImage &/*image*/)
 {
     return true;
 }
