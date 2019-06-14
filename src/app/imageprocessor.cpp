@@ -230,19 +230,19 @@ void ImageProcessor::exportImages(const SftpUrl &export_path, const SftpUrl &raw
         QDir parent_dir=QDir::current();
         parent_dir.cdUp();
         foreach(QString f,abs_raw_files){
-            raw_files.append(parent_dir.relativeFilePath(f));
+            raw_files.append(parent_dir.relativeFilePath(QDir::current().absoluteFilePath(f)));
         }
         QStringList abs_output_files=meta_data_store_.outputFiles(image_list,output_keys);
         foreach(QString f,abs_output_files){
-            files.append(parent_dir.relativeFilePath(f));
+            files.append(parent_dir.relativeFilePath(QDir::current().absoluteFilePath(f)));
         }
         QStringList files_to_filter;
         QStringList abs_shared_files=meta_data_store_.sharedFiles(image_list,shared_keys);
         foreach(QString f,abs_shared_files){
             if(f.endsWith(".star")){
-                files_to_filter.append(parent_dir.relativeFilePath(f));
+                files_to_filter.append(parent_dir.relativeFilePath(QDir::current().absoluteFilePath(f)));
             }else{
-                files.append(parent_dir.relativeFilePath(f));
+                files.append(parent_dir.relativeFilePath(QDir::current().absoluteFilePath(f)));
             }
         }
         if( (!separate_raw_export) || duplicate_raw){
