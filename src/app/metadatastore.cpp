@@ -55,7 +55,7 @@ void MetaDataStore::clear()
     data_.clear();
 }
 
-QStringList MetaDataStore::rawFiles(const QStringList& /*image_list*/, const QStringList &key_list, bool finished_only) const
+QStringList MetaDataStore::rawFiles(const QStringList& image_list, const QStringList &key_list, bool finished_only) const
 {
     QStringList result;
     foreach(DataPtr ptr, data_){
@@ -68,17 +68,19 @@ QStringList MetaDataStore::rawFiles(const QStringList& /*image_list*/, const QSt
                 }
             }
         }
-        QJsonObject raw_files=ptr->value("raw_files").toObject();
-        foreach(QString key,raw_files.keys()){
-            if(key_list.contains(key)){
-                result.append(raw_files.value(key).toString());
+        if(image_list.contains(ptr->value("short_name").toString())){
+            QJsonObject raw_files=ptr->value("raw_files").toObject();
+            foreach(QString key,raw_files.keys()){
+                if(key_list.contains(key)){
+                    result.append(raw_files.value(key).toString());
+                }
             }
         }
     }
     return result;
 }
 
-QStringList MetaDataStore::outputFiles(const QStringList& /*image_list*/, const QStringList& key_list, bool finished_only) const
+QStringList MetaDataStore::outputFiles(const QStringList& image_list, const QStringList& key_list, bool finished_only) const
 {
     QStringList result;
     foreach(DataPtr ptr, data_){
@@ -91,10 +93,12 @@ QStringList MetaDataStore::outputFiles(const QStringList& /*image_list*/, const 
                 }
             }
         }
-        QJsonObject files=ptr->value("files").toObject();
-        foreach(QString key,files.keys()){
-            if(key_list.contains(key)){
-                result.append(files.value(key).toString());
+        if(image_list.contains(ptr->value("short_name").toString())){
+            QJsonObject files=ptr->value("files").toObject();
+            foreach(QString key,files.keys()){
+                if(key_list.contains(key)){
+                    result.append(files.value(key).toString());
+                }
             }
         }
     }
@@ -114,7 +118,7 @@ QStringList MetaDataStore::sharedFiles(const QStringList& image_list, const QStr
                 }
             }
         }
-        if(image_list.contains(ptr->value("name").toString())){
+        if(image_list.contains(ptr->value("short_name").toString())){
             QJsonObject shared_files=ptr->value("shared_files").toObject();
             foreach(QString key,shared_files.keys()){
                 if(key_list.contains(key)){
