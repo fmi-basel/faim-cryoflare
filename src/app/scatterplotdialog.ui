@@ -104,5 +104,25 @@
  <resources>
   <include location="app.qrc"/>
  </resources>
- <connections/>
+ <connections>
+  <connection>
+   <sender>filter_chart</sender>
+   <signal>clicked()</signal>
+   <receiver>ScatterPlotDialog</receiver>
+   <slot>updateChart()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>284</x>
+     <y>23</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>334</x>
+     <y>14</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>updateChart()</slot>
+ </slots>
 </ui>

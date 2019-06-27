@@ -106,14 +106,6 @@ MainWindow::MainWindow(MetaDataStore &meta_data_store, ImageProcessor &processor
 
     QString stylesheet;
     stylesheet+="* {color: #e6e6e6; background-color: #40434a} ";
-    //stylesheet+="QScrollBar::handle {background-color: rgb(5,97,137) }  ";
-    //stylesheet+="QScrollBar { margin: 0px 20px 0 20px; }  ";
-    //stylesheet+="QScrollBar::add-line {background: none }  ";
-    //stylesheet+="QScrollBar::sub-line {background: none }  ";
-    //stylesheet+="QScrollBar::add-page {background: none }  ";
-    //stylesheet+="QScrollBar::sub-page {background: none) }  ";
-    //stylesheet+=" QScrollBar:horizontal { border: 2px solid grey; background: #32CC99;height: 15px; margin: 0px 20px 0 20px;} QScrollBar::handle:horizontal {    background: white;    min-width: 20px;} QScrollBar::add-line:horizontal {    border: 2px solid grey;    background: #32CC99;    width: 20px;    subcontrol-position: right;    subcontrol-origin: margin;} QScrollBar::sub-line:horizontal {    border: 2px solid grey;    background: #32CC99;    width: 20px;    subcontrol-position: left;    subcontrol-origin: margin;}";
-    //stylesheet+=" QScrollBar:vertical { border: 2px solid grey; background: #32CC99;width: 15px; margin: 20px 0px 20px 0px;} QScrollBar::handle:vertical {    background: white;    min-height: 20px;} QScrollBar::add-line:vertical {    border: 2px solid grey;    background: #32CC99;    height: 20px;    subcontrol-position: boyyom;    subcontrol-origin: margin;} QScrollBar::sub-line:vertical {    border: 2px solid grey;    background: #32CC99;    height: 20px;    subcontrol-position: top;    subcontrol-origin: margin;}";
     stylesheet+=" QScrollBar:vertical { width: 15px; margin: 15px 0px 15px 0px;} QScrollBar::handle:vertical {border: 1px solid #e6e6e6 ; background-color: rgb(5,97,137)}  QScrollBar::add-line:vertical { height: 15px; subcontrol-position: bottom; subcontrol-origin: margin;} QScrollBar::sub-line:vertical {height: 15px; subcontrol-position: top; subcontrol-origin: margin;}";
     stylesheet+=" QScrollBar:horizontal { height: 15px; margin: 0px 15px 0px 15px;} QScrollBar::handle:horizontal {border: 1px solid #e6e6e6 ; background-color: rgb(5,97,137)}  QScrollBar::add-line:horizontal { width: 15px; subcontrol-position: right; subcontrol-origin: margin;} QScrollBar::sub-line:horizontal {width: 15px; subcontrol-position: left; subcontrol-origin: margin;}";
     stylesheet+="QLineEdit{background-color: rgb(136, 138, 133)} ";

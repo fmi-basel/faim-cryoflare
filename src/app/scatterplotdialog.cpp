@@ -1,4 +1,5 @@
 #include <QChart>
+#include <QGraphicsLayout>
 #include <QtCharts/QScatterSeries>
 #include "scatterplotdialog.h"
 #include "ui_scatterplotdialog.h"
@@ -9,6 +10,9 @@ ScatterPlotDialog::ScatterPlotDialog(ImageTableModel * model,QWidget *parent) :
     model_(model)
 {
     ui->setupUi(this);
+    ui->chart->chart()->setTheme(QtCharts::QChart::ChartThemeBlueCerulean);
+    ui->chart->setRenderHint(QPainter::Antialiasing);
+    ui->chart->chart()->layout()->setContentsMargins(0,0,0,0);
     QStringList columns;
     for(int i=0;i<model_->columnCount(QModelIndex());++i){
         columns << model_->headerData(i,Qt::Horizontal,Qt::DisplayRole).toString();
@@ -29,6 +33,9 @@ ScatterPlotDialog::~ScatterPlotDialog()
 void ScatterPlotDialog::updateChart()
 {
     QtCharts::QScatterSeries *series = new QtCharts::QScatterSeries();
+    series->setMarkerSize(6);
+    series->setPen(QPen(QBrush(Qt::white),1));
+    series->setColor(QColor(23,159,223));
     for(int i=0;i<model_->rowCount();++i){
         QVariant val_x=model_->data(model_->index(i,ui->list_x->currentRow()),ImageTableModel::SortRole);
         QVariant val_y=model_->data(model_->index(i,ui->list_y->currentRow()),ImageTableModel::SortRole);
