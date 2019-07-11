@@ -34,7 +34,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>CryoFlare</string>
+   <string>CryoFLARE</string>
   </property>
   <property name="windowIcon">
    <iconset resource="app.qrc">

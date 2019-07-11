@@ -3,9 +3,9 @@
 // Author: Andreas Schenk
 // Friedrich Miescher Institute, Basel, Switzerland
 //
-// This file is part of CryoFlare
+// This file is part of CryoFLARE
 //
-// Copyright (C) 2017-2018 by the CryoFlare Authors
+// Copyright (C) 2017-2018 by the CryoFLARE Authors
 //
 // This program is free software; you can redistribute it and/or modify it under
 // the terms of the GNU General Public License as published by the Free
@@ -16,7 +16,7 @@
 // details.
 //
 // You should have received a copy of the GNU General Public License
-// along with CryoFlare.  If not, see <http://www.gnu.org/licenses/>.
+// along with CryoFLARE.  If not, see <http://www.gnu.org/licenses/>.
 //
 //------------------------------------------------------------------------------
 
@@ -28,6 +28,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "epuimageinfo.h"
+#include "pathedit.h"
 #include <QtDebug>
 #include <QFileDialog>
 #include "settings.h"
@@ -341,7 +342,7 @@ void MainWindow::updateTaskWidget_(Settings *settings, QFormLayout *parent_input
             InputOutputVariable iov(v);
             QWidget* local_widget;
             QString settings_key="ScriptInput/"+child_name+"/"+iov.label;
-            if(iov.type==Image || iov.type==String){
+            if(iov.type==String){
                 QLineEdit *le_widget=new QLineEdit();
                 if(!script_input_settings.contains(settings_key)){
                     script_input_settings.setValue(settings_key,"");
@@ -349,6 +350,15 @@ void MainWindow::updateTaskWidget_(Settings *settings, QFormLayout *parent_input
                 local_widget=le_widget;
                 connect(local_widget,SIGNAL(textChanged(QString)),this,SLOT(inputDataChanged()));
                 le_widget->setText(script_input_settings.value(settings_key).toString());
+                local_widget=le_widget;
+            }else if(iov.type==Image){
+                PathEdit *le_widget=new PathEdit(PathEdit::OpenFileName);
+                if(!script_input_settings.contains(settings_key)){
+                    script_input_settings.setValue(settings_key,"");
+                }
+                local_widget=le_widget;
+                connect(le_widget,&PathEdit::pathChanged,this,&MainWindow::inputDataChanged);
+                le_widget->setPath(script_input_settings.value(settings_key).toString());
                 local_widget=le_widget;
             }else if(iov.type==Int){
                 if(!script_input_settings.contains(settings_key)){
@@ -567,8 +577,10 @@ void MainWindow::inputDataChanged()
         settings.beginGroup(task.toString());
         switch(static_cast<VariableType>(type.toInt())){
         case String:
-        case Image:
             settings.setValue(label.toString(),qobject_cast<QLineEdit*>(sender_widget)->text());
+            break;
+        case Image:
+            settings.setValue(label.toString(),qobject_cast<PathEdit*>(sender_widget)->path());
             break;
         case Int:
             settings.setValue(label.toString(),qobject_cast<QSpinBox*>(sender_widget)->value());
