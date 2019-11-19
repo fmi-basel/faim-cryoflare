@@ -5,6 +5,7 @@
 #include <iostream>
 #include <QDebug>
 #include "mrciohandler.h"
+#include <cmath>
 
 class MRCHeader
 {
@@ -29,6 +30,36 @@ public:
     char LABEL[200*4];
     QByteArray EXTHEADER;
 };
+
+template< class T>
+void read_data_(const MRCHeader& header, QDataStream &stream,QImage *image){
+    QImage result(header.NX,header.NY, QImage::Format_ARGB32);
+    quint32 data_len=header.NX*header.NY;
+    QVector<T> data_vec(data_len);
+    quint32 count=0;
+    float mean=0,m2=0;
+    for(quint32 i=0; i<data_len;++i){
+        stream >> data_vec[i];
+        ++count;
+        float delta=float(data_vec[i])-mean;
+        mean+=delta/count;
+        float delta2=float(data_vec[i])-mean;
+        m2+=delta*delta2;
+    }
+    float stdev=sqrt(m2/count);
+    float width=6.0;
+    float s_min=mean-width*0.5*stdev;
+    float iscale=255.0/std::max(width*stdev,0.00001f);
+    QRgb * rgb_data=(QRgb *)(result.bits());
+    for(quint32 i=0; i<data_len;++i){
+        int iv=std::min<float>(std::max<float>(static_cast<int>((float( data_vec[i])-s_min)*iscale),0.0),255.0);
+        rgb_data[i]=qRgb(iv,iv,iv);
+    }
+    if (stream.status() == QDataStream::Ok){
+        *image = result;
+    }
+}
+
 
 QDataStream &operator<<(QDataStream& s, const MRCHeader& h)
 {
@@ -61,9 +92,6 @@ QDataStream &operator>>(QDataStream& s, MRCHeader& h)
     s >> h.CELL_ALPHA >> h.CELL_BETA >> h.CELL_GAMMA;
     s >> h.MAPC >> h.MAPR >> h.MAPS;
     s >> h.DMIN >> h.DMAX >> h.DMEAN;
-    // hack to get usable grey levels
-    h.DMIN=h.DMEAN-3;
-    h.DMAX=h.DMEAN+3;
     s >> h.ISPG;
     s >> h.NSYMBT;
     s >> h.EXTRA1 >> h.EXTRA2 >> h.EXTTYP >> h.NVERSION;
@@ -116,35 +144,33 @@ bool MRCIOHandler::canRead() const
 
 bool MRCIOHandler::read(QImage *image)
 {
-    QByteArray machst=device()->peek(54*4).right(4).left(2);
     QByteArray data=device()->readAll();
     QDataStream input(data);
     input.setFloatingPointPrecision(QDataStream::SinglePrecision);
-    if(machst==QByteArray("\x44\x41")){
-        input.setByteOrder(QDataStream::LittleEndian);
-    }else if(machst==QByteArray("\x11\x11")){
+    if(isBigEndian_()){
         input.setByteOrder(QDataStream::BigEndian);
     }else{
-        input.setByteOrder(QDataStream::BigEndian);
+        input.setByteOrder(QDataStream::LittleEndian);
     }
     MRCHeader header;
     input >> header;
     if (input.status() != QDataStream::Ok){
         return false;
     }
-    QImage result(header.NX,header.NY, QImage::Format_ARGB32);
-    float iscale=255.0/std::max(header.DMAX-header.DMIN,0.00001f);
-    for (quint32 y = 0; y < header.NY ; ++y) {
-        QRgb *scanLine = (QRgb *)result.scanLine(y);
-        for (quint32 x = 0; x < header.NX ; ++x){
-            float v;
-            input >> v;
-            int iv=static_cast<int>((v-header.DMIN)*iscale);
-            scanLine[x]=qRgb(iv,iv,iv);
-        }
-    }
-    if (input.status() == QDataStream::Ok){
-        *image = result;
+    switch(header.MODE){
+    case 0:
+    default:
+        read_data_<uchar>(header,input,image);
+        break;
+    case 1:
+        read_data_<short>(header,input,image);
+        break;
+    case 2:
+        read_data_<float>(header,input,image);
+        break;
+    case 6:
+        read_data_<unsigned short>(header,input,image);
+        break;
     }
     return input.status() == QDataStream::Ok;
 }
@@ -169,6 +195,11 @@ QVariant MRCIOHandler::option(QImageIOHandler::ImageOption option) const
     if (option == Size) {
         QByteArray bytes = device()->peek(8);
         QDataStream input(bytes);
+        if(isBigEndian_()){
+            input.setByteOrder(QDataStream::BigEndian);
+        }else{
+            input.setByteOrder(QDataStream::LittleEndian);
+        }
         quint32  width, height;
         input >> width >> height;
         if (input.status() == QDataStream::Ok )
@@ -187,4 +218,21 @@ bool MRCIOHandler::supportsOption(QImageIOHandler::ImageOption option) const
 {
     return option == Size;
 }
+
+bool MRCIOHandler::isBigEndian_() const
+{
+    qint64 old_pos=device()->pos();
+    device()->seek(53*4);
+    QByteArray machst=device()->peek(2);
+    device()->seek(old_pos);
+    if(machst==QByteArray("\x44\x41") || machst==QByteArray("\x44\x44")){
+        return false;
+    }else if(machst==QByteArray("\x11\x11")){
+        return true;
+    }else{
+        return true;
+    }
+
+}
+
 

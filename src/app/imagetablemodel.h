@@ -34,6 +34,7 @@
 
 //fw decl
 class MetaDataStore;
+class TaskConfiguration;
 
 class ImageTableModel : public QAbstractTableModel
 {
@@ -41,27 +42,29 @@ class ImageTableModel : public QAbstractTableModel
 public:
     enum Role {
         SortRole=Qt::UserRole,
-        SummaryRole
+        SummaryRole,
+        VisibilityRole
     };
-    ImageTableModel(MetaDataStore& store, QObject * parent = 0);
+    ImageTableModel(MetaDataStore* store,TaskConfiguration* task_config, QObject * parent = nullptr);
     virtual int rowCount(const QModelIndex &parent=QModelIndex()) const;
     virtual int columnCount(const QModelIndex &parent) const;
     virtual QVariant data(const QModelIndex &index, int role) const;
     virtual bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole);
     virtual QVariant headerData(int section, Qt::Orientation orientation, int role) const;
     virtual Qt::ItemFlags flags(const QModelIndex &index) const;
-    DataPtr image(int row);
-    void addColumn(const InputOutputVariable  &column, const QColor& color=QColor(136, 138, 133));
-    void clearColumns();
-    void onDataChanged(const DataPtr &data);
+    Data image(int row);
+    QString id(int row);
 public slots:
-    void imageAdded(const DataPtr & data);
+    void onMicrographUpdated(const QString &id);
+    void onMicrographAdded(const QString &id);
+    void onTasksChanged();
 
 private:
-    MetaDataStore& meta_data_store_;
+    MetaDataStore* meta_data_store_;
+    QVector<QString> micrograph_id_;
     QList<InputOutputVariable>  columns_;
     QList<QColor> colors_;
-    int num_rows_;
+    TaskConfiguration* task_configuration_;
 
 };
 

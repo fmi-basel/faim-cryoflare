@@ -22,26 +22,21 @@
 
 #include <sys/mman.h>
 #include "mainwindow.h"
-#include "imageprocessor.h"
+#include "micrographprocessor.h"
 #include <QApplication>
 #include <QStyleFactory>
 #include <QHash>
 #include <QTimer>
 #include <QDebug>
 #include <QtPlugin>
+#include <QSharedPointer>
 #include  "settings.h"
 #include "filelocker.h"
 #include "metadatastore.h"
 #include "epudatasource.h"
 #include "flatfolderdatasource.h"
+#include "task.h"
 
-QCoreApplication* createApplication(int &argc, char *argv[])
-{
-    for (int i = 1; i < argc; ++i)
-        if (!qstrcmp(argv[i], "-no-gui"))
-            return new QCoreApplication(argc, argv);
-    return new QApplication(argc, argv);
-}
 
 Q_IMPORT_PLUGIN(MRCIOPlugin)
 
@@ -69,14 +64,25 @@ void crash_message_handler(QtMsgType type, const QMessageLogContext &context, co
     }
 }
 
-
+DataSourceBase * createDataSource(const QString& mode, const QString& pattern){
+    if(mode=="EPU"){
+        return new EPUDataSource;
+    }else if(mode=="flat_EPU"){
+        return new FlatFolderDataSource(pattern,true);
+    }else if(mode=="json"){
+        return new FlatFolderDataSource(pattern,false);
+    }else{
+        return new EPUDataSource;
+    }
+}
 int main(int argc, char* argv[])
 {
     //qInstallMessageHandler(crash_message_handler);
     if(-1==mlockall(MCL_CURRENT|MCL_FUTURE)){
         //qWarning() << "failed to lock virtual address space into RAM";
     }
-    QScopedPointer<QCoreApplication> app(createApplication(argc, argv));
+    QScopedPointer<QApplication> app(new QApplication(argc, argv));
+    app.data()->setStyle(QStyleFactory::create("fusion"));
     QCoreApplication::setOrganizationName("Friedrich Miescher Institute");
     QCoreApplication::setOrganizationDomain("fmi.ch");
     QCoreApplication::setApplicationName("CryoFLARE");
@@ -86,6 +92,15 @@ int main(int argc, char* argv[])
     if(! cryoflare_dir.exists()){
         QDir(".").mkdir(CRYOFLARE_DIRECTORY);
     }
+    QDir gridsquare_dir(CRYOFLARE_DIRECTORY+"/"+CRYOFLARE_GRIDSQUARES_DIRECTORY);
+    if(! gridsquare_dir.exists()){
+        QDir(CRYOFLARE_DIRECTORY).mkdir(CRYOFLARE_GRIDSQUARES_DIRECTORY);
+    }
+    QDir foilhole_dir(CRYOFLARE_DIRECTORY+"/"+CRYOFLARE_FOILHOLES_DIRECTORY);
+    if(! foilhole_dir.exists()){
+        QDir(CRYOFLARE_DIRECTORY).mkdir(CRYOFLARE_FOILHOLES_DIRECTORY);
+    }
+
     if(!settings.loadFromFile(CRYOFLARE_INI)){
         if(!settings.loadFromFile(".stack_gui.ini")){
             qWarning() << "No settings found in local directory. Using global settings.";
@@ -97,7 +112,7 @@ int main(int argc, char* argv[])
     if(!file_locker.tryLock()){
         int owner=file_locker.getLockOwner();
         if(owner==-1){
-            qWarning() << "Can't get lock on CRYOFLARE_INI. The directory might already be used by a different process. Please use a differnt directory or stop the other process first.";
+            qWarning() << "Can't get lock on "<< CRYOFLARE_INI << ". The directory might already be used by a different process. Please use a differnt directory or stop the other process first.";
         }else{
             qWarning() << "Directory is already used by process: " << owner << ". Please use a differnt directory or stop the other process first." ;
         }
@@ -107,53 +122,20 @@ int main(int argc, char* argv[])
             return 1;
         }
     }
-    MetaDataStore* meta_data_store=new MetaDataStore;
-    QObject::connect(app.data(),&QCoreApplication::aboutToQuit,meta_data_store,&MetaDataStore::deleteLater);
-    QString import_mode=settings.value("import").toString();
-    DataSourceBase *data_source;
-    if(import_mode=="EPU"){
-        data_source= new EPUDataSource;
-        meta_data_store->setDataSource(data_source);
-    }else if(import_mode=="flat_EPU"){
-        data_source= new FlatFolderDataSource(settings.value("import_image_pattern").toString(),true);
-        meta_data_store->setDataSource(data_source);
-    }else if(import_mode=="json"){
-        data_source= new FlatFolderDataSource(settings.value("import_image_pattern").toString(),false);
-        meta_data_store->setDataSource(data_source);
-    }else{
-        EPUDataSource*  data_source= new EPUDataSource;
-        meta_data_store->setDataSource(data_source);
-    }
-    ImageProcessor processor(*meta_data_store);
+    QScopedPointer<TaskConfiguration> task_configuration(new TaskConfiguration);
+    QScopedPointer<MetaDataStore> meta_data_store(new MetaDataStore(task_configuration.data()));
+    //QObject::connect(app.data(),&QCoreApplication::aboutToQuit,meta_data_store.data(),&MetaDataStore::deleteLater);
 
-    if (qobject_cast<QApplication *>(app.data())) {
-         // start GUI version...
-        qobject_cast<QApplication *>(app.data())->setStyle(QStyleFactory::create("fusion"));
-        MainWindow w(*meta_data_store,processor);
-        w.init();
-        w.show();
-        //next line within if to avoid MainWindow going out of scope
-        return app->exec();
-     } else {
-         // start non-GUI version...
-        int path_count=0;
-        for (int i = 1; i < app->arguments().size(); ++i){
-            if (qstrcmp(argv[i], "-no-gui")){
-                switch(path_count){
-                case 0:
-                    settings.setValue("avg_source_dir",app->arguments()[i]);
-                    data_source->setProjectDir(app->arguments()[i]);
-                    path_count=1;
-                    break;
-                case 1:
-                    settings.setValue("stack_source_dir",app->arguments()[i]);
-                    data_source->setMovieDir(app->arguments()[i]);
-                    path_count=2;
-                    break;
-                }
-            }
-        }
-        QTimer::singleShot(0, &processor, SLOT(startStop()));
-        return app->exec();
-     }
+    QScopedPointer<DataSourceBase> data_source(createDataSource(settings.value("import").toString(),settings.value("import_image_pattern").toString()));
+    QObject::connect(data_source.data(),&DataSourceBase::newMicrograph,meta_data_store.data(),&MetaDataStore::addMicrograph);
+    QObject::connect(data_source.data(),&DataSourceBase::newGridsquare,meta_data_store.data(),&MetaDataStore::addGridsquare);
+    QObject::connect(data_source.data(),&DataSourceBase::newFoilhole,meta_data_store.data(),&MetaDataStore::addFoilhole);
+
+    QScopedPointer<MicrographProcessor> processor(new MicrographProcessor(meta_data_store.data(),data_source.data(),task_configuration.data()));
+
+    MainWindow w(meta_data_store.data(),processor.data(),task_configuration.data());
+    QObject::connect(&w,&MainWindow::settingsChanged,task_configuration.data(),&TaskConfiguration::updateConfiguration);
+    w.init();
+    w.show();
+    return app->exec();
 }

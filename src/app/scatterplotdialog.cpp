@@ -4,18 +4,19 @@
 #include "scatterplotdialog.h"
 #include "ui_scatterplotdialog.h"
 
-ScatterPlotDialog::ScatterPlotDialog(ImageTableModel * model,QWidget *parent) :
+ScatterPlotDialog::ScatterPlotDialog(MetaDataStore * store, QList<InputOutputVariable> result_labels, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::ScatterPlotDialog),
-    model_(model)
+    store_(store),
+    result_labels_(result_labels)
 {
     ui->setupUi(this);
     ui->chart->chart()->setTheme(QtCharts::QChart::ChartThemeBlueCerulean);
     ui->chart->setRenderHint(QPainter::Antialiasing);
     ui->chart->chart()->layout()->setContentsMargins(0,0,0,0);
     QStringList columns;
-    for(int i=0;i<model_->columnCount(QModelIndex());++i){
-        columns << model_->headerData(i,Qt::Horizontal,Qt::DisplayRole).toString();
+    foreach(InputOutputVariable v, result_labels_){
+        columns << v.label;
     }
     ui->list_x->addItems(columns);
     ui->list_x->setCurrentRow(0);
@@ -36,18 +37,20 @@ void ScatterPlotDialog::updateChart()
     series->setMarkerSize(6);
     series->setPen(QPen(QBrush(Qt::white),1));
     series->setColor(QColor(23,159,223));
-    for(int i=0;i<model_->rowCount();++i){
-        QVariant val_x=model_->data(model_->index(i,ui->list_x->currentRow()),ImageTableModel::SortRole);
-        QVariant val_y=model_->data(model_->index(i,ui->list_y->currentRow()),ImageTableModel::SortRole);
-        DataPtr data=model_->image(i);
-        QString export_val=data->value("export").toString("true");
-        bool export_flag=export_val.compare("true", Qt::CaseInsensitive) == 0 || export_val==QString("1") || ui->filter_chart->isChecked()==false;
+    QStringList ids;
+    if(ui->filter_chart->isChecked()){
+        ids=store_->selectedMicrographIDs();
+    }else{
+        ids=store_->micrographIDs();
+    }
+    foreach(QString id, ids){
+        Data data=store_->micrograph(id);
+        QVariant val_x=data.value(result_labels_.value(ui->list_x->currentRow()).key);
+        QVariant val_y=data.value(result_labels_.value(ui->list_y->currentRow()).key);
         if(val_x.canConvert<float>() && val_x.toString()!=QString("") && val_y.canConvert<float>() && val_y.toString()!=QString("") ){
-            if(export_flag){
-                float fval_x=val_x.toFloat();
-                float fval_y=val_y.toFloat();
-                series->append(fval_x,fval_y);
-            }
+            float fval_x=val_x.toFloat();
+            float fval_y=val_y.toFloat();
+            series->append(fval_x,fval_y);
         }
     }
     ui->chart->chart()->removeAllSeries();

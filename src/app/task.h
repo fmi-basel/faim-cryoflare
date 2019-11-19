@@ -24,52 +24,66 @@
 #define TASK_H
 
 #include <dataptr.h>
+#include "inputoutputvariable.h"
 #include <QPair>
 #include <QStringList>
 #include <QString>
 #include <QMap>
+#include <QColor>
 
 //fw decl
 class Task;
+class Settings;
+class TaskDefinition;
+class TaskConfiguration;
+
 
 typedef QSharedPointer<Task> TaskPtr;
+typedef QSharedPointer<TaskDefinition> TaskDefinitionPtr;
+typedef QSharedPointer<TaskConfiguration> TaskConfigurationPtr;
 
-class DisplayDetail{
+
+class TaskDefinition
+{
 public:
-    DisplayDetail(const QString& key_, const QString &label_,const QString& type_):
-        key(key_),
-        label(label_),
-        type(type_)
-    {}
-    QString key;
-    QString label;
-    QString type;
+    static TaskDefinitionPtr loadTaskDefinitions(Settings *settings);
+    explicit TaskDefinition(TaskDefinition* parent_, const QString& name_, const QString& script_, bool gpu_, bool priority_, bool group_with_parent_);
+    QString taskString() const;
+    TaskDefinition* parent;
+    QString name;
+    QString script;
+    bool gpu;
+    bool priority;
+    bool group_with_parent;
+    QColor color;
+    QList<InputOutputVariable> input_variables_;
+    QList<InputOutputVariable> result_variables_;
+    QList<TaskDefinitionPtr> children;
+};
+
+class TaskConfiguration: public QObject
+{
+    Q_OBJECT
+public:
+    TaskConfiguration(QObject * parent=nullptr);
+    TaskDefinitionPtr rootDefinition();
+    QList<InputOutputVariable> resultLabels();
+public slots:
+    void updateConfiguration();
+signals:
+    void configurationChanged();
+protected:
+    TaskDefinitionPtr root_definition_;
 };
 
 class Task
 {
 public:
-    explicit Task(const QString& name_, const QString& script_, DataPtr data_, bool gpu_=false, bool priority_=false);
-    void setData(const DataPtr &data_,bool force_reprocess=false);
-    void addColumn(const QString& key, const QString& value);
-    void addDetail(const QString& key, const QString &label,const QString& type);
-    QString taskString() const;
-    QPair<QStringList,QStringList> getDisplayKeys() const;
-    TaskPtr clone();
-    QString name;
-    QString script;
-    DataPtr data;
-    bool gpu;
-    bool priority;
-    QString output;
-    QString error;
-    QMap<QString,QString> raw_files;
-    QMap<QString,QString> output_files;
-    QMap<QString,QString> shared_output_files;
-    int state;
-    QList<TaskPtr > children;
-    QPair<QStringList,QStringList> display_keys;
-    QList<DisplayDetail> display_details;
+    explicit Task(const TaskDefinitionPtr& definition_, const QString& id_);
+    TaskDefinitionPtr definition;
+    QString id;
+
+
 };
 
 #endif // TASK_H

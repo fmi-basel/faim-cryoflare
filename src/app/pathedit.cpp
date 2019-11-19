@@ -75,13 +75,13 @@ void PathEdit::onBrowse()
     QString new_path;
     switch(path_type_){
     case ExistingDirectory:
-        new_path = QFileDialog::getExistingDirectory(0, caption_,path(),  QFileDialog::ShowDirsOnly| QFileDialog::DontResolveSymlinks);
+        new_path = QFileDialog::getExistingDirectory(nullptr, caption_,path(),  QFileDialog::ShowDirsOnly| QFileDialog::DontResolveSymlinks);
         break;
     case OpenFileName:
-        new_path = QFileDialog::getOpenFileName(0, caption_,path(),filter_);
+        new_path = QFileDialog::getOpenFileName(nullptr, caption_,path(),filter_);
         break;
     case SaveFileName:
-        new_path = QFileDialog::getSaveFileName(0, caption_,path(),filter_);
+        new_path = QFileDialog::getSaveFileName(nullptr, caption_,path(),filter_);
         break;
     }
     if(! new_path.isEmpty()){
@@ -97,4 +97,9 @@ PathEdit::PathType PathEdit::pathType() const
 void PathEdit::setPathType(const PathEdit::PathType &path_type)
 {
     path_type_ = path_type;
+}
+
+void PathEdit::setIconSize(int size)
+{
+    browse_->setIconSize(QSize(size,size));
 }

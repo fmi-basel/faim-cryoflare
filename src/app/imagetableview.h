@@ -25,11 +25,15 @@
 
 #include <QTableView>
 
+//fw decl
+class QAbstractItemModel;
+
 class ImageTableView : public QTableView
 {
     Q_OBJECT
 public:
     explicit ImageTableView(QWidget *parent = nullptr);
+    virtual void setModel(QAbstractItemModel *m);
     QAction *selectAllAction() const;
     QAction *unselectAllAction() const;
     QAction *selectAboveAction() const;
@@ -48,6 +52,7 @@ public slots:
     void selectBelow();
     void unselectBelow();
     void invertSelection();
+    void updateColumnVisibility();
 
 protected:
     QAction *select_all_;

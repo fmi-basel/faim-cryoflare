@@ -21,6 +21,7 @@
 //------------------------------------------------------------------------------
 
 #include <QtDebug>
+#include <QCheckBox>
 #include "settings.h"
 #include <QFileDialog>
 #include <QtDebug>
@@ -111,24 +112,8 @@ void save_to_settings(SETTINGS* settings, Ui::SettingsDialog* ui){
     if(ui->import_json->isChecked()){
         settings->setValue("import","json");
     }
-    settings->setValue("export_pre_script", ui->export_pre_script->path());
-    settings->setValue("export_post_script", ui->export_post_script->path());
-    settings->setValue("export_custom_script", ui->export_custom_script->path());
     settings->setValue("export_num_processes", ui->export_num_processes->value());
-    settings->setValue("ask_destination",ui->ask_destination->isChecked());
     settings->setValue("report_template",ui->report_template->path());
-    if(ui->export_copy->isChecked()){
-        settings->setValue("export","copy");
-    }
-    if(ui->export_move->isChecked()){
-        settings->setValue("export","move");
-    }
-    if(ui->export_custom1->isChecked()){
-        settings->setValue("export","custom");
-    }
-    if(ui->export_custom2->isChecked()){
-        settings->setValue("export","custom2");
-    }
     settings->beginGroup("Tasks");
     settings->remove("");
     save_task(settings,ui->task_tree->invisibleRootItem());
@@ -159,23 +144,7 @@ void load_from_settings(SETTINGS* settings, Ui::SettingsDialog* ui){
     }else{
         ui->import_epu->setChecked(true);
     }
-    ui->export_pre_script->setPath(settings->value("export_pre_script").toString());
-    ui->export_post_script->setPath(settings->value("export_post_script").toString());
-    ui->export_num_processes->setValue(settings->value("export_num_processes").toInt());
-    ui->ask_destination->setChecked(settings->value("ask_destination").toBool());
     ui->report_template->setPath(settings->value("report_template").toString());
-    QString export_mode=settings->value("export").toString();
-    if(export_mode=="copy"){
-        ui->export_copy->setChecked(true);
-    }else if(export_mode=="move"){
-        ui->export_move->setChecked(true);
-    }else if(export_mode=="custom"){
-        ui->export_custom1->setChecked(true);
-    }else if(export_mode=="custom2"){
-        ui->export_custom2->setChecked(true);
-    }else{
-        ui->export_copy->setChecked(true);
-    }
     settings->beginGroup("Tasks");
     ui->task_tree->clear();
     load_task(settings,ui->task_tree->invisibleRootItem());
@@ -187,17 +156,17 @@ void load_from_settings(SETTINGS* settings, Ui::SettingsDialog* ui){
 
 }
 
-SettingsDialog::SettingsDialog(QList<InputOutputVariable> default_columns, LimeReport::ReportEngine *report_engine, QWidget *parent) :
+SettingsDialog::SettingsDialog(TaskConfiguration *task_config, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::SettingsDialog),
+    task_config_(task_config),
     task_tree_menu_(new QMenu(this)),
     task_tree_new_(new QAction("New",this)),
     task_tree_delete_(new QAction("Delete",this)),
     output_variable_new_(new QAction("New",this)),
     output_variable_delete_(new QAction("Delete",this)),
     input_variable_new_(new QAction("New",this)),
-    input_variable_delete_(new QAction("Delete",this)),
-    report_engine_(report_engine)
+    input_variable_delete_(new QAction("Delete",this))
 {
     ui->setupUi(this);
     ui->task_tree->setHeaderHidden(false);
@@ -233,7 +202,7 @@ SettingsDialog::SettingsDialog(QList<InputOutputVariable> default_columns, LimeR
         ui->input_variable_table->horizontalHeader()->setResizeMode(QHeaderView::Stretch);
     #endif
     QVBoxLayout *vbox = new QVBoxLayout;
-    Q_FOREACH(InputOutputVariable column, default_columns){
+    Q_FOREACH(InputOutputVariable column, task_config_->rootDefinition()->result_variables_){
         QCheckBox *cb=new QCheckBox(column.key,ui->default_columns);
         cb->setObjectName(column.label);
         vbox->addWidget(cb);
@@ -332,7 +301,7 @@ void SettingsDialog::deleteInputVariable()
 
 void SettingsDialog::loadFromFile()
 {
-    QString path = QFileDialog::getOpenFileName(0, "Open configuration file","","Ini files (*.ini);; All files (*)");
+    QString path = QFileDialog::getOpenFileName(nullptr, "Open configuration file","","Ini files (*.ini);; All files (*)");
     if(! path.isEmpty()){
         QSettings* settings=new QSettings(path,QSettings::IniFormat);
         load_from_settings(settings,ui);
@@ -343,7 +312,7 @@ void SettingsDialog::loadFromFile()
 void SettingsDialog::saveToFile()
 {
     updateVariables(ui->task_tree->currentItem(),ui->task_tree->currentItem());
-    QString path = QFileDialog::getSaveFileName(0, "Save configuration file","","Ini files (*.ini);; All files (*)");
+    QString path = QFileDialog::getSaveFileName(nullptr, "Save configuration file","","Ini files (*.ini);; All files (*)");
     if(! path.isEmpty()){
         QSettings* settings=new QSettings(path,QSettings::IniFormat);
         save_to_settings(settings,ui);
@@ -421,7 +390,12 @@ void SettingsDialog::updateVariables(QTreeWidgetItem *new_item, QTreeWidgetItem 
 
 void SettingsDialog::designReport()
 {
-    report_engine_->designReport();
-    ui->report_template->setPath(report_engine_->reportFileName());
+    LimeReport::ReportEngine report_engine;
+    Settings settings;
+    if(QFileInfo::exists(settings.value("report_template").toString())){
+      report_engine.loadFromFile(settings.value("report_template").toString());
+    }
+    report_engine.designReport();
+    ui->report_template->setPath(report_engine.reportFileName());
 }
 

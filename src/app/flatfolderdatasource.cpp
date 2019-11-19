@@ -69,7 +69,7 @@ void FlatFolderDataSource::checkForFileChanges()
         QFileInfo file_info(image_path);
         if(file_info.lastModified()==watched_files_.value(image_path).first && file_info.size()==watched_files_.value(image_path).second){
             watched_files_.remove(image_path);
-            DataPtr data;
+            Data data;
             if(xml_){
                 QString xml_path=QDir(file_info.absolutePath()).absoluteFilePath(file_info.completeBaseName()+".xml");
                 data=readEPUXML(xml_path);
@@ -77,20 +77,20 @@ void FlatFolderDataSource::checkForFileChanges()
                 QString json_path=QDir(file_info.absolutePath()).absoluteFilePath(file_info.completeBaseName()+".json");
                 data=readJson_(json_path);
             }
-            if(!data.isNull()){
-                data->insert("destination_path",QDir::currentPath());
-                data->insert("stack_source_path",movie_dir_);
-                data->insert("avg_source_path",project_dir_);
+            if(!data.empty()){
+                data.insert("destination_path",QDir::currentPath());
+                data.insert("stack_source_path",movie_dir_);
+                data.insert("avg_source_path",project_dir_);
                 QStringList stack_frames;
-                if(QString("BM-Falcon")==data->value("camera").toString()){
-                    data->insert("stack_frames",QString("%1/%2_frames.mrc").arg(movie_dir_).arg(data->value("name").toString()));
-                }else if(QString("EF-CCD")==data->value("camera").toString()){
-                    for(int i=1;i<=data->value("num_frames").toInt();++i){
-                        stack_frames.append(QString("%1/%2-*-%3.???").arg(movie_dir_).arg(data->value("name").toString()).arg(i,4,10,QChar('0')));
+                if(QString("BM-Falcon")==data.value("camera").toString()){
+                    data.insert("stack_frames",QString("%1/%2_frames.mrc").arg(movie_dir_).arg(data.value("name").toString()));
+                }else if(QString("EF-CCD")==data.value("camera").toString()){
+                    for(int i=1;i<=data.value("num_frames").toInt();++i){
+                        stack_frames.append(QString("%1/%2-*-%3.???").arg(movie_dir_).arg(data.value("name").toString()).arg(i,4,10,QChar('0')));
                     }
-                    data->insert("stack_frames",stack_frames.join(" "));
+                    data.insert("stack_frames",stack_frames.join(" "));
                 }
-                emit newImage(data);
+                emit newMicrograph(data);
             }
         }else{
             watched_files_.insert(image_path,QPair<QDateTime,qint64>(file_info.lastModified(),file_info.size()));
@@ -101,15 +101,15 @@ void FlatFolderDataSource::checkForFileChanges()
     }
 }
 
-DataPtr FlatFolderDataSource::readJson_(const QString &path)
+Data FlatFolderDataSource::readJson_(const QString &path)
 {
     QFile json_file(path);
     if (!json_file.open(QIODevice::ReadOnly)) {
         qDebug() << "Couldn't open file: " << path;
-        return DataPtr();
+        return Data();
     }
     QByteArray data = json_file.readAll();
     QJsonDocument json_doc(QJsonDocument::fromJson(data));
-    return DataPtr(new QJsonObject(json_doc.object()));
+    return QJsonObject(json_doc.object());
 }
 

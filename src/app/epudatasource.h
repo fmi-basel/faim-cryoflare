@@ -2,6 +2,7 @@
 #define EPUDATASOURCE_H
 
 #include <QScopedPointer>
+#include <QDir>
 #include "datasourcebase.h"
 
 //fw decl
@@ -21,11 +22,15 @@ public slots:
 protected slots:
     virtual void onDirChanged(const QString & path);
 protected:
+    void parseGridSquares_(const QDir &dir);
+    void parseFoilHoles_(const QDir &dir);
+    void parseMicrographs_(const QDir &dir);
     QScopedPointer<FileSystemWatcher> watcher_;
     QString epu_project_dir_;
     QString movie_dir_;
     QStringList xml_files_;
-    QHash<QString,DataPtr> grid_square_data_;
+    QHash<QString,Data> grid_square_data_;
+    QHash<QString,Data> foil_hole_data_;
 
 };
 

@@ -18,5 +18,7 @@
         <file>icons/document-open-remote.png</file>
         <file>icons/document.png</file>
         <file>icons/folder.png</file>
+        <file>icons/fit-to-window.png</file>
+        <file>icons/fit-to-window-inactive.png</file>
     </qresource>
 </RCC>

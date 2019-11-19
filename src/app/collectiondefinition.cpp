@@ -5,7 +5,7 @@ CollectionDefinition::CollectionDefinition(QObject *parent) : QObject(parent)
 
 }
 
-QVector<DataPtr> CollectionDefinition::getData()
+QVector<Data> CollectionDefinition::getData()
 {
-    return QVector<DataPtr>();
+    return QVector<Data>();
 }

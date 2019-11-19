@@ -25,7 +25,7 @@ protected:
     void submitJob();
     CollectionStartingCondition* starting_condition_;
     CollectionDefinition* definition_;
-    QVector<DataPtr> data_;
+    QVector<Data> data_;
 };
 
 #endif // COLLECTION_H

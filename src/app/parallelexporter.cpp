@@ -31,6 +31,8 @@
 #include <QSet>
 #include <QtAlgorithms>
 #include "parallelexporter.h"
+#include "exportprogressdialog.h"
+
 ExportWorkerBase::ExportWorkerBase(int id, QSharedPointer<ThreadSafeQueue<WorkItem> > queue, const QString &source, const SftpUrl &destination, const QStringList &images, Barrier<ThreadSafeQueue<WorkItem> > &b):
     QObject(),
     queue_(queue),
@@ -85,6 +87,7 @@ QTemporaryFile* ExportWorkerBase::filter_(const QString &source_path) const
 {
     QTemporaryFile* temp_file=new QTemporaryFile();
     temp_file->open();
+    temp_file->setPermissions(QFileDevice::ReadOwner|QFileDevice::WriteOwner|QFileDevice::ReadGroup);
     QFile file(source_path);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)){
         return nullptr;
@@ -286,12 +289,12 @@ void RemoteExportWorker::copyFile_()
                 emit next();
                 return;
             }
-            QSsh::SftpJobId id=channel_->uploadFile(temp_file->fileName(), QDir(destination_.path()).absoluteFilePath(current_item_.filename), QSsh::SftpAppendToExisting);
+            QSsh::SftpJobId id=channel_->uploadFile(temp_file->fileName(), QDir(destination_.path()).absoluteFilePath(current_item_.filename), QSsh::SftpOverwriteExisting);
             sftp_ops_.insert(id,Copy);
             // store pointer to keep temp file around until op finishes
             temp_files_.insert(id,QSharedPointer<QTemporaryFile>(temp_file));
         }else{
-            QSsh::SftpJobId id=channel_->uploadFile(path, QDir(destination_.path()).absoluteFilePath(current_item_.filename), QSsh::SftpAppendToExisting);
+            QSsh::SftpJobId id=channel_->uploadFile(path, QDir(destination_.path()).absoluteFilePath(current_item_.filename), QSsh::SftpOverwriteExisting);
             sftp_ops_.insert(id,Copy);
         }
     }
@@ -476,7 +479,8 @@ ParallelExporter::ParallelExporter(const QString &source, const SftpUrl &destina
     started_(false),
     workers_(),
     message_timer_(),
-    barrier_(queue_.data(),num_threads)
+    barrier_(queue_.data(),num_threads),
+    export_progress_dialog_(new ExportProgressDialog())
 {
     for(int i=0;i<num_threads_ ;++i){
         QThread* thread = new QThread();
@@ -498,6 +502,7 @@ ParallelExporter::ParallelExporter(const QString &source, const SftpUrl &destina
     }
     message_timer_.start(1000);
     connect(&message_timer_,&QTimer::timeout,this,&ParallelExporter::getMessages);
+    connect(export_progress_dialog_,&ExportProgressDialog::rejected,this,&ParallelExporter::cancel);
 
 }
 
@@ -559,11 +564,13 @@ void ParallelExporter::cancel()
 {
     queue_->clear();
     barrier_.release();
+    emit finished();
 }
 
 void ParallelExporter::start()
 {
     started_=true;
+    export_progress_dialog_->start(destination().toString(QUrl::RemovePassword),numFiles());
     emit newFiles();
 }
 
@@ -578,8 +585,11 @@ void ParallelExporter::getMessages()
         }
         messages.append(w->messages());
     }
-    emit message(left+n_busy,messages);
+    export_progress_dialog_->update(messages,left+n_busy);
     if(left==0 && n_busy==0){
+        export_progress_dialog_->finish();
         emit finished();
     }
 }
+
+

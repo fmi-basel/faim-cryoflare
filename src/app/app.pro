@@ -47,7 +47,6 @@ SOURCES += \
     filesystemwatcher.cpp \
     filesystemwatcherimpl.cpp \
     epuimageinfo.cpp \
-    imageprocessor.cpp \
     processwrapper.cpp \
     task.cpp \
     imagetablemodel.cpp \
@@ -86,7 +85,19 @@ SOURCES += \
     job.cpp \
     flatfolderdatasource.cpp \
     readepuxml.cpp \
-    priorityqueue.cpp
+    priorityqueue.cpp \
+    gridsquaretablemodel.cpp \
+    imageviewer.cpp \
+    micrographsform.cpp \
+    gridsquareform.cpp \
+    datachartform.cpp \
+    linearchartview.cpp \
+    histogramchartview.cpp \
+    histogram.cpp \
+    phaseplatechart.cpp \
+    micrographprocessor.cpp \
+    processqueue.cpp \
+    gradient.cpp
 
 
 
@@ -95,7 +106,6 @@ HEADERS  += \
     filesystemwatcher.h \
     filesystemwatcherimpl.h \
     epuimageinfo.h \
-    imageprocessor.h \
     processwrapper.h \
     task.h \
     imagetablemodel.h \
@@ -135,7 +145,19 @@ HEADERS  += \
     job.h \
     flatfolderdatasource.h \
     readepuxml.h \
-    priorityqueue.h
+    priorityqueue.h \
+    gridsquaretablemodel.h \
+    imageviewer.h \
+    micrographsform.h \
+    gridsquareform.h \
+    datachartform.h \
+    linearchartview.h \
+    histogramchartview.h \
+    histogram.h \
+    phaseplatechart.h \
+    micrographprocessor.h \
+    processqueue.h \
+    gradient.h
 
 
 FORMS    += \
@@ -146,7 +168,10 @@ FORMS    += \
     exportdialog.ui \
     remotefiledialog.ui \
     exportprogressdialog.ui \
-    sshauthenticationdialog.ui
+    sshauthenticationdialog.ui \
+    micrographsform.ui \
+    gridsquareform.ui \
+    datachartform.ui
 
 LIBS += ../mrcio/libmrcio.a
 LIBS += ../external/qssh/libqssh.a

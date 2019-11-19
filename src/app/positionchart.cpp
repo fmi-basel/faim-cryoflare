@@ -117,7 +117,7 @@ QColor PositionChart::colorAt(double value)
     }
     double interval=1.0/(gradient_stops_.size()-1);
     int index=static_cast<int>(relval/interval);
-    double rel_offset=relval-index*interval;
+    double rel_offset=(relval-index*interval)/interval;
     double irel_offset=1.0-rel_offset;
     QColor start=gradient_stops_[index].second;
     QColor end=gradient_stops_[index+1].second;

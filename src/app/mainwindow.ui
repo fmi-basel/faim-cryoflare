@@ -42,8 +42,23 @@
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QVBoxLayout" name="verticalLayout_11">
+    <property name="leftMargin">
+     <number>2</number>
+    </property>
+    <property name="topMargin">
+     <number>2</number>
+    </property>
+    <property name="rightMargin">
+     <number>2</number>
+    </property>
+    <property name="bottomMargin">
+     <number>2</number>
+    </property>
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout">
+      <property name="spacing">
+       <number>6</number>
+      </property>
       <item>
        <widget class="QLabel" name="label">
         <property name="text">
@@ -52,27 +67,9 @@
        </widget>
       </item>
       <item>
-       <widget class="QLineEdit" name="avg_source_dir">
+       <widget class="PathEdit" name="avg_source_dir">
         <property name="toolTip">
          <string>EPU project directory</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="avg_source_dir_browse">
-        <property name="text">
-         <string/>
-        </property>
-        <property name="icon">
-         <iconset>
-          <normalon>:/icons/document-open-folder.png</normalon>
-         </iconset>
-        </property>
-        <property name="iconSize">
-         <size>
-          <width>32</width>
-          <height>32</height>
-         </size>
         </property>
        </widget>
       </item>
@@ -84,29 +81,12 @@
        </widget>
       </item>
       <item>
-       <widget class="QLineEdit" name="stack_source_dir">
+       <widget class="PathEdit" name="stack_source_dir">
         <property name="toolTip">
          <string>Directory where EPU saves raw stacks</string>
         </property>
         <property name="styleSheet">
          <string notr="true"/>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="stack_source_dir_browse">
-        <property name="text">
-         <string/>
-        </property>
-        <property name="icon">
-         <iconset resource="app.qrc">
-          <normaloff>:/icons/document-open-folder.png</normaloff>:/icons/document-open-folder.png</iconset>
-        </property>
-        <property name="iconSize">
-         <size>
-          <width>32</width>
-          <height>32</height>
-         </size>
         </property>
        </widget>
       </item>
@@ -175,62 +155,6 @@
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="filter">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="toolTip">
-         <string>Only show data for images selected for export</string>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-        <property name="icon">
-         <iconset resource="app.qrc">
-          <normaloff>:/icons/view-filter.png</normaloff>
-          <normalon>:/icons/view-no-filter.png</normalon>:/icons/view-filter.png</iconset>
-        </property>
-        <property name="iconSize">
-         <size>
-          <width>32</width>
-          <height>32</height>
-         </size>
-        </property>
-        <property name="checkable">
-         <bool>true</bool>
-        </property>
-        <property name="checked">
-         <bool>false</bool>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="select">
-        <property name="toolTip">
-         <string>Select images to export in plot (use Shift to deselect images)</string>
-        </property>
-        <property name="text">
-         <string/>
-        </property>
-        <property name="icon">
-         <iconset resource="app.qrc">
-          <normaloff>:/icons/select-rectangular.png</normaloff>:/icons/select-rectangular.png</iconset>
-        </property>
-        <property name="iconSize">
-         <size>
-          <width>32</width>
-          <height>32</height>
-         </size>
-        </property>
-        <property name="checkable">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-      <item>
        <widget class="QPushButton" name="settings">
         <property name="toolTip">
          <string>Settings</string>
@@ -253,213 +177,23 @@
      </layout>
     </item>
     <item>
-     <widget class="QFrame" name="frame">
-      <property name="frameShape">
-       <enum>QFrame::StyledPanel</enum>
+     <widget class="QTabWidget" name="tab_widget">
+      <property name="tabPosition">
+       <enum>QTabWidget::West</enum>
       </property>
-      <property name="frameShadow">
-       <enum>QFrame::Raised</enum>
+      <property name="currentIndex">
+       <number>0</number>
       </property>
-      <layout class="QVBoxLayout" name="verticalLayout_6">
-       <item>
-        <widget class="QTabWidget" name="tabWidget">
-         <property name="tabPosition">
-          <enum>QTabWidget::West</enum>
-         </property>
-         <property name="currentIndex">
-          <number>0</number>
-         </property>
-         <widget class="QWidget" name="Images">
-          <attribute name="title">
-           <string>Images</string>
-          </attribute>
-          <layout class="QVBoxLayout" name="verticalLayout_2">
-           <item>
-            <widget class="QSplitter" name="splitter">
-             <property name="orientation">
-              <enum>Qt::Vertical</enum>
-             </property>
-             <widget class="QSplitter" name="image_data_splitter">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-                <horstretch>0</horstretch>
-                <verstretch>1</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <widget class="QWidget" name="image_list_widget" native="true">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                 <horstretch>2</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <layout class="QVBoxLayout" name="verticalLayout">
-                <item>
-                 <widget class="ImageTableView" name="image_list">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-                    <horstretch>2</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="editTriggers">
-                   <set>QAbstractItemView::NoEditTriggers</set>
-                  </property>
-                  <property name="alternatingRowColors">
-                   <bool>true</bool>
-                  </property>
-                  <property name="selectionBehavior">
-                   <enum>QAbstractItemView::SelectItems</enum>
-                  </property>
-                  <property name="showGrid">
-                   <bool>true</bool>
-                  </property>
-                  <property name="sortingEnabled">
-                   <bool>true</bool>
-                  </property>
-                  <attribute name="horizontalHeaderDefaultSectionSize">
-                   <number>20</number>
-                  </attribute>
-                  <attribute name="horizontalHeaderMinimumSectionSize">
-                   <number>20</number>
-                  </attribute>
-                 </widget>
-                </item>
-                <item>
-                 <widget class="HorizontalHeaderView" name="image_list_summary" native="true">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
-                    <horstretch>2</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="minimumSize">
-                   <size>
-                    <width>0</width>
-                    <height>18</height>
-                   </size>
-                  </property>
-                  <property name="maximumSize">
-                   <size>
-                    <width>2000</width>
-                    <height>18</height>
-                   </size>
-                  </property>
-                  <property name="toolTip">
-                   <string>S: Column sum
-A: Column average</string>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </widget>
-              <widget class="QTabWidget" name="image_data">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="minimumSize">
-                <size>
-                 <width>570</width>
-                 <height>0</height>
-                </size>
-               </property>
-               <property name="currentIndex">
-                <number>-1</number>
-               </property>
-              </widget>
-             </widget>
-             <widget class="QSplitter" name="chart_splitter">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                <horstretch>0</horstretch>
-                <verstretch>1</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="minimumSize">
-               <size>
-                <width>0</width>
-                <height>300</height>
-               </size>
-              </property>
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <widget class="ChartView" name="linear_chart">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                 <horstretch>1</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="minimumSize">
-                <size>
-                 <width>100</width>
-                 <height>0</height>
-                </size>
-               </property>
-               <property name="baseSize">
-                <size>
-                 <width>100</width>
-                 <height>0</height>
-                </size>
-               </property>
-              </widget>
-              <widget class="ChartView" name="histogram">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                 <horstretch>1</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="minimumSize">
-                <size>
-                 <width>100</width>
-                 <height>0</height>
-                </size>
-               </property>
-              </widget>
-              <widget class="PositionChartView" name="phase_plate">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                 <horstretch>1</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="minimumSize">
-                <size>
-                 <width>100</width>
-                 <height>0</height>
-                </size>
-               </property>
-              </widget>
-              <widget class="PositionChartView" name="grid_square_chart">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                 <horstretch>1</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="minimumSize">
-                <size>
-                 <width>100</width>
-                 <height>0</height>
-                </size>
-               </property>
-              </widget>
-             </widget>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-        </widget>
-       </item>
-      </layout>
+      <widget class="MicrographsForm" name="micrographs">
+       <attribute name="title">
+        <string>Micrographs</string>
+       </attribute>
+      </widget>
+      <widget class="GridsquareForm" name="gridsquares">
+       <attribute name="title">
+        <string>Gridsquares</string>
+       </attribute>
+      </widget>
      </widget>
     </item>
    </layout>
@@ -484,32 +218,20 @@ A: Column average</string>
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>
   <customwidget>
-   <class>ImageTableView</class>
-   <extends>QTableView</extends>
-   <header>imagetableview.h</header>
+   <class>PathEdit</class>
+   <extends>QLineEdit</extends>
+   <header>pathedit.h</header>
   </customwidget>
   <customwidget>
-   <class>ChartView</class>
-   <extends>QGraphicsView</extends>
-   <header>chartview.h</header>
-   <slots>
-    <signal>selected(float,float,bool)</signal>
-    <slot>enableSelection(bool)</slot>
-   </slots>
-  </customwidget>
-  <customwidget>
-   <class>PositionChartView</class>
-   <extends>QGraphicsView</extends>
-   <header>positionchartview.h</header>
-   <slots>
-    <signal>clicked(int)</signal>
-    <slot>enableSelection(bool)</slot>
-   </slots>
-  </customwidget>
-  <customwidget>
-   <class>HorizontalHeaderView</class>
+   <class>GridsquareForm</class>
    <extends>QWidget</extends>
-   <header>horizontalheaderview.h</header>
+   <header>gridsquareform.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>MicrographsForm</class>
+   <extends>QWidget</extends>
+   <header>micrographsform.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
@@ -524,12 +246,12 @@ A: Column average</string>
    <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1338</x>
-     <y>86</y>
+     <x>1345</x>
+     <y>62</y>
     </hint>
     <hint type="destinationlabel">
-     <x>265</x>
-     <y>75</y>
+     <x>428</x>
+     <y>55</y>
     </hint>
    </hints>
   </connection>
@@ -540,108 +262,12 @@ A: Column average</string>
    <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1338</x>
-     <y>86</y>
+     <x>1345</x>
+     <y>62</y>
     </hint>
     <hint type="destinationlabel">
-     <x>982</x>
-     <y>76</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>avg_source_dir_browse</sender>
-   <signal>clicked()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>onAvgSourceDirBrowse()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>610</x>
-     <y>86</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>5</x>
-     <y>49</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>stack_source_dir_browse</sender>
-   <signal>clicked()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>onStackSourceDirBrowse()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>1288</x>
-     <y>86</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>1023</x>
-     <y>45</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>avg_source_dir</sender>
-   <signal>textChanged(QString)</signal>
-   <receiver>MainWindow</receiver>
-   <slot>onAvgSourceDirTextChanged(QString)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>353</x>
-     <y>79</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>163</x>
-     <y>0</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>stack_source_dir</sender>
-   <signal>textChanged(QString)</signal>
-   <receiver>MainWindow</receiver>
-   <slot>onStackSourceDirTextChanged(QString)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>982</x>
-     <y>76</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>559</x>
-     <y>0</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>start_stop</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>avg_source_dir_browse</receiver>
-   <slot>setDisabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>1338</x>
-     <y>86</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>610</x>
-     <y>86</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>start_stop</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>stack_source_dir_browse</receiver>
-   <slot>setDisabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>1338</x>
-     <y>86</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>1288</x>
-     <y>86</y>
+     <x>1295</x>
+     <y>55</y>
     </hint>
    </hints>
   </connection>
@@ -652,8 +278,8 @@ A: Column average</string>
    <slot>onSettings()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1588</x>
-     <y>86</y>
+     <x>1595</x>
+     <y>62</y>
     </hint>
     <hint type="destinationlabel">
      <x>1330</x>
@@ -668,12 +294,12 @@ A: Column average</string>
    <slot>setDisabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1338</x>
-     <y>86</y>
+     <x>1345</x>
+     <y>62</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1588</x>
-     <y>86</y>
+     <x>1595</x>
+     <y>62</y>
     </hint>
    </hints>
   </connection>
@@ -684,44 +310,12 @@ A: Column average</string>
    <slot>onExport()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1438</x>
-     <y>86</y>
+     <x>1445</x>
+     <y>62</y>
     </hint>
     <hint type="destinationlabel">
      <x>456</x>
      <y>40</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>filter</sender>
-   <signal>clicked()</signal>
-   <receiver>MainWindow</receiver>
-   <slot>updateChart()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>1488</x>
-     <y>86</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>8</x>
-     <y>266</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>select</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>MainWindow</receiver>
-   <slot>enableSelection(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>1538</x>
-     <y>86</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>1446</x>
-     <y>97</y>
     </hint>
    </hints>
   </connection>
@@ -732,60 +326,12 @@ A: Column average</string>
    <slot>writeReport()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1388</x>
-     <y>86</y>
+     <x>1395</x>
+     <y>62</y>
     </hint>
     <hint type="destinationlabel">
      <x>1180</x>
      <y>-3</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>histogram</sender>
-   <signal>selected(float,float,bool)</signal>
-   <receiver>MainWindow</receiver>
-   <slot>selectFromHistogramChart(float,float,bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>810</x>
-     <y>936</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>987</x>
-     <y>281</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>image_data</sender>
-   <signal>currentChanged(int)</signal>
-   <receiver>MainWindow</receiver>
-   <slot>updateDetails()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>1168</x>
-     <y>263</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>1339</x>
-     <y>538</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>linear_chart</sender>
-   <signal>selected(float,float,bool)</signal>
-   <receiver>MainWindow</receiver>
-   <slot>selectFromLinearChart(float,float,bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>362</x>
-     <y>936</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>310</x>
-     <y>273</y>
     </hint>
    </hints>
   </connection>

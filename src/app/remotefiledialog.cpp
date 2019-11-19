@@ -73,7 +73,7 @@ void RemoteFileDialog::connectToHost(bool con)
         default_keys_.clear();
         QStringList default_paths;
         default_paths << QDir::homePath()+"/.ssh/id_dsa";
-        default_paths << QDir::homePath()+"/.ssh/id_ecdsa";
+        //default_paths << QDir::homePath()+"/.ssh/id_ecdsa";
         default_paths << QDir::homePath()+ "/.ssh/id_ed25519";
         default_paths << QDir::homePath()+"/.ssh/id_rsa";
         foreach(QString path,default_paths){

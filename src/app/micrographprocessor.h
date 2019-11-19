@@ -26,63 +26,44 @@
 #include <QObject>
 #include <QStringList>
 #include <task.h>
-#include <parallelexporter.h>
 #include <dataptr.h>
-#include "sftpurl.h"
-#include "priorityqueue.h"
+#include "processqueue.h"
 
 //fw decl
-class ProcessWrapper;
 class Settings;
 class QProcess;
 class MetaDataStore;
+class DataSourceBase    ;
 
-class ImageProcessor: public QObject
+class MicrographProcessor: public QObject
 {
     Q_OBJECT
 public:
-    ImageProcessor(MetaDataStore &meta_data_store);
-    ~ImageProcessor();
+    MicrographProcessor(MetaDataStore* meta_data_store,DataSourceBase* data_source, TaskConfiguration* task_configuration);
+    ~MicrographProcessor();
 public slots:
     void startStop(bool start=true);
-    void onTaskFinished(const TaskPtr& task);
     void loadSettings();
-    void exportImages(const SftpUrl& export_path,const SftpUrl& raw_export_path,const QStringList& image_list, const QStringList& output_keys,const QStringList& raw_keys,const QStringList& shared_keys,bool duplicate_raw );
-    void cancelExport();
-    void startTasks();
-    void createTaskTree(DataPtr data, bool force_reprocess=false);
-    void reprocess(const QVector<DataPtr>& images);
+    void processMicrograph(const QString &id);
+    void reprocessMicrograph(const QString &id);
 signals:
-    void newImage(DataPtr data);
-    void dataChanged(DataPtr data);
+    void newImage(Data data);
     void imageUpdated(const QString& image);
     void queueCountChanged(int,int);
-    void processCreated(ProcessWrapper *wrapper,int gpu_id);
+    void processesCreated(QList<ProcessWrapper*> processes);
     void processesDeleted();
-    void exportStarted(const QString& title, int num);
-    void exportMessage(int left, const QList<ExportMessage>& output);
-    void exportFinished();
 
 protected slots:
-    void exportFinished_();
+    void enqueueChildren_(const QString &id, const TaskDefinitionPtr &taskdef);
+    void handleTaskFailed(const QString &id, const TaskDefinitionPtr &taskdef,int exitcode);
 private:
-    void startNextExport_();
-    void loadTask_(Settings *setting,const TaskPtr& task);
-    void enqueueChildren_(const TaskPtr& task);
-
     QString epu_project_dir_;
     QString movie_dir_;
-    PriorityQueue cpu_pqueue_;
-    PriorityQueue gpu_pqueue_;
-    QList<ProcessWrapper*> cpu_processes_;
-    QList<ProcessWrapper*> gpu_processes_;
-    TaskPtr root_task_;
-    QQueue<ParallelExporter*> exporters_;
-    ParallelExporter* current_exporter_;
-    QProcess* process_;
-    bool running_state_;
-    MetaDataStore& meta_data_store_;
-
+    ProcessQueue* cpu_queue_;
+    ProcessQueue* gpu_queue_;
+    MetaDataStore* meta_data_store_;
+    DataSourceBase* data_source_;
+    TaskConfiguration* task_configuration_;
 
 };
 

@@ -2,7 +2,7 @@
 #define SCATTERPLOTDIALOG_H
 
 #include <QDialog>
-#include "imagetablemodel.h"
+#include "metadatastore.h"
 
 namespace Ui {
 class ScatterPlotDialog;
@@ -13,14 +13,15 @@ class ScatterPlotDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit ScatterPlotDialog(ImageTableModel * model,QWidget *parent = 0);
+    explicit ScatterPlotDialog(MetaDataStore * store,QList<InputOutputVariable> result_labels,QWidget *parent = nullptr);
     ~ScatterPlotDialog();
 public slots:
     void updateChart();
 
 private:
     Ui::ScatterPlotDialog *ui;
-    ImageTableModel * model_;
+    MetaDataStore * store_;
+    QList<InputOutputVariable> result_labels_;
 };
 
 #endif // SCATTERPLOTDIALOG_H

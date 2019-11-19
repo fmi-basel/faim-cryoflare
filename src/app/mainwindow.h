@@ -31,14 +31,14 @@
 #include <QPair>
 #include <QChart>
 #include <QTimer>
-#include <imageprocessor.h>
+#include <micrographprocessor.h>
 #include <imagetablemodel.h>
 #include "positionchart.h"
 #include "tablesummarymodel.h"
-#include "imageprocessor.h"
-#include <LimeReport>
+#include "micrographprocessor.h"
 #include "diskusagewidget.h"
 #include "lastimagetimer.h"
+#include "gridsquaretablemodel.h"
 
 namespace Ui {
 class MainWindow;
@@ -58,80 +58,40 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit MainWindow(MetaDataStore& meta_data_store,ImageProcessor& processor);
+    explicit MainWindow(MetaDataStore* meta_data_store,MicrographProcessor* processor, TaskConfiguration* task_configuration);
     ~MainWindow();
     void init();
-    void updateTaskWidgets();
 public slots:
-    void onAvgSourceDirBrowse();
-    void onStackSourceDirBrowse();
-    void onDataChanged(const DataPtr &data);
-    void onAvgSourceDirTextChanged(const QString & dir);
-    void onStackSourceDirTextChanged(const QString & dir);
-    void updateDetailsfromModel(const QModelIndex & topLeft, const QModelIndex & bottomRight);
-    void updateDetailsfromView(const QModelIndex & topLeft, const QModelIndex & bottomRight);
+    void onProjectPathChanged(const QString & dir);
+    void onMoviePathChanged(const QString & dir);
     void onSettings();
-    void inputDataChanged();
     void onExport();
     void updateQueueCounts(int cpu_queue, int gpu_queue);
-    void updateDetails();
-    void updateChart();
-    void updatePhasePlateChart();
-    void updateGridSquareChart();
-    void createProcessIndicator(ProcessWrapper * wrapper, int gpu_id);
+    void createProcessIndicators(QList<ProcessWrapper *> wrappers);
     void deleteProcessIndicators();
-    void displayLinearChartDetails(const QPointF &point, bool state);
-    void displayHistogramChartDetails(const QPointF &point, bool state);
     void writeReport();
-    void selectFromLinearChart(float start, float end, bool invert);
-    void selectFromHistogramChart(float start, float end, bool invert);
     void onStartStopButton(bool start);
     void showAbout();
-    void phasePlateSelectionChanged();
-    void phasePlateSelectionFinished(QRect rubberBandRect, QPointF fromScenePoint, QPointF toScenePoint);
-    void gridSquareSelectionChanged();
-    void gridSquareSelectionFinished(QRect rubberBandRect, QPointF fromScenePoint, QPointF toScenePoint);
     void displayScatterPlot();
-    void enableSelection(bool selecting);
-    void onExportStarted(const QString& message, int num_files);
-    void onExportMessage(int left, const QList<ExportMessage>& messages);
-    void onExportFinished();
-    void reprocessAll();
-    void reprocessSelected();
-    void reprocessCurrent();
+    void currentTabChanged(int idx);
+
 
 signals:
     void startStop(bool start);
     void settingsChanged();
     void cancelExport();
-private slots:
 
 private:
-    void updateTaskWidget_(Settings *settings, QFormLayout *parent_input_layout, QFormLayout *parent_output_layout);
-    MetaDataStore & meta_data_store_;
-    ImageProcessor& processor_;
+    MetaDataStore*  meta_data_store_;
+    MicrographProcessor* processor_;
     Ui::MainWindow *ui;
-    ImageTableModel *model_;
-    ImageTableSortFilterProxyModel *sort_proxy_;
-    TableSummaryModel* summary_model_;
     QLabel *statusbar_queue_count_;
-    QTimer chart_update_timer_;
     QList<ProcessIndicator*> process_indicators_;
-    double histogram_min_;
-    double histogram_bucket_size_;
-    QVector<double> histogram_;
-    PositionChart* phase_plate_chart_;
-    PositionChart* phase_plate_position_chart_;
-    int phase_plate_level_;
-    int current_phase_plate_;
-    int chart_current_square_;
-    QList<InputOutputVariable> default_columns_;
-    LimeReport::ReportEngine report_;
-    ExportProgressDialog* export_progress_dialog_;
     DiskUsageWidget* epu_disk_usage_;
     DiskUsageWidget* movie_disk_usage_;
     DiskUsageWidget* local_disk_usage_;
     LastImageTimer* last_image_timer_;
+    TaskConfiguration* task_configuration_;
 };
 
 #endif // MAINWINDOW_H

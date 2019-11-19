@@ -23,7 +23,7 @@ void ExportProgressDialog::start(const QString &title, int num)
     ui->finish->hide();
     ui->cancel->show();
     ui->details->clear();
-    show();
+    open();
 }
 
 void ExportProgressDialog::update(const QList<ExportMessage> &messages, int num_left)

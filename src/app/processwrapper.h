@@ -27,6 +27,7 @@
 #include <QProcess>
 #include <QHash>
 #include "task.h"
+#include "metadatastore.h"
 
 //fw decl
 class QTimer;
@@ -35,12 +36,13 @@ class ProcessWrapper : public QObject
 {
     Q_OBJECT
 public:
-    explicit ProcessWrapper(QObject *parent, int timeout, int gpu_id);
+    explicit ProcessWrapper(QObject *parent, MetaDataStore* meta_data_store,int timeout, int gpu_id);
     bool running() const;
     TaskPtr task() const;
+    int gpuID() const;
 
 signals:
-    void finished(const TaskPtr &task);
+    void finished(ProcessWrapper* process, const TaskPtr &task,int exitcode);
     void started(const QString &image, const QString &task,int process_id);
     void error(const TaskPtr &task);
 
@@ -56,12 +58,15 @@ private slots:
 private:
     void handleSuccess_();
     void handleFailure_();
+    void writeLog_(const QString& text);
+    void writeErrorLog_(const QString& text);
     QProcess *process_;
     TaskPtr task_;
     int timeout_;
     int gpu_id_;
     QTimer* timeout_timer_;
-  
+    MetaDataStore* meta_data_store_;
+
 };
 
 #endif // PROCESSWRAPPER_H

@@ -25,16 +25,18 @@
 #include <QCoreApplication>
 #include <QTextStream>
 #include <QTimer>
+#include <QDir>
 #include "settings.h"
 #include "processwrapper.h"
 
-ProcessWrapper::ProcessWrapper(QObject *parent, int timeout, int gpu_id) :
+ProcessWrapper::ProcessWrapper(QObject *parent, MetaDataStore* meta_data_store, int timeout, int gpu_id) :
     QObject(parent),
     process_(new QProcess(this)),
     task_(),
     timeout_(timeout),
     gpu_id_(gpu_id),
-    timeout_timer_(new QTimer(this))
+    timeout_timer_(new QTimer(this)),
+    meta_data_store_(meta_data_store)
 {
     connect(process_,&QProcess::started,this,&ProcessWrapper::onStarted_);
     connect(process_,QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished) ,this,&ProcessWrapper::onFinished_);
@@ -57,7 +59,7 @@ bool ProcessWrapper::running() const
 void ProcessWrapper::start(const TaskPtr &task)
 {
     task_=task;
-    process_->start(task_->script);
+    process_->start(task_->definition->script);
     if(timeout_>0){
         timeout_timer_->start(timeout_*1000);
     }
@@ -66,16 +68,35 @@ void ProcessWrapper::start(const TaskPtr &task)
 void ProcessWrapper::onStarted_()
 {
     QByteArray script_input;
-    foreach(QString key,task_->data->keys()){
-        QString val=task_->data->value(key).toString();
+    Data data=meta_data_store_->micrograph(task_->id);
+    foreach(QString key,data.keys()){
+        QString val=data.value(key).toString();
         script_input.append(QString("%1=%2\n").arg(key,val).toLatin1());
     }
     if(-1!=gpu_id_){
         script_input.append(QString("gpu_id=%1\n").arg(gpu_id_).toLatin1());
     }
+    if(data.contains("square_id")){
+        if(meta_data_store_->hasGridsquare(data.value("square_id").toString())){
+            Data grid_data=meta_data_store_->gridsquare(data.value("square_id").toString());
+            foreach(QString key,grid_data.keys()){
+                QString val=grid_data.value(key).toString();
+                script_input.append(QString("grid_%1=%2\n").arg(key,val).toLatin1());
+            }
+        }
+    }
+    if(data.contains("hole_id")){
+        if(meta_data_store_->hasFoilhole(data.value("hole_id").toString())){
+            Data hole_data=meta_data_store_->foilhole(data.value("hole_id").toString());
+            foreach(QString key,hole_data.keys()){
+                QString val=hole_data.value(key).toString();
+                script_input.append(QString("hole_%1=%2\n").arg(key,val).toLatin1());
+            }
+        }
+    }
     Settings settings;
     settings.beginGroup("ScriptInput");
-    settings.beginGroup(task_->name);
+    settings.beginGroup(task_->definition->name);
     foreach(QString name,settings.allKeys()){
         QString value=settings.value(name).toString();
         script_input.append(QString("%1=%2\n").arg(name,value).toLatin1());
@@ -84,7 +105,7 @@ void ProcessWrapper::onStarted_()
     settings.endGroup();
     process_->write(script_input);
     process_->closeWriteChannel();
-    emit started(task_->name,task_->data->value("short_name").toString(),process_->processId());
+    emit started(task_->definition->name,data.value("short_name").toString(),process_->processId());
 }
 
 
@@ -104,26 +125,26 @@ void ProcessWrapper::onError_(QProcess::ProcessError e)
     QString error_string;
     switch (e) {
         case QProcess::FailedToStart:
-            error_string=QString("Task %1 failed to start\n").arg(task_->script);
+            error_string=QString("Task %1 failed to start\n").arg(task_->definition->script);
             break;
         case QProcess::Crashed:
-            error_string=QString("Task %1 crashed.\n").arg(task_->script);
+            error_string=QString("Task %1 crashed.\n").arg(task_->definition->script);
             break;
         case QProcess::Timedout:
-            error_string=QString("Task %1  waitFor...() function timed out.\n").arg(task_->script);
+            error_string=QString("Task %1  waitFor...() function timed out.\n").arg(task_->definition->script);
             break;
         case QProcess::WriteError:
-            error_string=QString("An error occurred when attempting to write to task %1.\n").arg(task_->script);
+            error_string=QString("An error occurred when attempting to write to task %1.\n").arg(task_->definition->script);
             break;
         case QProcess::ReadError:
-            error_string=QString("An error occurred when attempting to read from task %1.\n").arg(task_->script);
+            error_string=QString("An error occurred when attempting to read from task %1.\n").arg(task_->definition->script);
             break;
         case QProcess::UnknownError:
         default:
-            error_string=QString("Unknown error in task %1.\n").arg(task_->script);
+            error_string=QString("Unknown error in task %1.\n").arg(task_->definition->script);
             break;
     }
-    task_->error+=error_string;
+    writeErrorLog_(error_string);
     if(running()){
         terminate();
     }else{
@@ -140,18 +161,7 @@ void ProcessWrapper::handleSuccess_()
     QString shared_result_file_token("SHARED_FILE_EXPORT:");
     QString output;
     QString line;
-    QVariantHash raw_files;
-    if(task_->data->contains("raw_files")){
-        raw_files=task_->data->value("raw_files").toObject().toVariantHash();
-    }
-    QVariantHash files;
-    if(task_->data->contains("files")){
-        files=task_->data->value("files").toObject().toVariantHash();
-    }
-    QVariantHash shared_files;
-    if(task_->data->contains("shared_files")){
-        shared_files=task_->data->value("shared_files").toObject().toVariantHash();
-    }
+    QMap<QString,QString> data,raw_files,files,shared_files;
     do {
         line = output_stream.readLine();
         output.append(line+"\n");
@@ -162,7 +172,7 @@ void ProcessWrapper::handleSuccess_()
                 qDebug() << "invalid result line: " << line;
                 continue;
             }
-            task_->data->insert(splitted[0].trimmed(),splitted[1].trimmed());
+            data.insert(splitted[0].trimmed(),splitted[1].trimmed());
         }else if(line.startsWith(raw_file_token)){
             line.remove(0,raw_file_token.size());
             QStringList splitted=line.split("=");
@@ -189,36 +199,56 @@ void ProcessWrapper::handleSuccess_()
             shared_files.insert(splitted[0].trimmed(),splitted[1].trimmed());
         }
     } while (!line.isNull());
-    task_->data->insert("raw_files",QJsonObject::fromVariantHash(raw_files));
-    task_->data->insert("files",QJsonObject::fromVariantHash(files));
-    task_->data->insert("shared_files",QJsonObject::fromVariantHash(shared_files));
-    task_->output+=output;
-    task_->error+=process_->readAllStandardError();
-    task_->state=process_->exitCode();
+    data.insert(task_->definition->taskString(),"FINISHED");
+    meta_data_store_->updateMicrograph(task_->id,data,raw_files,files,shared_files);
+    writeLog_(output);
+    writeErrorLog_(process_->readAllStandardError());
     TaskPtr task=task_;
     task_.clear();
-    emit finished(task);
+    emit finished(this,task,0);
 }
 
 void ProcessWrapper::handleFailure_()
 {
-    if(process_->exitStatus()==QProcess::NormalExit){
-        task_->state=process_->exitCode();
-    }else{
-        task_->state=-1;
-    }
     process_->setReadChannel(QProcess::StandardError);
     if(process_->bytesAvailable()>0){
-        task_->error+=process_->readAllStandardError();
+        writeErrorLog_(process_->readAllStandardError());
     }
     process_->setReadChannel(QProcess::StandardOutput);
     if(process_->bytesAvailable()>0){
-        task_->output+=process_->readAllStandardOutput();
+        writeLog_(process_->readAllStandardOutput());
     }
+    meta_data_store_->updateMicrograph(task_->id, {{ task_->definition->taskString(),"ERROR"}});
     TaskPtr task=task_;
     task_.clear();
-    emit finished(task);
+    if(process_->exitStatus()==QProcess::NormalExit){
+        emit finished(this,task,process_->exitCode());
+    }else{
+        emit finished(this,task,-1);
+    }
 
+}
+
+void ProcessWrapper::writeLog_(const QString &text)
+{
+    QFile f(QDir::current().relativeFilePath(task_->definition->name+"_out.log"));
+    if (f.open(QIODevice::WriteOnly | QIODevice::Append)) {
+        QTextStream stream( &f );
+        foreach(QString line, text.split("\n", QString::SkipEmptyParts)){
+            stream << task_->id << ": " << text;
+        }
+    }
+}
+
+void ProcessWrapper::writeErrorLog_(const QString &text)
+{
+    QFile ferr(QDir::current().relativeFilePath(task_->definition->name+"_error.log"));
+    if (ferr.open(QIODevice::WriteOnly | QIODevice::Append)) {
+        QTextStream stream( &ferr );
+        foreach(QString line, text.split("\n", QString::SkipEmptyParts)){
+            stream << task_->id << ": " << text;
+        }
+    }
 }
 
 void ProcessWrapper::kill()
@@ -237,4 +267,9 @@ void ProcessWrapper::terminate()
 TaskPtr ProcessWrapper::task() const
 {
     return task_;
+}
+
+int ProcessWrapper::gpuID() const
+{
+    return gpu_id_;
 }

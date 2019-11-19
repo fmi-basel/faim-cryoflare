@@ -42,6 +42,9 @@
 #include "../external/qssh/sshconnection.h"
 #include "../external/qssh/sftpchannel.h"
 
+//fw decl
+class ExportProgressDialog;
+
 template <class T>
 class ThreadSafeList{
 protected:
@@ -284,6 +287,7 @@ protected:
     QList<ExportWorkerBase*> workers_;
     QTimer message_timer_;
     Barrier<ThreadSafeQueue<WorkItem> > barrier_;
+    ExportProgressDialog* export_progress_dialog_;
 private:
     Q_DISABLE_COPY(ParallelExporter)
 };

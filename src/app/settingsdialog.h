@@ -27,6 +27,7 @@
 #include "settings.h"
 #include <LimeReport>
 #include <inputoutputvariable.h>
+#include "task.h"
 
 //fw decl
 class QMenu;
@@ -42,7 +43,7 @@ class SettingsDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit SettingsDialog(QList<InputOutputVariable> default_columns,LimeReport::ReportEngine *report_engine, QWidget *parent = nullptr);
+    explicit SettingsDialog(TaskConfiguration* task_config, QWidget *parent = nullptr);
     void saveSettings();
     void loadSettings();
     ~SettingsDialog();
@@ -61,6 +62,7 @@ public slots:
     void designReport();
 private:
     Ui::SettingsDialog *ui;
+    TaskConfiguration* task_config_;
     QMenu *task_tree_menu_;
     QAction *task_tree_new_;
     QAction *task_tree_delete_;
@@ -68,7 +70,6 @@ private:
     QAction *output_variable_delete_;
     QAction *input_variable_new_;
     QAction *input_variable_delete_;
-    LimeReport::ReportEngine *report_engine_;
 };
 
 #endif // SETTINGSDIALOG_H

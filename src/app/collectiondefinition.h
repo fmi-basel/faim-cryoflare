@@ -10,7 +10,7 @@ class CollectionDefinition : public QObject
     Q_OBJECT
 public:
     explicit CollectionDefinition(QObject *parent = nullptr);
-    QVector<DataPtr> getData();
+    QVector<Data> getData();
 
 signals:
 

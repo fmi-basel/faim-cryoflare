@@ -3,6 +3,6 @@
 
 #include "dataptr.h"
 
-DataPtr readEPUXML(const QString &path);
+Data readEPUXML(const QString &path);
 
 #endif // READEPUXML_H

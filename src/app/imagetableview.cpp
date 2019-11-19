@@ -21,9 +21,9 @@
 //------------------------------------------------------------------------------
 
 #include <QAction>
-#include <QtDebug>
 #include <QHeaderView>
 #include "imagetableview.h"
+#include "imagetablemodel.h"
 
 ImageTableView::ImageTableView(QWidget *parent) :
     QTableView(parent),
@@ -53,6 +53,15 @@ ImageTableView::ImageTableView(QWidget *parent) :
     connect(invert_selection_,SIGNAL(triggered()),this,SLOT(invertSelection()));
     horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     horizontalHeader()->setResizeContentsPrecision(0);
+}
+
+void ImageTableView::setModel(QAbstractItemModel *m)
+{
+    if(model()){
+        disconnect(model(),&QAbstractItemModel::modelReset,this,&ImageTableView::updateColumnVisibility);
+    }
+    QTableView::setModel(m);
+    connect(model(),&QAbstractItemModel::modelReset,this,&ImageTableView::updateColumnVisibility);
 }
 
 void ImageTableView::selectEverything()
@@ -116,6 +125,13 @@ void ImageTableView::invertSelection()
         }else{
             m->setData(m->index(i,0),Qt::Checked,Qt::CheckStateRole);
        }
+    }
+}
+
+void ImageTableView::updateColumnVisibility()
+{
+    for(int i=0;i<model()->columnCount();++i){
+        setColumnHidden(i,! model()->headerData(i,Qt::Horizontal,ImageTableModel::VisibilityRole).toBool());
     }
 }
 

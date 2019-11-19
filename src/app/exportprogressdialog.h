@@ -12,7 +12,7 @@ class ExportProgressDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit ExportProgressDialog(QWidget *parent = 0);
+    explicit ExportProgressDialog(QWidget *parent = nullptr);
     ~ExportProgressDialog();
 public slots:
     void start(const QString& title,int num);

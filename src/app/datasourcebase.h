@@ -12,7 +12,9 @@ public:
     virtual ~DataSourceBase();
 
 signals:
-    void newImage(const DataPtr& ptr);
+    void newMicrograph(const Data& ptr);
+    void newGridsquare(const Data& ptr);
+    void newFoilhole(const Data& ptr);
 
 public slots:
     virtual void start()=0;

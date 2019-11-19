@@ -25,19 +25,22 @@
 #include "metadatastore.h"
 #include "imagetablemodel.h"
 
-ImageTableModel::ImageTableModel(MetaDataStore& store,QObject *parent):
+ImageTableModel::ImageTableModel(MetaDataStore* store, TaskConfiguration *task_config, QObject *parent):
     QAbstractTableModel(parent),
     meta_data_store_(store),
+    micrograph_id_(),
     columns_(),
     colors_(),
-    num_rows_(0)
+    task_configuration_(task_config)
 {
-    connect(&store,&MetaDataStore::newImage,this , &ImageTableModel::imageAdded);
+    connect(store,&MetaDataStore::newMicrograph,this , &ImageTableModel::onMicrographAdded);
+    connect(store,&MetaDataStore::micrographUpdated,this , &ImageTableModel::onMicrographUpdated);
+    connect(task_config,&TaskConfiguration::configurationChanged,this , &ImageTableModel::onTasksChanged);
 }
 
 int ImageTableModel::rowCount(const QModelIndex &/*parent*/) const
 {
-    return num_rows_;
+    return micrograph_id_.size();
 }
 
 int ImageTableModel::columnCount(const QModelIndex &/*parent*/) const
@@ -53,10 +56,9 @@ QVariant ImageTableModel::data(const QModelIndex &index, int role) const
     // handle export check box
     if(0==index.column()){
         if(role==Qt::BackgroundRole){
-//            return QBrush(QColor(255,255,255));
             return QBrush(QColor(136, 138, 133));
         }
-        QString value=meta_data_store_.at(index.row())->value("export").toString("true");
+        QString value=meta_data_store_->micrograph(micrograph_id_.value(index.row())).value("export").toString("true");
         bool state=value.compare("true", Qt::CaseInsensitive) == 0 || value==QString("1");
         if(role==Qt::CheckStateRole){
             if (state)
@@ -78,7 +80,6 @@ QVariant ImageTableModel::data(const QModelIndex &index, int role) const
     if(role==Qt::BackgroundRole){
         int col=index.column();
         if(col>colors_.size()){
-//            return QBrush(QColor(255,255,255));
             return QBrush(QColor(136, 138, 133));
         }else{
             return QBrush(colors_[col-1]);
@@ -87,30 +88,26 @@ QVariant ImageTableModel::data(const QModelIndex &index, int role) const
     }
     // handle other columns
     if(role==SortRole){
-        QVariant v=QVariant(meta_data_store_.at(index.row())->value(columns_[index.column()-1].label).toString());
+        QVariant v=QVariant(meta_data_store_->micrograph(micrograph_id_.value(index.row())).value(columns_[index.column()-1].label).toString());
         switch(columns_[index.column()-1].type){
         case String:
             return v;
-            break;
         case Float:
             if(v.toString()==QString("")){
                 return QVariant();
             }
             return v.toDouble();
-            break;
         case Int:
             if( v.toString()==QString("")){
                 return QVariant();
             }
             return v.toInt();
-            break;
         case Image:
         default:
             return "-";
-            break;
         }
     }else if(role==Qt::DisplayRole){
-        return meta_data_store_.at(index.row())->value(columns_[index.column()-1].label).toString();
+        return meta_data_store_->micrograph(micrograph_id_.value(index.row())).value(columns_[index.column()-1].label).toString();
     }else if (role==SummaryRole){
         return columns_[index.column()-1].summary_type;
     }
@@ -120,12 +117,7 @@ QVariant ImageTableModel::data(const QModelIndex &index, int role) const
 bool ImageTableModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
     if(role==Qt::CheckStateRole && index.column()==0){
-        if(value == Qt::Checked){
-            meta_data_store_.at(index.row())->insert("export","true");
-        }else{
-            meta_data_store_.at(index.row())->insert("export","false");
-        }
-        emit dataChanged(index,index);
+        meta_data_store_->setMicrographExport(micrograph_id_.value(index.row()),value == Qt::Checked);
         return true;
     }else{
         return false;
@@ -134,6 +126,16 @@ bool ImageTableModel::setData(const QModelIndex &index, const QVariant &value, i
 
 QVariant ImageTableModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
+    if(role==VisibilityRole){
+        if(orientation==Qt::Vertical){
+            return true;
+        }else{
+            if(section==0){
+                return true;
+            }
+            return columns_.value(section-1).in_column;
+        }
+    }
     if(role==Qt::DisplayRole){
         if(orientation==Qt::Horizontal){
             if(section==0){
@@ -150,7 +152,6 @@ QVariant ImageTableModel::headerData(int section, Qt::Orientation orientation, i
         }
     } else if(role==Qt::BackgroundRole){
         if(section>colors_.size() || section<1 || orientation==Qt::Vertical){
-//            return QBrush(QColor(255,255,255));
             return QBrush(QColor(136, 138, 133));
         }else{
             return QBrush(colors_[section-1]);
@@ -176,39 +177,50 @@ Qt::ItemFlags ImageTableModel::flags(const QModelIndex &index) const
     }
 }
 
-DataPtr ImageTableModel::image(int row)
+
+Data ImageTableModel::image(int row)
 {
-    return meta_data_store_.at(row);
+    return meta_data_store_->at(row);
 }
 
-void ImageTableModel::imageAdded(const DataPtr &/*data*/)
+QString ImageTableModel::id(int row)
 {
-   beginInsertRows(QModelIndex(),rowCount(QModelIndex()),rowCount(QModelIndex()));
-   ++num_rows_;
+    return micrograph_id_[row];
+}
+
+
+void ImageTableModel::onMicrographAdded(const QString &id)
+{
+   beginInsertRows(QModelIndex(),rowCount(),rowCount());
+   micrograph_id_.append(id);
    endInsertRows();
 }
 
-void ImageTableModel::addColumn(const InputOutputVariable &column, const QColor &color)
+void ImageTableModel::onTasksChanged()
 {
     beginResetModel();
-    columns_.append(column);
-    colors_.append(color);
+    columns_.clear();
+    colors_.clear();
+    QList<TaskDefinitionPtr> def_list;
+    def_list.append(task_configuration_->rootDefinition());
+    while(!def_list.empty()){
+        TaskDefinitionPtr ptr=def_list.takeFirst();
+        columns_.append(ptr->result_variables_);
+        for(int i=0;i<ptr->result_variables_.size();++i){
+            colors_.append(ptr->color);
+        }
+        QList<TaskDefinitionPtr> children=ptr->children;
+        while (!children.empty()) {
+            def_list.push_front(children.takeLast());
+        }
+    }
     endResetModel();
 }
 
-void ImageTableModel::clearColumns()
-{
-    if(! columns_.empty()){
-        beginResetModel();
-        columns_.clear();
-        colors_.clear();
-        endResetModel();
-    }
-}
 
-void ImageTableModel::onDataChanged(const DataPtr &data)
+void ImageTableModel::onMicrographUpdated(const QString &id)
 {
-    int idx=meta_data_store_.indexOf(data);
+    int idx=micrograph_id_.indexOf(id);
     if(idx>=0){
         dataChanged(index(idx,0),index(idx,columns_.size()));
     }

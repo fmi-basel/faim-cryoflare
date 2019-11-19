@@ -45,6 +45,7 @@ public:
 
     PathType pathType() const;
     void setPathType(const PathType &pathType);
+    void setIconSize(int size);
 
 signals:
     void pathChanged(QString);
