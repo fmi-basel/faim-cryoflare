@@ -75,6 +75,7 @@ void ProcessQueue::createProcesses(int num_processes, int timeout, QStringList g
         process->terminate();
         process->deleteLater();
     }
+    processes_.clear();
     if(gpus.empty()){
         gpus << "-1";
     }
