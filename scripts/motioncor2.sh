@@ -28,6 +28,7 @@ FILES motioncor2_log motioncor2_aligned_avg motioncor2_aligned_avg_dw
 
 ######################## define additional parameters ##########################
 dose_per_frame=`CALCULATE "$mc2_input_dose/$num_frames"`
+echo $dose_per_frame $mc2_input_dose $num_frames
 bft="300"
 iter=4
 

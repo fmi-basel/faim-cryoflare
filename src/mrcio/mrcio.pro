@@ -22,7 +22,7 @@
 
 TEMPLATE      = lib
 CONFIG       += plugin static
-QT           += widgets
+QT           += widgets gui
 HEADERS       = mrciohandler.h \
                 mrcioplugin.h
 SOURCES       = mrciohandler.cpp \

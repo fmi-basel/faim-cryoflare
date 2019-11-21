@@ -72,9 +72,9 @@ void RemoteFileDialog::connectToHost(bool con)
         ui->connect->setText("Disconnect");
         default_keys_.clear();
         QStringList default_paths;
-        default_paths << QDir::homePath()+"/.ssh/id_dsa";
         //default_paths << QDir::homePath()+"/.ssh/id_ecdsa";
         default_paths << QDir::homePath()+ "/.ssh/id_ed25519";
+        default_paths << QDir::homePath()+"/.ssh/id_dsa";
         default_paths << QDir::homePath()+"/.ssh/id_rsa";
         foreach(QString path,default_paths){
             if(QFileInfo::exists(path)){
@@ -164,6 +164,7 @@ void RemoteFileDialog::tryNextAuth_()
     remote_path_.setPort(ui->port->text().toInt());
     SshAuthenticationStore store;
     if(store.contains(remote_path_.toConnectionParameters()) && !stored_connection_){
+	qDebug() << "using stored connection";
         default_keys_.clear();
         model_->setSshConnection(store.retrieve(remote_path_.toConnectionParameters()));
         stored_connection_=true;
@@ -171,11 +172,13 @@ void RemoteFileDialog::tryNextAuth_()
         stored_connection_=false;
         if(!default_keys_.empty()){
             QString next_key=default_keys_.back();
+	    qDebug() << "using next auth key: " << next_key;
             default_keys_.pop_back();
             remote_path_.setAuthType(QSsh::SshConnectionParameters::AuthenticationByKey);
             remote_path_.setKey(next_key);
             model_->setSshConnection(remote_path_.toConnectionParameters());
         }else{
+	    qDebug() << "using pw auth";
             SshAuthenticationDialog::auth_type auth=SshAuthenticationDialog::getSshAuthentication(QString("Authentication for: %1").arg(remote_path_.toString(QUrl::RemovePassword)));
             if(auth.second!=""){
                 remote_path_.setAuthType(auth.first);
@@ -186,6 +189,7 @@ void RemoteFileDialog::tryNextAuth_()
                 }
                 model_->setSshConnection(remote_path_.toConnectionParameters());
             }else{
+	    	qDebug() << "receivd empty auth";
                 disconnect_();
                 ui->message->setText("Disconnected");
             }

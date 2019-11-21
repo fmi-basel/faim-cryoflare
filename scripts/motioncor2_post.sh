@@ -15,6 +15,9 @@ module load eman2/2.2
 
 
 patch_full_log=micrographs_mc2/${short_name}_motioncor2.log0-Patch-Full.log
+if [ ! -f $patch_full_log ]; then
+  patch_full_log=micrographs_mc2/${short_name}_motioncor2.log0-Full.log
+fi
 
 motioncor2_aligned_avg_dw_png=micrographs_mc2/${short_name}.png
 motioncor2_aligned_avg_dw_fft_thumbnail=micrographs_mc2/${short_name}_fft.png

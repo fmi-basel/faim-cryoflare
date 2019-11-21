@@ -28,7 +28,7 @@ CONFIG(debug, debug|release) {
 #TARGET = QtZint
 
 
-
+QMAKE_CFLAGS += -std=c99
 
 !contains(DEFINES, NO_PNG) {
     SOURCES += $$PWD/../backend/png.c

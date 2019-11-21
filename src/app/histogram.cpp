@@ -1,4 +1,6 @@
 #include "histogram.h"
+#include <QPointF>
+#include <QList>
 
 #include <algorithm>
 

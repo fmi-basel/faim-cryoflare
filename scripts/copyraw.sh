@@ -64,7 +64,9 @@ if FILES_MISSING; then
     echo install -m 644 $gain_ref $copyraw_gain_ref
     install -m 644 $gain_ref $copyraw_gain_ref
   fi
-  install -m 644 $source_stack $copyraw_raw_stack
+  if [ ! -f $copyraw_raw_stack ] ; then
+    install -m 644 $source_stack $copyraw_raw_stack
+  fi
   install -m 644 $xml_file $copyraw_xml
   install -m 644 ${xml_file/.xml/.mrc} $copyraw_raw_average
   install -m 644 ${xml_file/.xml/.jpg} $copyraw_raw_average_jpg

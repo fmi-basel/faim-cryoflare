@@ -181,7 +181,7 @@ void LocalExportWorker::copyFile_(const WorkItem &item)
         if(!source_file->copy(QDir(destination_.path()).absoluteFilePath(item.filename))){
             error_("Error copying file: "+item.filename);
         }else{
-            message_("Copied: "+item.filename);
+            //message_("Copied: "+item.filename);
         }
     }
 }

@@ -1,5 +1,7 @@
 include(../common.pri)
 QT += core gui
+CONFIG += static_build
+
 
 TARGET = LRDesigner
 TEMPLATE = app
@@ -17,8 +19,10 @@ macx{
 unix:{
     CONFIG(debug, debug|release) {
         LIBS += -L../limereport  -llimereportd
+        LIBS += -L  ../3rdparty    -lQtZintd
     } else {
         LIBS += -L../limereport -llimereport
+        LIBS += -L  ../3rdparty    -lQtZint
     }
     !contains(CONFIG, static_build){
 		contains(CONFIG,zint){

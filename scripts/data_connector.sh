@@ -6,7 +6,7 @@ set -e
 ######################## floating point calculator #############################
 
 CALCULATE() {
-python -c "from math import *;print $1"
+python -c "from __future__ import division;from math import *;print $1"
 }
 
 
