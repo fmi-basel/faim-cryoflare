@@ -90,7 +90,7 @@ void ProcessQueue::createProcesses(int num_processes, int timeout, QStringList g
 
 void ProcessQueue::onProcessFinished(ProcessWrapper *process, const TaskPtr &task,int exitcode)
 {
-    if(!pqueue_.empty()){
+    if(!pqueue_.empty() && running_){
         process->start(pqueue_.dequeue());
     }else{
         idle_processes_.append(process);

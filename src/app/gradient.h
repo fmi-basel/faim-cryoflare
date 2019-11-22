@@ -10,6 +10,7 @@ class Gradient
 public:
     Gradient(const QMap<qreal,QColor> &stops);
     QList<QColor> createColors(const QList<qreal> &values) const;
+    QMap<qreal,QColor> stops();
 protected:
     QMap<qreal,QColor> stops_;
 };

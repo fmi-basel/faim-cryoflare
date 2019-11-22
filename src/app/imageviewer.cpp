@@ -9,7 +9,10 @@ ImageViewer::ImageViewer(QWidget *parent):
     scene_(),
     pixmap_item_(),
     markers_(),
-    scalefactor_(1)
+    scalefactor_(1),
+    legend_gradient_(),
+    legend_min_(),
+    legend_max_()
 {
     pixmap_item_=scene_.addPixmap(QPixmap());
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -51,6 +54,17 @@ void ImageViewer::clearMarkers()
     markers_.clear();
 }
 
+void ImageViewer::setLegend(const QLinearGradient &gradient, const QString &lmin, const QString &lmax)
+{
+    legend_gradient_=gradient;
+    legend_gradient_.setStart(QPointF(40,15));
+    legend_gradient_.setFinalStop(QPointF(240,15));
+    legend_min_=lmin;
+    legend_max_=lmax;
+    scene_.update();
+
+}
+
 void ImageViewer::resizeEvent(QResizeEvent *event)
 {
     fitInView(scene_.sceneRect(),Qt::KeepAspectRatio);
@@ -65,6 +79,19 @@ void ImageViewer::wheelEvent(QWheelEvent *event)
     }else{
         --scalefactor_;
         scale(0.5,0.5);
+    }
+}
+
+void ImageViewer::drawForeground(QPainter *painter, const QRectF &rect)
+{
+    if(! markers_.empty()){
+        painter->setPen(Qt::black);
+        painter->resetTransform();
+        painter->setBrush(legend_gradient_);
+        painter->setFont(QFont("Arial", 12));
+        painter->drawRect(QRectF(QPointF(40,10),QPointF(240,20)));
+        painter->drawText(QRectF(QPointF(0,25),QPointF(80,40)), Qt::AlignCenter, legend_min_);
+        painter->drawText(QRectF(QPointF(200,25),QPointF(280,40)), Qt::AlignCenter, legend_max_);
     }
 }
 

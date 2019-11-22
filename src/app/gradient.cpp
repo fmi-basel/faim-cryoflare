@@ -40,3 +40,8 @@ QList<QColor> Gradient::createColors(const QList<qreal>& values) const
     }
     return result;
 }
+
+QMap<qreal, QColor> Gradient::stops()
+{
+    return stops_;
+}

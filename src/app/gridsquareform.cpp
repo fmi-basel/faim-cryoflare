@@ -85,6 +85,11 @@ void GridsquareForm::updateMarkers()
                     ui->gridsquare_view->addMarker(QPointF(fh_data.value("x").toString().toDouble(),fh_data.value("y").toString().toDouble()),30,fh_data.value("id").toString(),color);
                 }
             }
+            QLinearGradient lin_gradient;
+            QGradientStops stops;
+            stops << QGradientStop(0,QColor(0,127,0,100))<< QGradientStop(1,QColor(0,0,127,100));
+            lin_gradient.setStops(stops);
+            ui->gridsquare_view->setLegend(lin_gradient,"Selected","Acquired");
         }else {
             QList<QPointF> pos;
             QList<qreal> v;
@@ -111,6 +116,14 @@ void GridsquareForm::updateMarkers()
                 }
             }
             const auto [min, max] = std::minmax_element(v.begin(),v.end());
+            QLinearGradient lin_gradient;
+            QGradientStops stops;
+            QMap<qreal,QColor> s=gradient_.stops();
+            foreach(qreal v,s.keys()){
+                stops << QGradientStop(v,s[v]);
+            }
+            lin_gradient.setStops(stops);
+            ui->gridsquare_view->setLegend(lin_gradient,QString("%1").arg(*min),QString("%1").arg(*max));
             if(*max>*min){
                 std::transform(v.begin(),v.end(),v.begin(),Normalize(*min,*max));
             }else{
