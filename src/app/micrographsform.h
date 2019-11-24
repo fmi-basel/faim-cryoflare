@@ -29,7 +29,7 @@ public:
 
 public slots:
     void updateDetailsFromModel(const QModelIndex &topLeft, const QModelIndex &bottomRight);
-    void updateDetailsfromView(const QModelIndex &, const QModelIndex &);
+    void updateDetailsfromView();
     void updateTaskWidgets();
     void updatePhasePlateChart();
     void inputDataChanged();

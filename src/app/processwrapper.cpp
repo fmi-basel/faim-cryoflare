@@ -162,9 +162,11 @@ void ProcessWrapper::handleSuccess_()
     QString output;
     QString line;
     QMap<QString,QString> data,raw_files,files,shared_files;
+    int linecount=0;
     do {
         line = output_stream.readLine();
-        output.append(line+"\n");
+        output.append(QString("%1\n").arg(line));
+        ++linecount;
         if(line.startsWith(result_token)){
             line.remove(0,result_token.size());
             QStringList splitted=line.split("=");
@@ -235,7 +237,7 @@ void ProcessWrapper::writeLog_(const QString &text)
     if (f.open(QIODevice::WriteOnly | QIODevice::Append)) {
         QTextStream stream( &f );
         foreach(QString line, text.split("\n", QString::SkipEmptyParts)){
-            stream << task_->id << ": " << text;
+            stream << task_->id << ": " << line << "\n";
         }
     }
 }
@@ -246,7 +248,7 @@ void ProcessWrapper::writeErrorLog_(const QString &text)
     if (ferr.open(QIODevice::WriteOnly | QIODevice::Append)) {
         QTextStream stream( &ferr );
         foreach(QString line, text.split("\n", QString::SkipEmptyParts)){
-            stream << task_->id << ": " << text;
+            stream << task_->id << ": " << line << "\n";
         }
     }
 }

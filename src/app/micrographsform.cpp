@@ -139,6 +139,7 @@ void MicrographsForm::init(QMainWindow *parent, MetaDataStore* store, Micrograph
     connect(phase_plate_chart_,&PositionChart::selectionChanged,this,&MicrographsForm::phasePlateSelectionChanged);
     connect(ui->phase_plate,&PositionChartView::rubberBandChanged,this,&MicrographsForm::phasePlateSelectionFinished);
     connect(phase_plate_position_chart_,&PositionChart::selectionChanged,this,&MicrographsForm::phasePlateSelectionChanged);
+    connect(ui->image_data,&QTabWidget::currentChanged,this,&MicrographsForm::updateDetailsfromView);
     updateTaskWidgets();
 }
 
@@ -156,9 +157,9 @@ void MicrographsForm::updateDetailsFromModel(const QModelIndex &topLeft, const Q
     }
 }
 
-void MicrographsForm::updateDetailsfromView(const QModelIndex &/*topLeft*/, const QModelIndex &/*bottomRight*/)
+void MicrographsForm::updateDetailsfromView()
 {
-    static int previous_row=-1,previous_column=-1;
+    static int previous_row=-1,previous_column=-1, previous_tab=-1;
     int current_row=sort_proxy_->mapToSource(ui->image_list->currentIndex()).row();
     int current_column=sort_proxy_->mapToSource(ui->image_list->currentIndex()).column();
     if(current_column!=previous_column){
@@ -167,8 +168,10 @@ void MicrographsForm::updateDetailsfromView(const QModelIndex &/*topLeft*/, cons
         ui->histogram->setActiveColumn(current_column);
         chart_update_timer_.start();
     }
-    if(previous_row!=current_row){
+    int current_tab=ui->image_data->currentIndex();
+    if(previous_row!=current_row || previous_tab!=current_tab){
         previous_row=current_row;
+        previous_tab=current_tab;
         updateDetails_();
     }
 }

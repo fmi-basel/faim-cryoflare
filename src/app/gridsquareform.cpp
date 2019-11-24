@@ -66,9 +66,10 @@ void GridsquareForm::updateMarkers()
     }
     ui->gridsquare_view->clearMarkers();
     QModelIndex idx=ui->gridsquare_list->currentIndex();
-    if(idx.isValid()){
+    QListWidgetItem* current_label=ui->result_labels->currentItem();
+    if(idx.isValid() && current_label){
         QString id=gridsquare_model_->data(idx).toString();
-        QString result_label=ui->result_labels->currentItem()->text();
+        QString result_label=current_label->text();
         Data grid_data=meta_data_store_->gridsquare(id);
         QJsonArray hole_ids=grid_data.value("hole_ids").toArray();
         qDebug()<< result_label <<hole_ids.size();

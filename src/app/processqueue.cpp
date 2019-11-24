@@ -76,6 +76,7 @@ void ProcessQueue::createProcesses(int num_processes, int timeout, QStringList g
         process->deleteLater();
     }
     processes_.clear();
+    idle_processes_.clear();
     if(gpus.empty()){
         gpus << "-1";
     }
@@ -87,7 +88,7 @@ void ProcessQueue::createProcesses(int num_processes, int timeout, QStringList g
         idle_processes_.append(wrapper);
     }
 }
-
+ 
 void ProcessQueue::onProcessFinished(ProcessWrapper *process, const TaskPtr &task,int exitcode)
 {
     if(!pqueue_.empty() && running_){
