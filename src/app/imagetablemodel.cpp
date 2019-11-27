@@ -141,7 +141,7 @@ QVariant ImageTableModel::headerData(int section, Qt::Orientation orientation, i
             if(section==0){
                 return "Export";
             }else{
-                if(columns_.size()>section-1){
+                if(columns_.size()>section-1 && section>0){
                     return QString("%1").arg(columns_[section-1].key);
                 }else{
                    return "invalid";
