@@ -24,9 +24,11 @@
 
 #include <QGraphicsView>
 #include <QGraphicsScene>
+#include <QRubberBand>
 
 class ImageViewer : public QGraphicsView
 {
+    Q_OBJECT
 public:
     ImageViewer(QWidget *parent = nullptr);
 public slots:
@@ -35,10 +37,15 @@ public slots:
     void clear();
     void clearMarkers();
     void setLegend(const QLinearGradient& gradient, const QString& lmin,const QString& lmax);
+signals:
+    void selected(QStringList& ids,bool invert);
 protected:
     virtual void resizeEvent(QResizeEvent *event);
     virtual void wheelEvent(QWheelEvent *event);
     virtual void drawForeground(QPainter * painter,const QRectF& rect);
+    virtual void mousePressEvent(QMouseEvent *event);
+    virtual void mouseMoveEvent(QMouseEvent *event);
+    virtual void mouseReleaseEvent(QMouseEvent *event);
     QGraphicsScene scene_;
     QGraphicsPixmapItem* pixmap_item_;
     QList<QGraphicsItem*> markers_;
@@ -46,6 +53,9 @@ protected:
     QLinearGradient legend_gradient_;
     QString legend_min_;
     QString legend_max_;
+    bool selecting_;
+    QRubberBand *rubberband_;
+    QPoint rubberband_start_;
 };
 
 #endif // IMAGEVIEWER_H

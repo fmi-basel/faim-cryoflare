@@ -33,7 +33,10 @@ ImageViewer::ImageViewer(QWidget *parent):
     scalefactor_(1),
     legend_gradient_(),
     legend_min_(),
-    legend_max_()
+    legend_max_(),
+    selecting_(false),
+    rubberband_(new QRubberBand(QRubberBand::Rectangle,this)),
+    rubberband_start_()
 {
     pixmap_item_=scene_.addPixmap(QPixmap());
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -113,6 +116,46 @@ void ImageViewer::drawForeground(QPainter *painter, const QRectF &rect)
         painter->drawRect(QRectF(QPointF(40,10),QPointF(240,20)));
         painter->drawText(QRectF(QPointF(0,25),QPointF(80,40)), Qt::AlignCenter, legend_min_);
         painter->drawText(QRectF(QPointF(200,25),QPointF(280,40)), Qt::AlignCenter, legend_max_);
+    }
+}
+
+void ImageViewer::mousePressEvent(QMouseEvent *event)
+{
+    if(event->button()==Qt::RightButton){
+        selecting_=true;
+        rubberband_start_=event->pos();
+        rubberband_->setGeometry(QRect(rubberband_start_,QSize()));
+        rubberband_->show();
+    }else{
+        QGraphicsView::mousePressEvent(event);
+    }
+}
+
+void ImageViewer::mouseMoveEvent(QMouseEvent *event)
+{
+    if(selecting_){
+        rubberband_->setGeometry(QRect(rubberband_start_,event->pos()));
+    }else{
+        QGraphicsView::mouseMoveEvent(event);
+    }
+}
+
+void ImageViewer::mouseReleaseEvent(QMouseEvent *event)
+{
+    if(selecting_){
+        selecting_=false;
+        rubberband_->hide();
+        QList<QGraphicsItem *> selected_items=items(rubberband_->geometry(),Qt::ContainsItemShape);
+        QStringList selected_ids;
+        foreach(QGraphicsItem * i,selected_items){
+            QString tooltip=i->toolTip();
+            if(tooltip!=""){
+                selected_ids.append(tooltip);
+            }
+        }
+        emit selected(selected_ids,event->modifiers() & Qt::ShiftModifier);
+    }else{
+        QGraphicsView::mouseReleaseEvent(event);
     }
 }
 

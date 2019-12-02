@@ -25,6 +25,8 @@
 #include <QJsonArray>
 #include <algorithm>
 
+const int marker_size=30;
+
 struct Normalize {
     qreal min_;
     qreal i_diff_;
@@ -41,6 +43,7 @@ GridsquareForm::GridsquareForm(QWidget *parent) :
     gradient_({{0.0,QColor(255,0,0,100)},{0.3333,QColor(255,255,0,100)},{0.6666,QColor(0,255,0,100)},{1.0,QColor(0,0,255,100)}})
 {
     ui->setupUi(this);
+    connect(ui->gridsquare_view, &ImageViewer::selected,this,&GridsquareForm::deselectMicrographs);
 
 }
 
@@ -93,7 +96,6 @@ void GridsquareForm::updateMarkers()
         QString result_label=current_label->text();
         Data grid_data=meta_data_store_->gridsquare(id);
         QJsonArray hole_ids=grid_data.value("hole_ids").toArray();
-        qDebug()<< result_label <<hole_ids.size();
         if(result_label=="Acquisition state"){
             foreach(QJsonValue fh_id,hole_ids){
                 Data fh_data=meta_data_store_->foilhole(fh_id.toString());
@@ -104,7 +106,7 @@ void GridsquareForm::updateMarkers()
                             color=QColor(0,0,127,100);
                         }
                     }
-                    ui->gridsquare_view->addMarker(QPointF(fh_data.value("x").toString().toDouble(),fh_data.value("y").toString().toDouble()),30,fh_data.value("id").toString(),color);
+                    ui->gridsquare_view->addMarker(QPointF(fh_data.value("x").toString().toDouble(),fh_data.value("y").toString().toDouble()),marker_size,fh_data.value("id").toString(),color);
                 }
             }
             QLinearGradient lin_gradient;
@@ -123,7 +125,9 @@ void GridsquareForm::updateMarkers()
                 qreal sum=0;
                 foreach(QJsonValue micrograph_id,micrograph_ids){
                     Data data=meta_data_store_->micrograph(micrograph_id.toString());
-                    if(data.contains(result_label)){
+                    QString export_val=data.value("export").toString("true");
+                    bool export_flag=export_val.compare("true", Qt::CaseInsensitive) == 0 || export_val==QString("1") ;
+                    if(data.contains(result_label) && export_flag){
                         double v=data.value(result_label).toString().toDouble();
                         if(! qIsNaN(v)){
                             sum+=v;
@@ -135,6 +139,8 @@ void GridsquareForm::updateMarkers()
                     v.append(sum/num);
                     pos.append(QPointF(fh_data.value("x").toString().toDouble(),fh_data.value("y").toString().toDouble()));
                     ids.append(fh_data.value("id").toString());
+                }else if(! micrograph_ids.empty()){
+                    ui->gridsquare_view->addMarker(QPointF(fh_data.value("x").toString().toDouble(),fh_data.value("y").toString().toDouble()),marker_size,fh_data.value("id").toString(),QColor(127,127,127,100));
                 }
             }
             const auto [min, max] = std::minmax_element(v.begin(),v.end());
@@ -153,7 +159,7 @@ void GridsquareForm::updateMarkers()
             }
             QList<QColor> colors=gradient_.createColors(v);
             for(int i=0;i<pos.size();++i){
-                ui->gridsquare_view->addMarker(pos[i],30,ids[i],colors[i]);
+                ui->gridsquare_view->addMarker(pos[i],marker_size,ids[i],colors[i]);
             }
         }
     }
@@ -174,4 +180,25 @@ void GridsquareForm::updateResultLabels()
     if(ui->result_labels->count()>0){
         ui->result_labels->setCurrentRow(0);
     }
+}
+
+void GridsquareForm::deselectMicrographs(QStringList &ids, bool invert)
+{
+    if(invert){
+        foreach(QString id, ids){
+            Data fh_data=meta_data_store_->foilhole(id);
+            QJsonArray micrograph_ids=fh_data.value("micrograph_ids").toArray();
+            foreach(QJsonValue micrograph_id,micrograph_ids){
+                meta_data_store_->setMicrographExport(micrograph_id.toString(),false);
+            }
+        }
+    }else{
+        foreach(QString id,meta_data_store_->micrographIDs()){
+            Data data=meta_data_store_->micrograph(id);
+            if(!ids.contains(data.value("hole_id").toString())){
+                meta_data_store_->setMicrographExport(id,false);
+            }
+        }
+    }
+    updateMarkers();
 }

@@ -45,6 +45,7 @@ public slots:
     void loadGridsquare();
     void updateMarkers();
     void updateResultLabels();
+    void deselectMicrographs(QStringList& ids,bool invert);
 
 private:
     Ui::GridsquareForm *ui;
