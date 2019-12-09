@@ -241,7 +241,7 @@ void MainWindow::showAbout()
 
 void MainWindow::displayScatterPlot()
 {
-    ScatterPlotDialog dialog(meta_data_store_, task_configuration_->resultLabels());
+    ScatterPlotDialog dialog(meta_data_store_, task_configuration_);
     dialog.exec();
 }
 

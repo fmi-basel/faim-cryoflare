@@ -47,7 +47,7 @@ public slots:
     void enableSelection(bool selecting);
     void update();
 protected:
-    void drawChart_();
+    virtual void drawChart_();
     virtual void drawSeries_();
     virtual void deselectData_(float start, float end, bool invert=false){}
     virtual void mousePressEvent(QMouseEvent *event);

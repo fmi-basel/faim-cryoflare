@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
-<comment>
+ <comment>
 ------------------------------------------------------------------------------
 
 Author: Andreas Schenk
@@ -108,7 +108,7 @@ along with CryoFLARE.  If not, see http://www.gnu.org/licenses/ .
       </widget>
      </item>
      <item>
-      <widget class="ChartView" name="chart"/>
+      <widget class="ScatterChartView" name="chart"/>
      </item>
     </layout>
    </item>
@@ -116,12 +116,9 @@ along with CryoFLARE.  If not, see http://www.gnu.org/licenses/ .
  </widget>
  <customwidgets>
   <customwidget>
-   <class>ChartView</class>
+   <class>ScatterChartView</class>
    <extends>QGraphicsView</extends>
-   <header>chartview.h</header>
-   <slots>
-    <signal>selected(float,float,bool)</signal>
-   </slots>
+   <header>scatterchartview.h</header>
   </customwidget>
  </customwidgets>
  <resources>

@@ -97,7 +97,8 @@ SOURCES += \
     phaseplatechart.cpp \
     micrographprocessor.cpp \
     processqueue.cpp \
-    gradient.cpp
+    gradient.cpp \
+    scatterchartview.cpp
 
 
 
@@ -157,7 +158,8 @@ HEADERS  += \
     phaseplatechart.h \
     micrographprocessor.h \
     processqueue.h \
-    gradient.h
+    gradient.h \
+    scatterchartview.h
 
 
 FORMS    += \

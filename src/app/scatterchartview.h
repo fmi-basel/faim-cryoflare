@@ -19,28 +19,20 @@
 // along with CryoFLARE.  If not, see <http://www.gnu.org/licenses/>.
 //
 //------------------------------------------------------------------------------
-#ifndef SCATTERPLOTDIALOG_H
-#define SCATTERPLOTDIALOG_H
+#ifndef SCATTERCHARTVIEW_H
+#define SCATTERCHARTVIEW_H
 
-#include <QDialog>
-#include "metadatastore.h"
+#include "chartview.h"
 
-namespace Ui {
-class ScatterPlotDialog;
-}
-
-class ScatterPlotDialog : public QDialog
+class ScatterChartView : public ChartView
 {
-    Q_OBJECT
-
 public:
-    explicit ScatterPlotDialog(MetaDataStore * store,TaskConfiguration *task_config ,QWidget *parent = nullptr);
-    ~ScatterPlotDialog();
-public slots:
-    void updateChart();
-
-private:
-    Ui::ScatterPlotDialog *ui;
+    ScatterChartView(QWidget *parent);
+    void setXColumn(int col);
+protected:
+    virtual void drawChart_();
+    virtual void drawSeries_();
+    int x_column_;
 };
 
-#endif // SCATTERPLOTDIALOG_H
+#endif // SCATTERCHARTVIEW_H
