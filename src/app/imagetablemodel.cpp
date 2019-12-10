@@ -36,6 +36,13 @@ ImageTableModel::ImageTableModel(MetaDataStore* store, TaskConfiguration *task_c
     connect(store,&MetaDataStore::newMicrograph,this , &ImageTableModel::onMicrographAdded);
     connect(store,&MetaDataStore::micrographUpdated,this , &ImageTableModel::onMicrographUpdated);
     connect(task_config,&TaskConfiguration::configurationChanged,this , &ImageTableModel::onTasksChanged);
+    foreach(QString id, store->micrographIDs()){
+        beginInsertRows(QModelIndex(),rowCount(),rowCount());
+        micrograph_id_.append(id);
+        endInsertRows();
+    }
+    onTasksChanged();
+
 }
 
 int ImageTableModel::rowCount(const QModelIndex &/*parent*/) const

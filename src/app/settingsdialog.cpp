@@ -144,6 +144,7 @@ void load_from_settings(SETTINGS* settings, Ui::SettingsDialog* ui){
     }else{
         ui->import_epu->setChecked(true);
     }
+    ui->export_num_processes->setValue(settings->value("export_num_processes").toInt());
     ui->report_template->setPath(settings->value("report_template").toString());
     settings->beginGroup("Tasks");
     ui->task_tree->clear();
