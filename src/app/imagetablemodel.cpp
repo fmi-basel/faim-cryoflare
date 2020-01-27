@@ -210,6 +210,8 @@ void ImageTableModel::onTasksChanged()
     colors_.clear();
     QList<TaskDefinitionPtr> def_list;
     def_list.append(task_configuration_->rootDefinition());
+    //Warning: ordering here has to match code in TaskConfiguration
+    //Todo: merge code handling IO variables and color into TaskConfiguration
     while(!def_list.empty()){
         TaskDefinitionPtr ptr=def_list.takeFirst();
         columns_.append(ptr->result_variables_);

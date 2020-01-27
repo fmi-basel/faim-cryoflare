@@ -135,10 +135,14 @@ QList<InputOutputVariable> TaskConfiguration::resultLabels()
     QList<InputOutputVariable> result;
     QList<TaskDefinitionPtr> def_list;
     def_list.append(root_definition_);
+    //Warning: ordering here has to match code in ImageTableModel
     while(!def_list.empty()){
         TaskDefinitionPtr ptr=def_list.takeFirst();
         result.append(ptr->result_variables_);
-        def_list.append(ptr->children);
+        QList<TaskDefinitionPtr> children=ptr->children;
+        while (!children.empty()) {
+            def_list.push_front(children.takeLast());
+        }
     }
     return result;
 }

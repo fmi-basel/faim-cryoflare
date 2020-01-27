@@ -377,7 +377,7 @@ void RemoteExportWorker::sftpOpFinished_(QSsh::SftpJobId job, const QString &err
         if(err!=""){
             error_(QString("Couldn't copy file: %1 (%2)").arg(QDir(destination_.path()).absoluteFilePath(current_item_.filename)).arg(err));
         }else{
-            message_(QString("Copied file: %1").arg(QDir(destination_.path()).absoluteFilePath(current_item_.filename)));
+            //message_(QString("Copied file: %1").arg(QDir(destination_.path()).absoluteFilePath(current_item_.filename)));
         }
         next();
         break;
@@ -385,7 +385,7 @@ void RemoteExportWorker::sftpOpFinished_(QSsh::SftpJobId job, const QString &err
         if(err!=""){
             error_(QString("Couldn't create link: %1").arg(QDir(destination_.path()).absoluteFilePath(current_item_.filename)));
         }else{
-            message_(QString("Created link: %1").arg(QDir(destination_.path()).absoluteFilePath(current_item_.filename)));
+            //message_(QString("Created link: %1").arg(QDir(destination_.path()).absoluteFilePath(current_item_.filename)));
         }
         next();
         break;
@@ -400,7 +400,7 @@ void RemoteExportWorker::sftpOpFinished_(QSsh::SftpJobId job, const QString &err
     case MkDir:
         if(err!=""){
             QString dir_path=current_item_.directories.first();
-            message_(QString("MkDir err: %1 (%2)").arg(QDir(destination_.path()).absoluteFilePath(dir_path)).arg(err));
+            error_(QString("MkDir err: %1 (%2)").arg(QDir(destination_.path()).absoluteFilePath(dir_path)).arg(err));
             emit  next();
         }else{
             current_item_.directories.takeFirst();
