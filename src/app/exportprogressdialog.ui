@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
-<comment>
+ <comment>
 ------------------------------------------------------------------------------
 
 Author: Andreas Schenk
@@ -67,7 +67,10 @@ along with CryoFLARE.  If not, see http://www.gnu.org/licenses/ .
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <item>
-        <widget class="QLabel" name="details">
+        <widget class="QPlainTextEdit" name="details"/>
+       </item>
+       <item>
+        <widget class="QLabel" name="details_o">
          <property name="text">
           <string/>
          </property>

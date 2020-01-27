@@ -27,6 +27,8 @@ ExportProgressDialog::ExportProgressDialog(QWidget *parent) :
     ui(new Ui::ExportProgressDialog)
 {
     ui->setupUi(this);
+    ui->details->setReadOnly(true);
+    ui->details->setMaximumBlockCount(100000);
     setModal(true);
     hide();
 }
@@ -63,7 +65,8 @@ void ExportProgressDialog::update(const QList<ExportMessage> &messages)
             new_messages+=QString("%1: %2<br>").arg(m.id).arg(m.text);
         }
     }
-    ui->details->setText(ui->details->text()+new_messages);
+    //ui->details->setText(ui->details->text()+new_messages);
+    ui->details->appendHtml(new_messages);
 }
 
 void ExportProgressDialog::finish()

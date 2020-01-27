@@ -181,7 +181,7 @@ void LocalExportWorker::copyFile_(const WorkItem &item)
         if(!source_file->copy(QDir(destination_.path()).absoluteFilePath(item.filename))){
             error_("Error copying file: "+item.filename);
         }else{
-            //message_("Copied: "+item.filename);
+            message_("Copied: "+item.filename);
         }
     }
 }
@@ -337,7 +337,7 @@ void RemoteExportWorker::createLink_()
 
 void RemoteExportWorker::connected_()
 {
-    message_("Connected");
+    //message_("Connected");
     channel_=ssh_connection_->createSftpChannel();
     connect(channel_.data(),&QSsh::SftpChannel::initialized,this,&RemoteExportWorker::initialized_);
     connect(channel_.data(),&QSsh::SftpChannel::initializationFailed,this,&RemoteExportWorker::initializationFailed_);
@@ -353,7 +353,7 @@ void RemoteExportWorker::connectionFailed_()
 
 void RemoteExportWorker::initialized_()
 {
-    message_("Initialized");
+    //message_("Initialized");
     processNext_();
 }
 
@@ -377,7 +377,7 @@ void RemoteExportWorker::sftpOpFinished_(QSsh::SftpJobId job, const QString &err
         if(err!=""){
             error_(QString("Couldn't copy file: %1 (%2)").arg(QDir(destination_.path()).absoluteFilePath(current_item_.filename)).arg(err));
         }else{
-            //message_(QString("Copied file: %1").arg(QDir(destination_.path()).absoluteFilePath(current_item_.filename)));
+            message_(QString("Copied file: %1").arg(QDir(destination_.path()).absoluteFilePath(current_item_.filename)));
         }
         next();
         break;
@@ -385,7 +385,7 @@ void RemoteExportWorker::sftpOpFinished_(QSsh::SftpJobId job, const QString &err
         if(err!=""){
             error_(QString("Couldn't create link: %1").arg(QDir(destination_.path()).absoluteFilePath(current_item_.filename)));
         }else{
-            //message_(QString("Created link: %1").arg(QDir(destination_.path()).absoluteFilePath(current_item_.filename)));
+            message_(QString("Created link: %1").arg(QDir(destination_.path()).absoluteFilePath(current_item_.filename)));
         }
         next();
         break;
