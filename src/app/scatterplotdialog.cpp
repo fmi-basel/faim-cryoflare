@@ -28,7 +28,8 @@
 
 ScatterPlotDialog::ScatterPlotDialog(MetaDataStore * store, TaskConfiguration *task_config, QWidget *parent) :
     QDialog(parent),
-    ui(new Ui::ScatterPlotDialog)
+    ui(new Ui::ScatterPlotDialog),
+    col_ids_()
 {
     ui->setupUi(this);
     ui->chart->chart()->setTheme(QtCharts::QChart::ChartThemeBlueCerulean);
@@ -36,8 +37,13 @@ ScatterPlotDialog::ScatterPlotDialog(MetaDataStore * store, TaskConfiguration *t
     ui->chart->chart()->layout()->setContentsMargins(0,0,0,0);
     QStringList columns;
     ui->chart->setModel(new ImageTableModel(store,task_config, this));
+    int col_id=1;
     foreach(InputOutputVariable v, task_config->resultLabels()){
-        columns << v.key;
+        if(v.in_column){
+            columns << v.key;
+            col_ids_.append(col_id);
+        }
+        ++col_id;
     }
     ui->list_x->addItems(columns);
     ui->list_x->setCurrentRow(0);
@@ -54,6 +60,6 @@ ScatterPlotDialog::~ScatterPlotDialog()
 
 void ScatterPlotDialog::updateChart()
 {
-    ui->chart->setActiveColumn(ui->list_y->currentRow()+1);
-    ui->chart->setXColumn(ui->list_x->currentRow()+1);
+    ui->chart->setActiveColumn(col_ids_.at(ui->list_y->currentRow()));
+    ui->chart->setXColumn(col_ids_.at(ui->list_x->currentRow()));
 }

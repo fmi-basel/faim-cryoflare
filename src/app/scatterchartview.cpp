@@ -36,7 +36,7 @@ void ScatterChartView::drawChart_()
     ChartView::drawChart_();
     chart()->axisX(chart()->series().first())->setTitleText(model_->headerData(x_column_,Qt::Horizontal,Qt::DisplayRole).toString());
     chart()->axisY(chart()->series().first())->setTitleText(model_->headerData(active_column_,Qt::Horizontal,Qt::DisplayRole).toString());
-    chart()->setTitle(QString("%1<-->%2").arg(model_->headerData(active_column_,Qt::Horizontal,Qt::DisplayRole).toString()).arg(model_->headerData(x_column_,Qt::Horizontal,Qt::DisplayRole).toString()));
+    chart()->setTitle(QString("%1 / %2").arg(model_->headerData(active_column_,Qt::Horizontal,Qt::DisplayRole).toString()).arg(model_->headerData(x_column_,Qt::Horizontal,Qt::DisplayRole).toString()));
 }
 
 void ScatterChartView::drawSeries_()

@@ -41,6 +41,7 @@ public slots:
 
 private:
     Ui::ScatterPlotDialog *ui;
+    QVector<int> col_ids_;
 };
 
 #endif // SCATTERPLOTDIALOG_H
