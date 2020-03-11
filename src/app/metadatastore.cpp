@@ -508,7 +508,8 @@ void MetaDataStore::exportMicrographs(const SftpUrl &export_path, const SftpUrl 
     int num_processes=settings.value("export_num_processes",1).toInt();
     QStringList files;
     QStringList raw_files;
-    QStringList files_to_filter;
+    QSet<QString> filtered_shared_files;
+    QSet<QString> unfiltered_shared_files;
     QDir parent_dir=QDir::current();
     parent_dir.cdUp();
     foreach(QString id, selectedMicrographIDs()){
@@ -530,9 +531,9 @@ void MetaDataStore::exportMicrographs(const SftpUrl &export_path, const SftpUrl 
             if(shared_keys.contains(key)){
                 QString f=file_object.value(key).toString();
                 if(f.endsWith(".star")){
-                    files_to_filter.append(parent_dir.relativeFilePath(QDir::current().absoluteFilePath(f)));
+                    filtered_shared_files.insert(parent_dir.relativeFilePath(QDir::current().absoluteFilePath(f)));
                 }else{
-                    files.append(parent_dir.relativeFilePath(QDir::current().absoluteFilePath(f)));
+                    unfiltered_shared_files.insert(parent_dir.relativeFilePath(QDir::current().absoluteFilePath(f)));
                 }
             }
         }
@@ -540,9 +541,10 @@ void MetaDataStore::exportMicrographs(const SftpUrl &export_path, const SftpUrl 
     if( (!separate_raw_export) || duplicate_raw){
         files.append(raw_files);
     }
-    if(!files.empty() || !files_to_filter.empty()){
+    files.append(unfiltered_shared_files.toList());
+    if(!files.empty() || !filtered_shared_files.empty()){
         ParallelExporter* exporter=new ParallelExporter(parent_dir.path(),export_path,selectedMicrographIDs(),num_processes);
-        exporter->addImages(files_to_filter,true);
+        exporter->addImages(filtered_shared_files.toList(),true);
         exporter->addImages(files,false);
         exporters_.enqueue(exporter);
     }

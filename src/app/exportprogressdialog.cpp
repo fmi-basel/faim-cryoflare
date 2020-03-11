@@ -57,16 +57,19 @@ void ExportProgressDialog::update(const QList<ExportMessage> &messages, int num_
 
 void ExportProgressDialog::update(const QList<ExportMessage> &messages)
 {
-    QString new_messages;
+    if(messages.empty()){
+        return;
+    }
+    QStringList new_messages;
     foreach( ExportMessage m,messages){
         if(m.type==ExportMessage::ERROR){
-            new_messages+=QString("<font color=red><b>%1: %2</b></font><br>").arg(m.id).arg(m.text);
+            new_messages.append(QString("<font color=red><b>%1: %2</b></font>").arg(m.id).arg(m.text));
         }else{
-            new_messages+=QString("%1: %2<br>").arg(m.id).arg(m.text);
+            new_messages.append(QString("%1: %2").arg(m.id).arg(m.text));
         }
     }
     //ui->details->setText(ui->details->text()+new_messages);
-    ui->details->appendHtml(new_messages);
+    ui->details->appendHtml(new_messages.join("<br>"));
 }
 
 void ExportProgressDialog::finish()

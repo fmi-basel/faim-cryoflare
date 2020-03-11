@@ -39,9 +39,7 @@ void LinearChartView::drawSeries_()
     QList<QPointF> current_series;
     for(int i=0;i<model_->rowCount();++i){
         QVariant val=model_->data(model_->index(i,active_column_),ImageTableModel::SortRole);
-        Data data=model_->image(i);
-        QString export_val=data.value("export").toString("true");
-        bool export_flag=export_val.compare("true", Qt::CaseInsensitive) == 0 || export_val==QString("1") ;
+        bool export_flag=model_->data(model_->index(i,0),ImageTableModel::SortRole)==1;
         if(val.canConvert<float>() && val.toString()!=QString("")){
             qreal fval=val.toDouble();
             QPointF p(i,fval);
