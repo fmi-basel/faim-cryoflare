@@ -1,0 +1,41 @@
+{#
+#------------------------------------------------------------------------------
+#
+# Author: Andreas Schenk
+# Friedrich Miescher Institute, Basel, Switzerland
+#
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free
+# Software Foundation; either version 3.0 of the License.
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+# details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this file.  If not, see <http:#www.gnu.org/licenses/>.
+#
+#------------------------------------------------------------------------------
+#}
+{% block header %}
+#!/bin/sh
+{% endblock header %}
+{% block preamble %}
+module purge
+module load relion/3.0_20190219
+START=$(date +%s)
+STARTDATE=$(date -Iseconds)
+echo "[INFO] [$STARTDATE] [$$] Starting SLURM relion job $SLURM_JOB_ID"
+echo "[INFO] [$STARTDATE] [$$] Running in $(hostname -s)"
+echo "[INFO] [$STARTDATE] [$$] Working directory: $(pwd)"
+{% endblock preamble %}
+{% block command %}
+{% endblock command %}
+{% block postamble %}
+# grab EXITCODE if needed
+EXITCODE=$?
+END=$(date +%s)
+ENDDATE=$(date -Iseconds)
+echo "[INFO] [$ENDDATE] [$$] Workflow finished with code $EXITCODE"
+echo "[INFO] [$ENDDATE] [$$] Workflow execution time \(seconds\) : $(( $END-$START ))"
+{% endblock postamble %}

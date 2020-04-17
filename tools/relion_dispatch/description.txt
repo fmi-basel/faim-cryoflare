@@ -1,0 +1,111 @@
+
+
+Folder/File descriptions
+------------------
+├── bin
+│   └── relion_dispatch.py --> dispatching script, acts a a drop in replacemnet for sbatch, qsub, etc.
+├── config
+│   └── dispatch_config.json  --> configuration file: defines how different relion job types are run (e.g. how many processes, threads and GPUs a refine job uses), defines how jobs are sumbitted (e.g. using sbatch, etc.)
+├── job_template --> hierarchical jinja templates used to assemble submission scripts
+│   ├── base.sh.j2
+│   ├── gpu.sh.j2
+│   ├── interactive.sh.j2
+│   ├── sp.sh.j2
+│   └── submit.sh.j2
+└── relion_template --> dummy submission template to give to relion. Just writes job information into a file so that the dispatcher can parse it
+    └── relion_template.sh
+
+
+
+
+
+Environment setup for relion
+----------------------------
+setenv RELION_QSUB_COMMAND "relion_dispatch.py"
+setenv RELION_QUEUE_USE yes
+setenv RELION_QSUB_TEMPLATE /path_to/relion_template/relion_template.sh
+
+
+
+
+Example for a Refine3D job
+--------------------------
+1) User submits a Refine3D job in relion (job019 in this example)
+2) Relion creates Refine3D/job019/run_submit.script using the template file /path_to/relion_template/relion_template.sh
+
+Refine3D/job019/run_submit.script has the following content:
+
+Refine3D/job019/run.out
+Refine3D/job019/run.err
+`which relion_refine_mpi` --o Refine3D/job019/run --auto_refine --split_random_halves --i Select/job017/particles.star --ref ref/postprocess240.mrc --firstiter_cc --ini_high 8 --dont_combine_weights_via_disc --pool 3 --pad 2  --ctf --particle_diameter 180 --flatten_solvent --zero_mask --oversampling 1 --healpix_order 2 --auto_local_healpix_order 4 --offset_range 5 --offset_step 2 --sym O --low_resol_join_halves 40 --norm --scale  --j 2 
+
+
+3) Relion hands the submission over to the dispatcher by running relion_dispatch.py Refine3D/job019/run_submit.script
+
+4) The dispatcher matches the job to a jobtype defined in dispatch_config.json
+
+In the example the job will match to 
+
+   "refine":{
+        "match_command":"relion_refine",
+        "nomatch_parameter":["skip_align","multibody_masks"],
+        "inherits":"gpu",
+        "adjust_GPU_nproc_to_mem":[4,32212254720],
+        "relion_add_parameter":{
+            "free_gpu_memory":1000
+        }
+
+as the command in run_submit.script is relion_refine and the parameters skip_align and multibody_masks are not present in the relion command line
+
+5) The job types are hierarchical, so the dispatcher will look for the base job type in the config file. In this case:
+refine --> gpu --> submit
+
+6) The dispatcher start with the base type to assemble the submission information. The relevant information from the submit type are:
+       "relion_remove_parameter":[
+            "gpu",
+            "j"
+        ],
+        This part will remove any user set --j or --gpu relion command line parameters
+
+
+        "job_parameters":{
+            "nproc":10,
+            "nthread":2,
+            "partition":"cpu_short",
+            "mem":"32G",
+            "submit_command":"sbatch"
+        }
+        This part will set the number of threads and procs, the requested memory, the partition/queue and the actual submit command (sbatch for SLURM) for the cluster.
+
+7) The dispatcher will then apply any changes defined in the derived job types. So for the GPU job type it will 
+        add the --gpu parameter to the relion command line:
+        "relion_add_parameter":{
+            "gpu":"\"\""
+        },
+
+        and modify the number of threads, procs, GPUS, the requested memory and the partition/queue.
+        "job_parameters":{
+            "partition":"gpu_long",
+            "nproc":21,
+            "ngpu":4,
+            "nproc_slurm":30,
+            "nthread_slurm":2,
+            "mem":"240G"
+        }
+8) For the refine job type it will then also tweak the job submission for the GPU. By default in the GPU job type we use 21 procs on 4 GPUs. This will give 5 procs per GPU plus one control proc.
+Depending on the size of the job, this might not fit into GPU memory (32GB for the V100 in our case). So the dispatcher determines the boxsize of the submitted dataset and calculated how much GPU memory is needed per process.
+It then adjusts the number of processes accordinly (if necesary down to a minimum of 1 process per GPU). It also adds the --free_gpu_memory relion parameter to the command line to reserve some memory to be kept free.
+This seems to be necessary on the V100 GPUs as otherwise relion seems to overallocate the memory, even if only one process per GPU is used. One reason for that might be that we run relion on the GPUs through NVidia MPS, as this gives it a speed boost.
+
+        "adjust_GPU_nproc_to_mem":[4,32212254720],
+        "relion_add_parameter":{
+            "free_gpu_memory":1000
+        }
+
+
+9) Now that all parameters are together the dispatcher will look for the best fitting jinja2 template. First it will look for refine.sh.j2, then for gpu.sh.j2 and then for submit.sh.j2.
+As there is no specific template for the refine job, the gpu.sh.j2 will be used.
+It will then run gpu.sh.j2 through jinja2 to create a submission script for the cluster. All the job parameters can be access through the {{ job }} variable in the j2 template.
+
+10) The cluster submission template will be written to Refine3D/job019/run_submit.script.run and the job will be submitted with sbatch Refine3D/job019/run_submit.script.run in this example.
+The submission command used is configured int the dispatch_config.json.
