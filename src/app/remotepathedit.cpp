@@ -74,7 +74,11 @@ void RemotePathEdit::updateUrl(const QString &text)
     SftpUrl new_url=QUrl::fromUserInput(text);
     if(new_url.isValid()){
         if( !new_url.isLocalFile()){
-            new_url.setPassword(remote_path_.password());
+            if(remote_path_.authType()==QSsh::SshConnectionParameters::AuthenticationByPassword){
+                new_url.setPassword(remote_path_.password());
+            }else{
+                new_url.setKey(remote_path_.key());
+            }
         }
         remote_path_=new_url;
     }

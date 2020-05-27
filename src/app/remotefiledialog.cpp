@@ -58,7 +58,8 @@ RemoteFileDialog::RemoteFileDialog(const SftpUrl &remote_path, QWidget *parent) 
 
 SftpUrl RemoteFileDialog::remotePath() const
 {
-    QString path=proxy_->data(ui->tree->currentIndex(),QSsh::SftpFileSystemModel::PathRole).toString();
+    QModelIndex idx=ui->tree->currentIndex();
+    QString path=proxy_->data(proxy_->index( idx.row(),1,idx.parent()),QSsh::SftpFileSystemModel::PathRole).toString();
     if(path.isEmpty()){
         return SftpUrl();
     }
@@ -88,7 +89,6 @@ RemoteFileDialog::~RemoteFileDialog()
 
 void RemoteFileDialog::connectToHost(bool con)
 {
-    qDebug() << "connect to host: " << con;
     if(con){
         ui->connect->setText("Disconnect");
         default_keys_.clear();
@@ -178,14 +178,12 @@ void RemoteFileDialog::initSftpFileSystemModel_()
 void RemoteFileDialog::tryNextAuth_()
 {
     //connect
-    qDebug() << "try next auth: " << default_keys_.size();
     ui->message->setText("Connecting ...");
     remote_path_.setHost(ui->host->text());
     remote_path_.setUserName(ui->user->text());
     remote_path_.setPort(ui->port->text().toInt());
     SshAuthenticationStore store;
     if(store.contains(remote_path_.toConnectionParameters()) && !stored_connection_){
-	qDebug() << "using stored connection";
         default_keys_.clear();
         model_->setSshConnection(store.retrieve(remote_path_.toConnectionParameters()));
         stored_connection_=true;
@@ -193,13 +191,11 @@ void RemoteFileDialog::tryNextAuth_()
         stored_connection_=false;
         if(!default_keys_.empty()){
             QString next_key=default_keys_.back();
-	    qDebug() << "using next auth key: " << next_key;
             default_keys_.pop_back();
             remote_path_.setAuthType(QSsh::SshConnectionParameters::AuthenticationByKey);
             remote_path_.setKey(next_key);
             model_->setSshConnection(remote_path_.toConnectionParameters());
         }else{
-	    qDebug() << "using pw auth";
             SshAuthenticationDialog::auth_type auth=SshAuthenticationDialog::getSshAuthentication(QString("Authentication for: %1").arg(remote_path_.toString(QUrl::RemovePassword)));
             if(auth.second!=""){
                 remote_path_.setAuthType(auth.first);
@@ -210,7 +206,6 @@ void RemoteFileDialog::tryNextAuth_()
                 }
                 model_->setSshConnection(remote_path_.toConnectionParameters());
             }else{
-	    	qDebug() << "receivd empty auth";
                 disconnect_();
                 ui->message->setText("Disconnected");
             }
