@@ -29,9 +29,10 @@ enum VariableType {
     String,
     Float,
     Int,
-    Image
+    Image,
+    Bool
 };
 
-const static QStringList VariableTypeName(QStringList() << "String" << "Float" << "Int" << "Image");
+const static QStringList VariableTypeName(QStringList() << "String" << "Float" << "Int" << "Image" << "Boolean");
 
 #endif // VARIABLETYPES_H

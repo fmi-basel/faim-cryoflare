@@ -36,6 +36,7 @@
 #include <QMenu>
 #include <QPicture>
 #include <QSpinBox>
+#include <QCheckBox>
 #include <QMenuBar>
 #include <cmath>
 MicrographsForm::MicrographsForm(QMainWindow *parent) :
@@ -253,7 +254,7 @@ void MicrographsForm::updateDetails_()
                     painter.drawImage(QRect(QPoint((512-reduced_x)/2,(512-reduced_x/2)),QSize(reduced_x,reduced_y)), image, QRect(QPoint(0,0),QSize(reduced_x,reduced_y)));
                 }
                 qlabel->setPicture(p);
-            }else if(static_cast<VariableType>(type.toInt())==String || static_cast<VariableType>(type.toInt())==Float || static_cast<VariableType>(type.toInt())==Int){
+            }else if(static_cast<VariableType>(type.toInt())==Bool || static_cast<VariableType>(type.toInt())==String || static_cast<VariableType>(type.toInt())==Float || static_cast<VariableType>(type.toInt())==Int){
                 qlabel->setText(data.value(label.toString()).toString());
             }
         }
@@ -322,6 +323,14 @@ void MicrographsForm::updateTaskWidget_(Settings *settings, QFormLayout *parent_
                 local_widget=sp_widget;
                 connect(local_widget,SIGNAL(valueChanged(double)),this,SLOT(inputDataChanged()));
                 sp_widget->setValue(script_input_settings.value(settings_key).toDouble());
+            }else if(iov.type==Bool){
+                if(!script_input_settings.contains(settings_key)){
+                    script_input_settings.setValue(settings_key,false);
+                }
+                QCheckBox *sp_widget=new QCheckBox();
+                local_widget=sp_widget;
+                connect(local_widget,SIGNAL(stateChanged(int)),this,SLOT(inputDataChanged()));
+                sp_widget->setChecked(script_input_settings.value(settings_key).toBool());
             }else{
                 continue;
             }
@@ -349,6 +358,7 @@ void MicrographsForm::updateTaskWidget_(Settings *settings, QFormLayout *parent_
                     case String:
                     case Int:
                     case Float:
+                    case Bool:
                         output_layout->addRow(iov.key,label);
                         break;
                     case Image:
@@ -449,6 +459,9 @@ void MicrographsForm::inputDataChanged()
             break;
         case Float:
             settings.setValue(label.toString(),qobject_cast<QDoubleSpinBox*>(sender_widget)->value());
+            break;
+        case Bool:
+            settings.setValue(label.toString(),qobject_cast<QCheckBox*>(sender_widget)->isChecked());
             break;
         }
         settings.endGroup();
