@@ -425,10 +425,10 @@ void MetaDataStore::removeMicrographResults(const QString &id, const TaskDefinit
     Data& data=micrographs_[id];
     QJsonObject raw_files=data.value("raw_files").toObject();
     QJsonObject files=data.value("files").toObject();
-    foreach(QString key,raw_files.keys()){
-        QFile file(raw_files.value(key).toString());
-        file.remove();
-    }
+    //foreach(QString key,raw_files.keys()){
+    //    QFile file(raw_files.value(key).toString());
+    //    file.remove();
+    //}
     foreach(QString key,files.keys()){
         QFile file(files.value(key).toString());
         file.remove();
