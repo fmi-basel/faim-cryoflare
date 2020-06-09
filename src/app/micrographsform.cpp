@@ -293,6 +293,7 @@ void MicrographsForm::updateTaskWidget_(Settings *settings, QFormLayout *parent_
                 connect(local_widget,SIGNAL(textChanged(QString)),this,SLOT(inputDataChanged()));
                 le_widget->setText(script_input_settings.value(settings_key).toString());
                 local_widget=le_widget;
+                local_widget->setStyleSheet(" * {background-color: rgb(136, 138, 133)}");
             }else if(iov.type==Image){
                 PathEdit *le_widget=new PathEdit(PathEdit::OpenFileName);
                 if(!script_input_settings.contains(settings_key)){
@@ -302,6 +303,7 @@ void MicrographsForm::updateTaskWidget_(Settings *settings, QFormLayout *parent_
                 connect(le_widget,&PathEdit::pathChanged,this,&MicrographsForm::inputDataChanged);
                 le_widget->setPath(script_input_settings.value(settings_key).toString());
                 local_widget=le_widget;
+                local_widget->setStyleSheet(" * {background-color: rgb(136, 138, 133)}");
             }else if(iov.type==Int){
                 if(!script_input_settings.contains(settings_key)){
                     script_input_settings.setValue(settings_key,0);
@@ -310,6 +312,7 @@ void MicrographsForm::updateTaskWidget_(Settings *settings, QFormLayout *parent_
                 sp_widget->setMaximum(9999999);
                 sp_widget->setMinimum(-9999999);
                 local_widget=sp_widget;
+                local_widget->setStyleSheet(" * {background-color: rgb(136, 138, 133)}");
                 connect(local_widget,SIGNAL(valueChanged(int)),this,SLOT(inputDataChanged()));
                 sp_widget->setValue(script_input_settings.value(settings_key).toInt());
             }else if(iov.type==Float){
@@ -321,6 +324,7 @@ void MicrographsForm::updateTaskWidget_(Settings *settings, QFormLayout *parent_
                 sp_widget->setMinimum(-9999999);
                 sp_widget->setDecimals(5);
                 local_widget=sp_widget;
+                local_widget->setStyleSheet(" * {background-color: rgb(136, 138, 133)}");
                 connect(local_widget,SIGNAL(valueChanged(double)),this,SLOT(inputDataChanged()));
                 sp_widget->setValue(script_input_settings.value(settings_key).toDouble());
             }else if(iov.type==Bool){
@@ -331,10 +335,10 @@ void MicrographsForm::updateTaskWidget_(Settings *settings, QFormLayout *parent_
                 local_widget=sp_widget;
                 connect(local_widget,SIGNAL(stateChanged(int)),this,SLOT(inputDataChanged()));
                 sp_widget->setChecked(script_input_settings.value(settings_key).toBool());
+                local_widget->setStyleSheet(" QCheckBox::indicator::unchecked {background-color: rgb(136, 138, 133)} QCheckBox::indicator::checked {background-color: #e6e6e6; border: 3px solid rgb(136, 138, 133);}");
             }else{
                 continue;
             }
-            local_widget->setStyleSheet(" * {background-color: rgb(136, 138, 133)}");
             input_layout->addRow(iov.key,local_widget);
             local_widget->setProperty("type",iov.type);
             local_widget->setProperty("label",iov.label);
