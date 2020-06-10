@@ -288,6 +288,7 @@ void MicrographsForm::updateTaskWidget_(Settings *settings, QFormLayout *parent_
                 QLineEdit *le_widget=new QLineEdit();
                 if(!script_input_settings.contains(settings_key)){
                     script_input_settings.setValue(settings_key,"");
+                    script_input_settings.saveToFile(CRYOFLARE_INI, QStringList(), QStringList() << settings_key);
                 }
                 local_widget=le_widget;
                 connect(local_widget,SIGNAL(textChanged(QString)),this,SLOT(inputDataChanged()));
@@ -298,6 +299,7 @@ void MicrographsForm::updateTaskWidget_(Settings *settings, QFormLayout *parent_
                 PathEdit *le_widget=new PathEdit(PathEdit::OpenFileName);
                 if(!script_input_settings.contains(settings_key)){
                     script_input_settings.setValue(settings_key,"");
+                    script_input_settings.saveToFile(CRYOFLARE_INI, QStringList(), QStringList() << settings_key);
                 }
                 local_widget=le_widget;
                 connect(le_widget,&PathEdit::pathChanged,this,&MicrographsForm::inputDataChanged);
@@ -307,6 +309,7 @@ void MicrographsForm::updateTaskWidget_(Settings *settings, QFormLayout *parent_
             }else if(iov.type==Int){
                 if(!script_input_settings.contains(settings_key)){
                     script_input_settings.setValue(settings_key,0);
+                    script_input_settings.saveToFile(CRYOFLARE_INI, QStringList(), QStringList() << settings_key);
                 }
                 QSpinBox *sp_widget=new QSpinBox();
                 sp_widget->setMaximum(9999999);
@@ -318,6 +321,7 @@ void MicrographsForm::updateTaskWidget_(Settings *settings, QFormLayout *parent_
             }else if(iov.type==Float){
                 if(!script_input_settings.contains(settings_key)){
                     script_input_settings.setValue(settings_key,0.0);
+                    script_input_settings.saveToFile(CRYOFLARE_INI, QStringList(), QStringList() << settings_key);
                 }
                 QDoubleSpinBox *sp_widget=new QDoubleSpinBox();
                 sp_widget->setMaximum(9999999);
@@ -330,6 +334,7 @@ void MicrographsForm::updateTaskWidget_(Settings *settings, QFormLayout *parent_
             }else if(iov.type==Bool){
                 if(!script_input_settings.contains(settings_key)){
                     script_input_settings.setValue(settings_key,false);
+                    script_input_settings.saveToFile(CRYOFLARE_INI, QStringList(), QStringList() << settings_key);
                 }
                 QCheckBox *sp_widget=new QCheckBox();
                 local_widget=sp_widget;

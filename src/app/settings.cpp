@@ -181,7 +181,7 @@ bool Settings::contains(const QString &key)
             return false;
         }
     }
-    return true;
+    return group->values.contains(keylist.takeFirst());
 
 }
 
