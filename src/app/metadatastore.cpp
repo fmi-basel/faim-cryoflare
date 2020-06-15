@@ -28,9 +28,10 @@
 #include <QJsonArray>
 #include "settings.h"
 #include "metadatastore.h"
-#include "datasourcebase.h"
+#include "flatfolderdatasource.h"
 #include "epudatasource.h"
 #include "imagetablemodel.h"
+#include "filereaders.h"
 #include <LimeReport>
 
 static const bool BINARY_STORAGE = true;
@@ -50,6 +51,7 @@ void PersistenDataWriter::writeData(QJsonObject data, const QString &basename){
 MetaDataStore::MetaDataStore(TaskConfiguration* task_configuration, QObject *parent):
     QObject(parent),
     task_configuration_(task_configuration),
+    data_folder_watcher_(),
     micrographs_(),
     foil_holes_(),
     grid_squares_(),
@@ -57,6 +59,10 @@ MetaDataStore::MetaDataStore(TaskConfiguration* task_configuration, QObject *par
     exporters_(),
     current_exporter_(nullptr)
 {
+    Settings settings;
+    data_folder_watcher_=createFolderWatcher_(settings.value("import").toString(),settings.value("import_image_pattern").toString());
+    connect(data_folder_watcher_,&DataFolderWatcher::newDataAvailable,this, &MetaDataStore::updateData);
+
      QTimer::singleShot(0,this,&MetaDataStore::readPersistenData);
      PersistenDataWriter *writer=new PersistenDataWriter;
      writer->moveToThread(&worker_);
@@ -302,6 +308,29 @@ void MetaDataStore::updateGridsquare(const Data &data)
             saveGridsquareData_(id);
         }
     }
+}
+
+void MetaDataStore::updateData(const ParsedData &data)
+{
+    foreach(Data d, data.grid_squares){
+        addGridsquare(d);
+    }
+    foreach(Data d, data.foil_holes){
+        addFoilhole(d);
+    }
+    foreach(Data d, data.micrographs){
+        addMicrograph(d);
+    }
+}
+
+void MetaDataStore::start(const QString &project_dir)
+{
+    data_folder_watcher_->start(project_dir);
+}
+
+void MetaDataStore::stop()
+{
+    data_folder_watcher_->stop();
 }
 
 void MetaDataStore::readPersistenData()
@@ -569,6 +598,19 @@ void MetaDataStore::startNextExport_()
         connect(current_exporter_,&ParallelExporter::finished,this,&MetaDataStore::exportFinished_);
         current_exporter_->start();
     }else{
+    }
+}
+
+DataFolderWatcher * MetaDataStore::createFolderWatcher_(const QString &mode, const QString &pattern)
+{
+    if(mode=="EPU"){
+        return createEPUFolderWatcher(this);
+    }else if(mode=="flat_EPU"){
+        return createFlatEPUFolderWatcher(this);
+    }else if(mode=="json"){
+        return createFlatImageFolderWatcher(pattern,this);
+    }else{
+        return createEPUFolderWatcher(this);
     }
 }
 

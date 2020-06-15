@@ -25,12 +25,15 @@
 #include <QObject>
 #include "dataptr.h"
 
+//fw decl
+class MetaDataStore;
 class DataSourceBase : public QObject
 {
     Q_OBJECT
 public:
-    explicit DataSourceBase(QObject *parent = nullptr);
+    explicit DataSourceBase(MetaDataStore *parent);
     virtual ~DataSourceBase();
+    MetaDataStore * store_;
 
 signals:
     void newMicrograph(const Data& ptr);

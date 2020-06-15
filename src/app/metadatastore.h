@@ -33,8 +33,9 @@
 #include "parallelexporter.h"
 
 //fw decl
-class DataSourceBase;
+class DataFolderWatcher;
 class TaskConfiguration;
+class ParsedData;
 
 class PersistenDataWriter: public QObject
 {
@@ -81,6 +82,9 @@ public slots:
     void updateMicrograph(const QString &id, const QMap<QString,QString>& new_data, const QMap<QString,QString>& raw_files=QMap<QString,QString>(), const QMap<QString,QString>& files=QMap<QString,QString>(), const QMap<QString,QString>& shared_files=QMap<QString,QString>());
     void updateFoilhole(const Data & data);
     void updateGridsquare(const Data & data);
+    void updateData(const ParsedData& data);
+    void start(const QString& project_dir);
+    void stop();
 signals:
     void newMicrograph(const QString & id);
     void newFoilhole(const QString & id);
@@ -98,7 +102,9 @@ protected:
     void readPersistentDataHelper_(const QString & path, QMap<QString,Data> & storage, void (MetaDataStore::*sig)(const QString&));
     void exportFinished_();
     void startNextExport_();
+    DataFolderWatcher * createFolderWatcher_(const QString& mode="EPU", const QString& pattern="");
     TaskConfiguration* task_configuration_;
+    DataFolderWatcher * data_folder_watcher_;
     QMap<QString,Data> micrographs_;
     QMap<QString,Data> foil_holes_;
     QMap<QString,Data> grid_squares_;

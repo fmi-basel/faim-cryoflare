@@ -25,6 +25,7 @@
 
 #include <QObject>
 #include <QThread>
+#include <QFileInfo>
 
 
 //fw decl
@@ -45,7 +46,7 @@ public:
     void removeAllPaths();
 
 signals:
-    void directoryChanged(const QString & path);
+    void directoryChanged(const QString & path, const QList<QFileInfo> & changed_files);
     void fileChanged(const QString & path);
 public slots:
 protected:

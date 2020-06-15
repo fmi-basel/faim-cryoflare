@@ -34,7 +34,7 @@ class FlatFolderDataSource : public DataSourceBase
 {
     Q_OBJECT
 public:
-    FlatFolderDataSource(const QString& pattern, bool xml=true);
+    FlatFolderDataSource(MetaDataStore *store,const QString& pattern, bool xml=true);
     virtual ~FlatFolderDataSource();
 public slots:
     virtual void start();

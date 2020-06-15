@@ -41,16 +41,13 @@ FileSystemWatcherImpl::FileSystemWatcherImpl(QObject *parent) :
 void FileSystemWatcherImpl::addPath(const QString &path)
 {
     QFileInfo finfo(path);
-    bool emit_signal=false;
+    QFileInfoList child_items;
     if( finfo.exists()){
         if(finfo.isDir()){
             QMap<QString,QDateTime> mod_times_local;
-            QFileInfoList child_items=QDir(path).entryInfoList(QDir::AllEntries|QDir::NoDotAndDotDot);
+            child_items=QDir(path).entryInfoList(QDir::AllEntries|QDir::NoDotAndDotDot);
             foreach(QFileInfo info, child_items){
                 mod_times_local[info.canonicalFilePath()]=info.lastModified();
-            }
-            if(child_items.size()>0){
-                emit_signal=true;
             }
             QMutexLocker locker(&mutex);
             dirs_.append(path);
@@ -68,8 +65,8 @@ void FileSystemWatcherImpl::addPath(const QString &path)
         }
     }
     //emit only after unlocking mutex to avoid deadlocks
-    if(emit_signal){
-        emit directoryChanged(path);
+    if(! child_items.empty()){
+        emit directoryChanged(path,child_items);
     }
 }
 
@@ -133,7 +130,7 @@ void FileSystemWatcherImpl::start()
 }
 
 void FileSystemWatcherImpl::update(){
-    QStringList emit_dirs;
+    QList<QPair<QString,QList<QFileInfo> > > emit_dirs;
     QStringList emit_files;
     mutex.lock();
     QStringList dirs_local=dirs_;
@@ -144,17 +141,17 @@ void FileSystemWatcherImpl::update(){
     // make sure that mutex is ulocked for filesystem access, as filesystem might potentially hang
     foreach(QString path,dirs_local){
         QFileInfoList entry_list=QDir(path).entryInfoList(QDir::AllEntries|QDir::NoDotAndDotDot);
-        bool has_changes=false;
+        QList<QFileInfo> changed_files;
         foreach(QFileInfo info, entry_list){
             QString child_path=info.canonicalFilePath();
             QDateTime last_modified=info.lastModified();
             if(! mod_times_local.contains(child_path) || mod_times_local.value(child_path)!=last_modified){
-                has_changes=true;
+                changed_files << info;
                 mod_times_updates[child_path]=last_modified;
             }
         }
-        if(has_changes){
-            emit_dirs<<path;
+        if(! changed_files.empty()){
+            emit_dirs<<QPair<QString,QList<QFileInfo> >(path,changed_files);
         }
     }
     foreach(QString path,files_local){
@@ -177,8 +174,8 @@ void FileSystemWatcherImpl::update(){
     mutex.unlock();
     timer_->start();
     //emit only after unlocking mutex to avoid deadlocks
-    foreach(QString path,emit_dirs){
-        emit directoryChanged(path);
+   for(int i=0;i<emit_dirs.size();++i){
+        emit directoryChanged(emit_dirs[i].first,emit_dirs[i].second);
     }
     foreach(QString path, emit_files){
         emit fileChanged(path);

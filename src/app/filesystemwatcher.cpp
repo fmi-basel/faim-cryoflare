@@ -49,11 +49,11 @@ FileSystemWatcher::~FileSystemWatcher()
 
 void FileSystemWatcher::init_impl()
 {
-    connect(thread_, SIGNAL(started()), impl_, SLOT(start()));
-    connect(thread_, SIGNAL(finished()), impl_, SLOT(deleteLater()));
+    connect(thread_, &QThread::started, impl_, &FileSystemWatcherImpl::start);
+    connect(thread_, &QThread::finished, impl_, &FileSystemWatcherImpl::deleteLater);
     impl_->moveToThread(thread_);
-    connect(impl_, SIGNAL(directoryChanged(const QString &)), this, SIGNAL(directoryChanged(const QString &)));
-    connect(impl_, SIGNAL(fileChanged(const QString &)), this, SIGNAL(fileChanged(const QString &)));
+    connect(impl_, &FileSystemWatcherImpl::directoryChanged, this, &FileSystemWatcher::directoryChanged);
+    connect(impl_, &FileSystemWatcherImpl::fileChanged, this, &FileSystemWatcher::fileChanged);
     connect(this,&FileSystemWatcher::destroyed,impl_,&FileSystemWatcherImpl::deleteLater);
     connect(this,&FileSystemWatcher::destroyed,thread_,&QThread::deleteLater);
     thread_->start();

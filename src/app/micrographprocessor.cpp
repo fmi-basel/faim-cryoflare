@@ -32,14 +32,13 @@
 #include "metadatastore.h"
 #include "datasourcebase.h"
 
-MicrographProcessor::MicrographProcessor(MetaDataStore *meta_data_store, DataSourceBase *data_source, TaskConfiguration *task_configuration):
+MicrographProcessor::MicrographProcessor(MetaDataStore *meta_data_store, TaskConfiguration *task_configuration):
     QObject(),
     epu_project_dir_(),
     movie_dir_(),
     cpu_queue_(new ProcessQueue(meta_data_store,this)),
     gpu_queue_(new ProcessQueue(meta_data_store,this)),
     meta_data_store_(meta_data_store),
-    data_source_(data_source),
     task_configuration_(task_configuration)
 
 {
@@ -60,14 +59,11 @@ void MicrographProcessor::startStop(bool start)
     if(start){
         Settings settings;
         epu_project_dir_=settings.value("avg_source_dir").toString();
-        movie_dir_=settings.value("stack_source_dir").toString();
-        data_source_->setProjectDir(epu_project_dir_);
-        data_source_->setMovieDir(movie_dir_);
-        data_source_->start();
+        meta_data_store_->start(epu_project_dir_);
         cpu_queue_->start();
         gpu_queue_->start();
     }else{
-        data_source_->stop();
+        meta_data_store_->stop();
         cpu_queue_->stop();
         gpu_queue_->stop();
     }

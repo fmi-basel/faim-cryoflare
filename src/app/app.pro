@@ -20,7 +20,7 @@
 #
 #------------------------------------------------------------------------------
 
-QT       += core gui xml charts printsupport network script sql
+QT       += core gui xml charts printsupport network script sql concurrent
 greaterThan(QT_MAJOR_VERSION, 5): QT += widgets
 
 TARGET = cryoflare
@@ -28,8 +28,13 @@ TEMPLATE = app
 PRE_TARGETDEPS += ../mrcio/libmrcio.a
 PRE_TARGETDEPS += ../external/botan2/libbotan2.a
 PRE_TARGETDEPS += ../external/qssh/libqssh.a
-PRE_TARGETDEPS += ../external/limereport/3rdparty/libQtZint.a
-PRE_TARGETDEPS += ../external/limereport/limereport/liblimereport.a
+CONFIG(debug, debug|release) {
+    PRE_TARGETDEPS += ../external/limereport/3rdparty/libQtZintd.a
+    PRE_TARGETDEPS += ../external/limereport/limereport/liblimereportd.a
+} else {
+    PRE_TARGETDEPS += ../external/limereport/3rdparty/libQtZint.a
+    PRE_TARGETDEPS += ../external/limereport/limereport/liblimereport.a
+}
 INCLUDEPATH += $$PWD/../external/limereport/limereport
 
 
@@ -42,6 +47,8 @@ PRE_TARGETDEPS += $$GITVERSION
 QMAKE_EXTRA_TARGETS += version_target
 
 SOURCES += \
+    datafolderwatcher.cpp \
+    filereaders.cpp \
     main.cpp\
     mainwindow.cpp \
     filesystemwatcher.cpp \
@@ -103,6 +110,8 @@ SOURCES += \
 
 
 HEADERS  += \
+    datafolderwatcher.h \
+    filereaders.h \
     mainwindow.h \
     filesystemwatcher.h \
     filesystemwatcherimpl.h \
@@ -178,8 +187,13 @@ FORMS    += \
 LIBS += ../mrcio/libmrcio.a
 LIBS += ../external/qssh/libqssh.a
 LIBS += ../external/botan2/libbotan2.a
-LIBS += ../external/limereport/limereport/liblimereport.a
-LIBS += ../external/limereport/3rdparty/libQtZint.a
+CONFIG(debug, debug|release) {
+    LIBS += ../external/limereport/limereport/liblimereportd.a
+    LIBS += ../external/limereport/3rdparty/libQtZintd.a
+} else {
+    LIBS += ../external/limereport/limereport/liblimereport.a
+    LIBS += ../external/limereport/3rdparty/libQtZint.a
+}
 LIBS += -ldl
 CONFIG += static
 static {

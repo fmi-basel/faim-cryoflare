@@ -28,8 +28,8 @@
 #include "filesystemwatcher.h"
 #include "flatfolderdatasource.h"
 
-FlatFolderDataSource::FlatFolderDataSource(const QString &pattern, bool xml):
-    DataSourceBase(),
+FlatFolderDataSource::FlatFolderDataSource(MetaDataStore *store, const QString &pattern, bool xml):
+    DataSourceBase(store),
     watcher_(new FileSystemWatcher()),
     project_dir_(),
     movie_dir_(),

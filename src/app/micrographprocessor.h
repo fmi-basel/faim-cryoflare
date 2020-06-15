@@ -33,13 +33,12 @@
 class Settings;
 class QProcess;
 class MetaDataStore;
-class DataSourceBase    ;
 
 class MicrographProcessor: public QObject
 {
     Q_OBJECT
 public:
-    MicrographProcessor(MetaDataStore* meta_data_store,DataSourceBase* data_source, TaskConfiguration* task_configuration);
+    MicrographProcessor(MetaDataStore* meta_data_store, TaskConfiguration* task_configuration);
     ~MicrographProcessor();
 public slots:
     void startStop(bool start=true);
@@ -62,7 +61,6 @@ private:
     ProcessQueue* cpu_queue_;
     ProcessQueue* gpu_queue_;
     MetaDataStore* meta_data_store_;
-    DataSourceBase* data_source_;
     TaskConfiguration* task_configuration_;
 
 };

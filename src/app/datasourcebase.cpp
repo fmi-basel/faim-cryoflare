@@ -20,8 +20,11 @@
 //
 //------------------------------------------------------------------------------
 #include "datasourcebase.h"
+#include "metadatastore.h"
 
-DataSourceBase::DataSourceBase(QObject *parent) : QObject(parent)
+DataSourceBase::DataSourceBase(MetaDataStore *parent) :
+    QObject(parent),
+    store_(parent)
 {
 
 }
@@ -30,3 +33,4 @@ DataSourceBase::~DataSourceBase()
 {
 
 }
+
