@@ -65,7 +65,7 @@ QVariant ImageTableModel::data(const QModelIndex &index, int role) const
         if(role==Qt::BackgroundRole){
             return QBrush(QColor(136, 138, 133));
         }
-        QString value=meta_data_store_->micrograph(micrograph_id_.value(index.row())).value("export").toString("true");
+        QString value=meta_data_store_->value(micrograph_id_.value(index.row()),"export");
         bool state=value.compare("true", Qt::CaseInsensitive) == 0 || value==QString("1");
         if(role==Qt::CheckStateRole){
             if (state)
@@ -95,7 +95,7 @@ QVariant ImageTableModel::data(const QModelIndex &index, int role) const
     }
     // handle other columns
     if(role==SortRole){
-        QVariant v=QVariant(meta_data_store_->micrograph(micrograph_id_.value(index.row())).value(columns_[index.column()-1].label).toString());
+        QVariant v=QVariant(meta_data_store_->value(micrograph_id_.value(index.row()),columns_[index.column()-1].label));
         switch(columns_[index.column()-1].type){
         case String:
             return v;
@@ -114,7 +114,7 @@ QVariant ImageTableModel::data(const QModelIndex &index, int role) const
             return "-";
         }
     }else if(role==Qt::DisplayRole){
-        return meta_data_store_->micrograph(micrograph_id_.value(index.row())).value(columns_[index.column()-1].label).toString();
+        return meta_data_store_->value(micrograph_id_.value(index.row()),columns_[index.column()-1].label);
     }else if (role==SummaryRole){
         return columns_[index.column()-1].summary_type;
     }

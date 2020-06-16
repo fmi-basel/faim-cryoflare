@@ -33,6 +33,7 @@
 #include "imagetablemodel.h"
 #include "filereaders.h"
 #include <LimeReport>
+#include <QtConcurrent/QtConcurrentMap>
 
 static const bool BINARY_STORAGE = true;
 
@@ -61,7 +62,7 @@ MetaDataStore::MetaDataStore(TaskConfiguration* task_configuration, QObject *par
 {
     Settings settings;
     data_folder_watcher_=createFolderWatcher_(settings.value("import").toString(),settings.value("import_image_pattern").toString());
-    connect(data_folder_watcher_,&DataFolderWatcher::newDataAvailable,this, &MetaDataStore::updateData);
+    connect(data_folder_watcher_,&DataFolderWatcher::newDataAvailable,this, [=](const ParsedData& parsed_data) {updateData(parsed_data,true);});
 
      QTimer::singleShot(0,this,&MetaDataStore::readPersistenData);
      PersistenDataWriter *writer=new PersistenDataWriter;
@@ -203,91 +204,6 @@ void MetaDataStore::saveGridsquareData_(const QString &id)
     emit gridsquareUpdated(id);
 }
 
-void MetaDataStore::addMicrograph( Data data)
-{
-    if(data.contains("id")){
-        QString id=data.value("id").toString();
-        if(micrographs_.contains(id)){
-            //skip already existing entries
-            return;
-        }
-        if(!data.contains("export")){
-            data.insert("export","true");
-        }
-        if(!data.contains("raw_files")){
-            data.insert("raw_files",QJsonObject());
-        }
-        if(!data.contains("files")){
-            data.insert("files",QJsonObject());
-        }
-        if(!data.contains("shared_files")){
-            data.insert("shared_files",QJsonObject());
-        }
-        micrographs_.insert(id,data);
-
-        saveMicrographData_(id);
-        if(data.contains("hole_id") && hasFoilhole(data.value("hole_id").toString())){
-            Data hole_data=foilhole(data.value("hole_id").toString());
-            QSet<QString> micrograph_ids;
-            if(hole_data.contains("micrograph_ids")){
-                foreach(QJsonValue jv,hole_data.value("micrograph_ids").toArray()){
-                    micrograph_ids.insert(jv.toString());
-                }
-            }
-            micrograph_ids.insert(id);
-            QJsonArray micrograph_ids_ja;
-            foreach(QString i,micrograph_ids){
-                micrograph_ids_ja.append(i);
-            }
-            hole_data.insert("micrograph_ids",micrograph_ids_ja);
-            updateFoilhole(hole_data);
-            saveFoilholeData_(data.value("hole_id").toString());
-        }
-        emit newMicrograph(id);
-    }
-}
-
-void MetaDataStore::addFoilhole(const Data &data)
-{
-    if(data.contains("id")){
-        QString id=data.value("id").toString();
-        if(!foil_holes_.contains(id)){
-            foil_holes_.insert(id,data);
-            saveFoilholeData_(id);
-            if(data.contains("square_id") && hasGridsquare(data.value("square_id").toString())){
-                Data square_data=gridsquare(data.value("square_id").toString());
-                QSet<QString> hole_ids;
-                if(square_data.contains("hole_ids")){
-                    foreach(QJsonValue jv,square_data.value("hole_ids").toArray()){
-                        hole_ids.insert(jv.toString());
-                    }
-                }
-                hole_ids.insert(id);
-                QJsonArray hole_ids_ja;
-                foreach(QString i,hole_ids){
-                    hole_ids_ja.append(i);
-                }
-                square_data.insert("hole_ids",hole_ids_ja);
-                updateGridsquare(square_data);
-            }
-            emit newFoilhole(id);
-        }
-    }
-}
-
-void MetaDataStore::addGridsquare(const Data &data)
-{
-    if(data.contains("id")){
-        QString id=data.value("id").toString();
-        if(!grid_squares_.contains(id)){
-            grid_squares_.insert(id,data);
-            saveGridsquareData_(id);
-            emit newGridsquare(id);
-        }
-    }
-}
-
-
 void MetaDataStore::updateFoilhole(const Data &data)
 {
     if(data.contains("id")){
@@ -299,27 +215,89 @@ void MetaDataStore::updateFoilhole(const Data &data)
     }
 }
 
-void MetaDataStore::updateGridsquare(const Data &data)
-{
-    if(data.contains("id")){
-        QString id=data.value("id").toString();
-        if(grid_squares_.contains(id)){
-            grid_squares_.insert(id,data);
-            saveGridsquareData_(id);
-        }
-    }
-}
 
-void MetaDataStore::updateData(const ParsedData &data)
+void MetaDataStore::updateData(const ParsedData &data, bool save)
 {
+    auto update_item = [] (MetaDataStore *store, QMap<QString,Data> &container, const Data& d, void (MetaDataStore::*sig)(const QString&)){
+        QString id=d.id();
+        if(container.contains(id)){
+            Data merged=container.value(id);
+            merged.update(d);
+            container.insert(id,merged);
+        }else{
+            container.insert(id,d);
+            emit (store->*sig)(id);
+        }
+    };
+
+    auto update_children = [] (MetaDataStore *store, QMap<QString,Data> &container, const Data& d, void (MetaDataStore::*sig)(const QString&),void (MetaDataStore::*save_method)(const QString&),bool save){
+        foreach(QString child,d.children()){
+            Data child_data;
+            if(! container.contains(child)){
+                container.insert(child,Data());
+                emit (store->*sig)(child);
+            }
+            child_data=container.value(child);
+            if(child_data.parent()==""){
+                child_data.setParent(d.id());
+                container.insert(child,child_data);
+                if(save){
+                    (store->*save_method)(child);
+                }
+            }
+        }
+    };
+    auto update_parent = [] (MetaDataStore *store, QMap<QString,Data> &container, const Data& d, void (MetaDataStore::*sig)(const QString&),void (MetaDataStore::*save_method)(const QString&),bool save){
+        QString parent_id=d.parent();
+        Data parent_data;
+        if(! container.contains(parent_id)){
+            container.insert(parent_id,Data());
+            emit (store->*sig)(parent_id);
+        }
+        parent_data=container.value(parent_id);
+        if(! parent_data.children().contains(d.id())){
+            parent_data.addChild(d.id());
+            container.insert(parent_id,parent_data);
+            if(save){
+                (store->*save_method)(parent_id);
+            }
+        }
+    };
     foreach(Data d, data.grid_squares){
-        addGridsquare(d);
+        update_item(this,grid_squares_,d,&MetaDataStore::newGridsquare);
+        if(save){
+            saveGridsquareData_(d.id());
+        }
+        update_children(this,foil_holes_,grid_squares_.value(d.id()),&MetaDataStore::newFoilhole,&MetaDataStore::saveFoilholeData_,save);
     }
     foreach(Data d, data.foil_holes){
-        addFoilhole(d);
+        update_item(this,foil_holes_,d,&MetaDataStore::newFoilhole);
+        if(save){
+            saveFoilholeData_(d.id());
+        }
+        update_children(this,micrographs_,foil_holes_.value(d.id()),&MetaDataStore::newMicrograph,&MetaDataStore::saveMicrographData_,save);
+        update_parent(this,grid_squares_,foil_holes_.value(d.id()),&MetaDataStore::newGridsquare,&MetaDataStore::saveGridsquareData_,save);
     }
     foreach(Data d, data.micrographs){
-        addMicrograph(d);
+        update_item(this,micrographs_,d,&MetaDataStore::newMicrograph);
+        Data mic_data=micrographs_.value(d.id());
+        if(!mic_data.contains("export")){
+            mic_data.insert("export","true");
+        }
+        if(!mic_data.contains("raw_files")){
+            mic_data.insert("raw_files",QJsonObject());
+        }
+        if(!mic_data.contains("files")){
+            mic_data.insert("files",QJsonObject());
+        }
+        if(!mic_data.contains("shared_files")){
+            mic_data.insert("shared_files",QJsonObject());
+        }
+        micrographs_.insert(d.id(),mic_data);
+        if(save){
+            saveMicrographData_(d.id());
+        }
+        update_parent(this,foil_holes_,mic_data,&MetaDataStore::newFoilhole,&MetaDataStore::saveFoilholeData_,save);
     }
 }
 
@@ -335,62 +313,59 @@ void MetaDataStore::stop()
 
 void MetaDataStore::readPersistenData()
 {
-    readPersistentDataHelper_(CRYOFLARE_DIRECTORY,micrographs_,&MetaDataStore::newMicrograph);
-    readPersistentDataHelper_(QString("%1/%2").arg(CRYOFLARE_DIRECTORY).arg(CRYOFLARE_GRIDSQUARES_DIRECTORY),grid_squares_,&MetaDataStore::newGridsquare);
-    readPersistentDataHelper_(QString("%1/%2").arg(CRYOFLARE_DIRECTORY).arg(CRYOFLARE_FOILHOLES_DIRECTORY),foil_holes_,&MetaDataStore::newFoilhole);
-    foreach(QString id, grid_squares_.keys()){
-        QSet<QString> hole_ids;
-        Data square_data=grid_squares_.value(id);
-        if(square_data.contains("hole_ids")){
-            foreach(QJsonValue jv,square_data.value("hole_ids").toArray()){
-                hole_ids.insert(jv.toString());
+    ParsedData parsed_data;
+    struct reader
+    {
+        reader(bool binary,const QString& dirpath):binary_(binary),dirpath_(dirpath){}
+        typedef Data result_type;
+        Data operator()(const QString& path)
+        {
+            QFile load_file(QDir(dirpath_).absoluteFilePath(path));
+            if(!load_file.open(QIODevice::ReadOnly)){
+                qWarning() << "Couldn't open file: " << QDir(dirpath_).absoluteFilePath(path);
+                return Data();
             }
+            QByteArray byte_data=load_file.readAll();
+            QJsonDocument load_doc=binary_ ? QJsonDocument::fromBinaryData(byte_data) : QJsonDocument::fromJson(byte_data);
+            return load_doc.object();
         }
-        QJsonArray hole_ids_ja;
-        foreach(QString i,hole_ids){
-            hole_ids_ja.append(i);
-        }
-        square_data.insert("hole_ids",hole_ids_ja);
-        updateGridsquare(square_data);
-        saveGridsquareData_(id);
-    }
-    foreach(QString id, foil_holes_.keys()){
-        Data hole_data=foil_holes_.value(id);
-        QSet<QString> micrograph_ids;
-        if(hole_data.contains("micrograph_ids")){
-            foreach(QJsonValue jv,hole_data.value("micrograph_ids").toArray()){
-                micrograph_ids.insert(jv.toString());
-            }
-        }
-        QJsonArray micrograph_ids_ja;
-        foreach(QString i,micrograph_ids){
-            micrograph_ids_ja.append(i);
-        }
-        hole_data.insert("micrograph_ids",micrograph_ids_ja);
-        updateFoilhole(hole_data);
-        saveFoilholeData_(id);
 
-    }
+        bool binary_;
+        QString dirpath_;
+    };
+    QString path=CRYOFLARE_DIRECTORY;
+    parsed_data.micrographs=QtConcurrent::blockingMapped<QList<Data> >(QDir(path).entryList(BINARY_STORAGE? QStringList("*.dat") :  QStringList("*.json"),QDir::Files,QDir::Name),reader(BINARY_STORAGE,path));
+    path=QString("%1/%2").arg(CRYOFLARE_DIRECTORY).arg(CRYOFLARE_FOILHOLES_DIRECTORY);
+    parsed_data.foil_holes=QtConcurrent::blockingMapped<QList<Data> >(QDir(path).entryList(BINARY_STORAGE? QStringList("*.dat") :  QStringList("*.json"),QDir::Files,QDir::Name),reader(BINARY_STORAGE,path));
+    path=QString("%1/%2").arg(CRYOFLARE_DIRECTORY).arg(CRYOFLARE_GRIDSQUARES_DIRECTORY);
+    parsed_data.grid_squares=QtConcurrent::blockingMapped<QList<Data> >(QDir(path).entryList(BINARY_STORAGE? QStringList("*.dat") :  QStringList("*.json"),QDir::Files,QDir::Name),reader(BINARY_STORAGE,path));
+    updateData(parsed_data,false);
 }
 
 
-void MetaDataStore::readPersistentDataHelper_(const QString &path, QMap<QString,Data> & storage, void(MetaDataStore::*sig)(const QString&))
+QList<Data> MetaDataStore::readPersistentDataHelper_(const QString &path)
 {
-    QDir persistent_dir(path);
-    foreach(QString file_entry, persistent_dir.entryList(BINARY_STORAGE? QStringList("*.dat") :  QStringList("*.json"),QDir::Files,QDir::Name)){
-        QFile load_file(persistent_dir.filePath(file_entry));
-        if(!load_file.open(QIODevice::ReadOnly)){
-            qWarning() << "Couldn't open file: " << persistent_dir.filePath(file_entry);
-            continue;
+    struct reader
+    {
+        reader(bool binary):binary_(binary){}
+        typedef Data result_type;
+        Data operator()(const QString& path)
+        {
+            QFile load_file(path);
+            if(!load_file.open(QIODevice::ReadOnly)){
+                qWarning() << "Couldn't open file: " << path;
+                return Data();
+            }
+            QByteArray byte_data=load_file.readAll();
+            QJsonDocument load_doc=binary_ ? QJsonDocument::fromBinaryData(byte_data) : QJsonDocument::fromJson(byte_data);
+            return load_doc.object();
         }
-        QByteArray byte_data=load_file.readAll();
-        QJsonDocument load_doc=BINARY_STORAGE ? QJsonDocument::fromBinaryData(byte_data) : QJsonDocument::fromJson(byte_data);
-        Data data=load_doc.object();
-        QString id=data.value("id").toString();
-        storage.insert(id,data);
-        emit (this->*sig)(id);
-    }
 
+        bool binary_;
+    };
+
+    QDir persistent_dir(path);
+    return QtConcurrent::blockingMapped<QList<Data> >(persistent_dir.entryList(BINARY_STORAGE? QStringList("*.dat") :  QStringList("*.json"),QDir::Files,QDir::Name),reader(BINARY_STORAGE));
 }
 
 QList<QString> MetaDataStore::micrographIDs() const
@@ -584,6 +559,33 @@ void MetaDataStore::exportMicrographs(const SftpUrl &export_path, const SftpUrl 
     }
     startNextExport_();
 
+}
+
+QString MetaDataStore::value(const QString &id, QString key) const
+{
+    if(! micrographs_.contains(id)){
+        return QString();
+    }
+    if(key.startsWith("hole_")){
+        Data mic_data=micrographs_.value(id);
+        QString pid=mic_data.parent();
+        Data hole_data=foil_holes_.value(micrographs_.value(id).parent());
+        key.remove(0,5);
+        if(hole_data.contains(key)){
+            return hole_data.value(key).toString();
+        }
+    }else if(key.startsWith("square_")){
+        Data square_data=grid_squares_.value(foil_holes_.value(micrographs_.value(id).parent()).parent());
+        key.remove(0,7);
+        if(square_data.contains(key)){
+            return square_data.value(key).toString();
+        }
+    }else{
+        if(micrographs_.value(id).contains(key)){
+            return micrographs_.value(id).value(key).toString();
+        }
+    }
+    return QString();
 }
 
 void MetaDataStore::startNextExport_()

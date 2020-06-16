@@ -72,15 +72,15 @@ TaskDefinitionPtr TaskDefinition::loadTaskDefinitions(Settings *settings)
                                                         << InputOutputVariable("PP","phase_plate_num",Float)
                                                         << InputOutputVariable("PP position","phase_plate_pos",Float)
                                                         << InputOutputVariable("PP count","phase_plate_count",Float)
-                                                        << InputOutputVariable("Grid square X","square_X",Float)
-                                                        << InputOutputVariable("Grid square Y","square_Y",Float)
-                                                        << InputOutputVariable("Grid square Z","square_Z",Float)
+                                                        << InputOutputVariable("Grid square X","square_x",Float)
+                                                        << InputOutputVariable("Grid square Y","square_y",Float)
+                                                        << InputOutputVariable("Grid square Z","square_z",Float)
                                                         << InputOutputVariable("Grid square id","square_id",Float)
-                                                        << InputOutputVariable("X","X",Float)
-                                                        << InputOutputVariable("Y","Y",Float)
-                                                        << InputOutputVariable("Z","Z",Float)
-                                                        << InputOutputVariable("Hole Position X","hole_pos_x",Float)
-                                                        << InputOutputVariable("Hole Position Y","hole_pos_y",Float);
+                                                        << InputOutputVariable("X","x",Float)
+                                                        << InputOutputVariable("Y","y",Float)
+                                                        << InputOutputVariable("Z","z",Float)
+                                                        << InputOutputVariable("Hole Position X","hole_x",Float)
+                                                        << InputOutputVariable("Hole Position Y","hole_y",Float);
     settings->beginGroup("DefaultColumns");
     foreach(InputOutputVariable v, default_results){
         root_definition->result_variables_.append(v);

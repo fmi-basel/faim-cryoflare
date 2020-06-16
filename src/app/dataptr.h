@@ -6,22 +6,19 @@
 #include <QSet>
 #include <QSharedPointer>
 #include <QDateTime>
+#include <QJsonArray>
 
 const QString timeformat("yyyy-MM-dd hh:mm:ss.z");
 
 class Data: public QJsonObject{
 public:
     Data(const QJsonObject& other):
-        QJsonObject(other),
-        parent(),
-        children()
+        QJsonObject(other)
     {}
     Data():
-        QJsonObject(),
-        parent(),
-        children()
+        QJsonObject()
     {}
-    QDateTime timestamp(){
+    QDateTime timestamp() const{
         if(! contains("last_modified")){
             return QDateTime();
         }
@@ -30,8 +27,60 @@ public:
     void setTimestamp(const QDateTime& dt){
         insert("last_modified",dt.toString(timeformat));
     }
-    QString parent;
-    QSet<QString> children;
+    QString id() const
+    {
+        if(contains("id")){
+            return value("id").toString();
+        }
+        return "";
+    }
+    void setId(const QString& id){
+        insert("id",id);
+    }
+    QString parent() const{
+        {
+            if(contains("parent")){
+                return value("parent").toString();
+            }
+            return "";
+        }
+    }
+    void setParent(const QString& id) {
+        insert("parent",id);
+    }
+    QSet<QString> children() const{
+        QSet<QString> result;
+        if(contains("children")){
+            foreach(QJsonValue val, value("children").toArray())
+            result << val.toString();
+        }
+        return result;
+    }
+    void addChild(const QString & child){
+        QJsonArray array;
+        if(contains("children")){
+            array= value("children").toArray();
+        }
+        if(! array.contains(child)){
+            array.append(child);
+        }
+    }
+    void update(const Data& other){
+        const QStringList reserved = {"timestamp", "id", "children"};
+        QDateTime other_timestamp=other.timestamp();
+        QDateTime this_timestamp=timestamp();
+        foreach(QString key, other.keys()){
+            if(!reserved.contains(key) && (other_timestamp>this_timestamp || ! contains(key))){
+                insert(key,other.value(key));
+            }
+        }
+        if(other_timestamp>this_timestamp){
+            setTimestamp(other_timestamp);
+        }
+        foreach( QString child, other.children()){
+            addChild(child);
+        }
+    }
 };
 typedef QSharedPointer<Data> DataPtr;
 
