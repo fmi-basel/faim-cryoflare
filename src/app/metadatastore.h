@@ -19,8 +19,8 @@
 // along with CryoFLARE.  If not, see <http://www.gnu.org/licenses/>.
 //
 //------------------------------------------------------------------------------
-#ifndef MEATDATASTORE_H
-#define MEATDATASTORE_H
+#ifndef METADATASTORE_H
+#define METADATASTORE_H
 
 #include <QObject>
 #include <QVector>
@@ -29,13 +29,13 @@
 #include <QThread>
 #include "dataptr.h"
 #include "task.h"
-#include "sftpurl.h"
 #include "parallelexporter.h"
 
 //fw decl
 class DataFolderWatcher;
 class TaskConfiguration;
 class ParsedData;
+class SftpUrl;
 
 class PersistenDataWriter: public QObject
 {
@@ -78,7 +78,6 @@ public:
     QString value(const QString& id, QString key) const;
 public slots:
     void updateMicrograph(const QString &id, const QMap<QString,QString>& new_data, const QMap<QString,QString>& raw_files=QMap<QString,QString>(), const QMap<QString,QString>& files=QMap<QString,QString>(), const QMap<QString,QString>& shared_files=QMap<QString,QString>());
-    void updateFoilhole(const Data & data);
     void updateData(const ParsedData& data, bool save=true);
     void start(const QString& project_dir);
     void stop();
@@ -91,12 +90,12 @@ signals:
     void gridsquareUpdated(const QString & id);
     void saveData(QJsonObject data,const QString& basename);
 protected slots:
-    void readPersistenData();
+    void readPersistentData_();
+
 protected:
     void saveMicrographData_(const QString& id);
     void saveFoilholeData_(const QString& id);
     void saveGridsquareData_(const QString& id);
-    QList<Data> readPersistentDataHelper_(const QString & path);
     void exportFinished_();
     void startNextExport_();
     DataFolderWatcher * createFolderWatcher_(const QString& mode="EPU", const QString& pattern="");
@@ -108,7 +107,6 @@ protected:
     QThread worker_;
     QQueue<ParallelExporter*> exporters_;
     ParallelExporter* current_exporter_;
-
 };
 
-#endif // MEATDATASTORE_H
+#endif // METADATASTORE_H

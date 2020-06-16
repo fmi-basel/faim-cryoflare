@@ -32,8 +32,10 @@
 #include "epudatasource.h"
 #include "imagetablemodel.h"
 #include "filereaders.h"
+#include "sftpurl.h"
 #include <LimeReport>
 #include <QtConcurrent/QtConcurrentMap>
+#include <QtConcurrent/QtConcurrentRun>
 
 static const bool BINARY_STORAGE = true;
 
@@ -64,7 +66,7 @@ MetaDataStore::MetaDataStore(TaskConfiguration* task_configuration, QObject *par
     data_folder_watcher_=createFolderWatcher_(settings.value("import").toString(),settings.value("import_image_pattern").toString());
     connect(data_folder_watcher_,&DataFolderWatcher::newDataAvailable,this, [=](const ParsedData& parsed_data) {updateData(parsed_data,true);});
 
-     QTimer::singleShot(0,this,&MetaDataStore::readPersistenData);
+     QTimer::singleShot(0,this,&MetaDataStore::readPersistentData_);
      PersistenDataWriter *writer=new PersistenDataWriter;
      writer->moveToThread(&worker_);
      connect(&worker_, &QThread::finished, writer, &QObject::deleteLater);
@@ -204,18 +206,6 @@ void MetaDataStore::saveGridsquareData_(const QString &id)
     emit gridsquareUpdated(id);
 }
 
-void MetaDataStore::updateFoilhole(const Data &data)
-{
-    if(data.contains("id")){
-        QString id=data.value("id").toString();
-        if(foil_holes_.contains(id)){
-            foil_holes_.insert(id,data);
-            saveFoilholeData_(id);
-        }
-    }
-}
-
-
 void MetaDataStore::updateData(const ParsedData &data, bool save)
 {
     auto update_item = [] (MetaDataStore *store, QMap<QString,Data> &container, const Data& d, void (MetaDataStore::*sig)(const QString&)){
@@ -311,7 +301,7 @@ void MetaDataStore::stop()
     data_folder_watcher_->stop();
 }
 
-void MetaDataStore::readPersistenData()
+void MetaDataStore::readPersistentData_()
 {
     ParsedData parsed_data;
     struct reader
@@ -343,31 +333,6 @@ void MetaDataStore::readPersistenData()
 }
 
 
-QList<Data> MetaDataStore::readPersistentDataHelper_(const QString &path)
-{
-    struct reader
-    {
-        reader(bool binary):binary_(binary){}
-        typedef Data result_type;
-        Data operator()(const QString& path)
-        {
-            QFile load_file(path);
-            if(!load_file.open(QIODevice::ReadOnly)){
-                qWarning() << "Couldn't open file: " << path;
-                return Data();
-            }
-            QByteArray byte_data=load_file.readAll();
-            QJsonDocument load_doc=binary_ ? QJsonDocument::fromBinaryData(byte_data) : QJsonDocument::fromJson(byte_data);
-            return load_doc.object();
-        }
-
-        bool binary_;
-    };
-
-    QDir persistent_dir(path);
-    return QtConcurrent::blockingMapped<QList<Data> >(persistent_dir.entryList(BINARY_STORAGE? QStringList("*.dat") :  QStringList("*.json"),QDir::Files,QDir::Name),reader(BINARY_STORAGE));
-}
-
 QList<QString> MetaDataStore::micrographIDs() const
 {
     return micrographs_.keys();
@@ -388,6 +353,7 @@ QList<QString> MetaDataStore::selectedMicrographIDs() const
 void MetaDataStore::setMicrographExport(const QString &id, bool export_flag)
 {
     micrographs_[id].insert("export",export_flag?"true":"false");
+    micrographs_[id].setTimestamp(QDateTime::currentDateTime());
     saveMicrographData_(id);
 }
 
@@ -421,6 +387,7 @@ void MetaDataStore::updateMicrograph(const QString &id, const QMap<QString,QStri
     data.insert("raw_files",QJsonObject::fromVariantMap(old_raw_files));
     data.insert("files",QJsonObject::fromVariantMap(old_files));
     data.insert("shared_files",QJsonObject::fromVariantMap(old_shared_files));
+    data.setTimestamp(QDateTime::currentDateTime());
     saveMicrographData_(id);
 }
 

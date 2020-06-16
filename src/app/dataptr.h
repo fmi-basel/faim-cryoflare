@@ -66,16 +66,12 @@ public:
         }
     }
     void update(const Data& other){
-        const QStringList reserved = {"timestamp", "id", "children"};
         QDateTime other_timestamp=other.timestamp();
         QDateTime this_timestamp=timestamp();
         foreach(QString key, other.keys()){
-            if(!reserved.contains(key) && (other_timestamp>this_timestamp || ! contains(key))){
+            if(key!="children" && (other_timestamp>this_timestamp || ! contains(key))){
                 insert(key,other.value(key));
             }
-        }
-        if(other_timestamp>this_timestamp){
-            setTimestamp(other_timestamp);
         }
         foreach( QString child, other.children()){
             addChild(child);
