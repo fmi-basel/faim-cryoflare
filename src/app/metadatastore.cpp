@@ -293,7 +293,8 @@ void MetaDataStore::updateData(const ParsedData &data, bool save)
 
 void MetaDataStore::start(const QString &project_dir)
 {
-    data_folder_watcher_->start(project_dir);
+    data_folder_watcher_->setProjectDir(project_dir);
+    data_folder_watcher_->start();
 }
 
 void MetaDataStore::stop()

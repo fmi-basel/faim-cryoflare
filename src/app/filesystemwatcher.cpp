@@ -49,9 +49,10 @@ FileSystemWatcher::~FileSystemWatcher()
 
 void FileSystemWatcher::init_impl()
 {
-    connect(thread_, &QThread::started, impl_, &FileSystemWatcherImpl::start);
     connect(thread_, &QThread::finished, impl_, &FileSystemWatcherImpl::deleteLater);
     impl_->moveToThread(thread_);
+    connect(this, &FileSystemWatcher::startImpl_, impl_, &FileSystemWatcherImpl::start);
+    connect(this, &FileSystemWatcher::stopImpl, impl_, &FileSystemWatcherImpl::stop);
     connect(impl_, &FileSystemWatcherImpl::directoryChanged, this, &FileSystemWatcher::directoryChanged);
     connect(impl_, &FileSystemWatcherImpl::fileChanged, this, &FileSystemWatcher::fileChanged);
     connect(this,&FileSystemWatcher::destroyed,impl_,&FileSystemWatcherImpl::deleteLater);
@@ -94,5 +95,15 @@ void FileSystemWatcher::removePaths(const QStringList &paths)
 void FileSystemWatcher::removeAllPaths()
 {
     impl_->removeAllPaths();
+}
+
+void FileSystemWatcher::start()
+{
+    emit startImpl_(QPrivateSignal());
+}
+
+void FileSystemWatcher::stop()
+{
+    emit stopImpl(QPrivateSignal());
 }
 

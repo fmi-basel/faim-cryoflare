@@ -31,7 +31,8 @@ FileSystemWatcherImpl::FileSystemWatcherImpl(QObject *parent) :
     files_(),
     dirs_(),
     mod_times_(),
-    mutex()
+    mutex(),
+    running_(false)
 {
     timer_->setInterval(5000);
     timer_->setSingleShot(true);
@@ -126,7 +127,16 @@ void FileSystemWatcherImpl::removeAllPaths()
 
 void FileSystemWatcherImpl::start()
 {
-    timer_->start();
+    if(!running_){
+        running_=true;
+        timer_->start();
+    }
+}
+
+void FileSystemWatcherImpl::stop()
+{
+    running_=false;
+    timer_->stop();
 }
 
 void FileSystemWatcherImpl::update(){
@@ -172,7 +182,9 @@ void FileSystemWatcherImpl::update(){
         emit_files.clear();
     }
     mutex.unlock();
-    timer_->start();
+    if(running_){
+        timer_->start();
+    }
     //emit only after unlocking mutex to avoid deadlocks
    for(int i=0;i<emit_dirs.size();++i){
         emit directoryChanged(emit_dirs[i].first,emit_dirs[i].second);

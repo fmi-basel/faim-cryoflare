@@ -44,10 +44,14 @@ public:
     void removePath(const QString & path);
     void removePaths(const QStringList & paths);
     void removeAllPaths();
-
+public slots:
+    void start();
+    void stop();
 signals:
     void directoryChanged(const QString & path, const QList<QFileInfo> & changed_files);
     void fileChanged(const QString & path);
+    void startImpl_(QPrivateSignal);
+    void stopImpl(QPrivateSignal);
 public slots:
 protected:
     void init_impl();

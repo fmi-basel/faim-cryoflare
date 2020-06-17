@@ -57,6 +57,7 @@ signals:
 
 public slots:
     void start();
+    void stop();
     void update();
 
 protected:
@@ -65,6 +66,7 @@ protected:
     QStringList dirs_;
     QMap<QString,QDateTime> mod_times_;
     mutable QMutex mutex;
+    bool running_;
 };
 
 #endif // FILESYSTEMWATCHERIMPL_H

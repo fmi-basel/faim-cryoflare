@@ -26,17 +26,25 @@ void DataFolderWatcher::setRootFolder(const FolderNode &node)
     root_folder_=node;
 }
 
-void DataFolderWatcher::start(const QString& project_dir)
+void DataFolderWatcher::setProjectDir(const QString &project_dir)
 {
-    project_dir_=project_dir;
-    watcher_->addPath(project_dir_);
-    watched_dirs_.append(project_dir_);
+    if(project_dir_!=project_dir){
+        project_dir_=project_dir;
+        watcher_->removeAllPaths();
+        watched_dirs_.clear();
+        watcher_->addPath(project_dir_);
+        watched_dirs_.append(project_dir_);
+    }
+}
+
+void DataFolderWatcher::start()
+{
+    watcher_->start();
 }
 
 void DataFolderWatcher::stop()
 {
-    watcher_->removeAllPaths();
-    watched_dirs_.clear();
+    watcher_->stop();
 }
 
 void DataFolderWatcher::onDirChanged(const QString &path, QList<QFileInfo> changed_files)

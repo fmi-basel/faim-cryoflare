@@ -33,8 +33,9 @@ public:
 signals:
     void newDataAvailable(const ParsedData& data);
 public slots:
-    virtual void start(const QString& project_dir);
-    virtual void stop();
+    void setProjectDir(const QString& project_dir);
+    void start();
+    void stop();
 protected slots:
     virtual void onDirChanged(const QString & path, QList<QFileInfo> changed_files);
     void fileReadFinished(QFutureWatcher<ParsedData> * watcher);
