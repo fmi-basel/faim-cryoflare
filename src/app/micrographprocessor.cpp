@@ -59,7 +59,8 @@ void MicrographProcessor::startStop(bool start)
     if(start){
         Settings settings;
         epu_project_dir_=settings.value("avg_source_dir").toString();
-        meta_data_store_->start(epu_project_dir_);
+        movie_dir_=settings.value("stack_source_dir").toString();
+        meta_data_store_->start(epu_project_dir_,movie_dir_);
         cpu_queue_->start();
         gpu_queue_->start();
     }else{

@@ -37,7 +37,7 @@ DataFolderWatcher *createEPUFolderWatcher(QObject *parent)
     return watcher;
 }
 
-ParsedData readEPUMicrographXML(const QFileInfo &info)
+ParsedData readEPUMicrographXML(const QFileInfo &info, const QString& project_dir, const QString &movie_dir)
 {
     ParsedData data;
     Data result;
@@ -125,11 +125,31 @@ ParsedData readEPUMicrographXML(const QFileInfo &info)
     QDomNode image_shift=dom_document.elementsByTagName("ImageShift").at(0);
     result.insert("image_shift_x",image_shift.toElement().elementsByTagName("a:_x").at(0).toElement().text());
     result.insert("image_shift_y",image_shift.toElement().elementsByTagName("a:_y").at(0).toElement().text());
+
+
+
+
+    QString avg_s_path= info.absoluteDir().absolutePath();
+    QString relative_path=QDir(project_dir).relativeFilePath(avg_s_path);
+    QString stack_s_path=QString("%1/%2").arg(movie_dir).arg(relative_path);
+    result.insert("destination_path",QDir::currentPath());
+    result.insert("stack_source_path",stack_s_path);
+    result.insert("avg_source_path",avg_s_path);
+    QStringList stack_frames;
+    if(QString("BM-Falcon")==result.value("camera").toString()){
+        result.insert("stack_frames",QString("%1/%2_frames.mrc").arg(stack_s_path).arg(result.value("name").toString()));
+    }else if(QString("EF-CCD")==result.value("camera").toString()){
+        for(int i=1;i<=result.value("num_frames").toInt();++i){
+            stack_frames.append(QString("%1/%2-*-%3.???").arg(stack_s_path).arg(result.value("name").toString()).arg(i,4,10,QChar('0')));
+        }
+        result.insert("stack_frames",stack_frames.join(" "));
+    }
+
     data.micrographs.append(result);
     return data;
 }
 
-ParsedData readEPUGridSquareXML(const QFileInfo &info)
+ParsedData readEPUGridSquareXML(const QFileInfo &info, const QString& project_dir, const QString &movie_dir)
 {
     ParsedData result;
     QString square_id=info.dir().dirName();
@@ -173,7 +193,7 @@ ParsedData readEPUGridSquareXML(const QFileInfo &info)
     return result;
 }
 
-ParsedData readEPUTargetLocationDM(const QFileInfo &info)
+ParsedData readEPUTargetLocationDM(const QFileInfo &info, const QString& project_dir, const QString &movie_dir)
 {
     // read 2.6 foil hole metadata
 
@@ -210,7 +230,7 @@ ParsedData readEPUTargetLocationDM(const QFileInfo &info)
     return result;
 }
 
-ParsedData readEPUGridSquareDM(const QFileInfo &info)
+ParsedData readEPUGridSquareDM(const QFileInfo &info, const QString& project_dir, const QString &movie_dir)
 {
     // read 2.7 foil hole metadata
     ParsedData result;
@@ -261,7 +281,7 @@ DataFolderWatcher *createFlatEPUFolderWatcher(QObject *parent)
     return watcher;
 }
 
-ParsedData readImage(const QFileInfo &info)
+ParsedData readImage(const QFileInfo &info, const QString& project_dir, const QString& movie_dir)
 {
     ParsedData result;
     QString json_path=QDir(info.absolutePath()).absoluteFilePath(info.completeBaseName()+".json");

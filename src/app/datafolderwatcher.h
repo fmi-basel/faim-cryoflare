@@ -14,7 +14,7 @@ struct ParsedData{
     QList<Data> foil_holes;
     QList<Data> micrographs;
 };
-typedef ParsedData (*FileReaderPtr)(const QFileInfo& info);
+typedef ParsedData (*FileReaderPtr)(const QFileInfo&,const QString&, const QString&);
 typedef QPair<QRegularExpression,FileReaderPtr> ReaderPair;
 struct FolderNode {
     QRegularExpression pattern;
@@ -34,6 +34,7 @@ signals:
     void newDataAvailable(const ParsedData& data);
 public slots:
     void setProjectDir(const QString& project_dir);
+    void setMovieDir(const QString& movie_dir);
     void start();
     void stop();
 protected slots:
@@ -43,6 +44,7 @@ protected:
     FolderNode root_folder_;
     QScopedPointer<FileSystemWatcher> watcher_;
     QString project_dir_;
+    QString movie_dir_;
     QStringList watched_dirs_;
     QList<QFutureWatcher<ParsedData> *> future_watchers_;
 };

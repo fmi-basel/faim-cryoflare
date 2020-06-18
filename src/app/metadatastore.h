@@ -79,7 +79,7 @@ public:
 public slots:
     void updateMicrograph(const QString &id, const QMap<QString,QString>& new_data, const QMap<QString,QString>& raw_files=QMap<QString,QString>(), const QMap<QString,QString>& files=QMap<QString,QString>(), const QMap<QString,QString>& shared_files=QMap<QString,QString>());
     void updateData(const ParsedData& data, bool save=true);
-    void start(const QString& project_dir);
+    void start(const QString& project_dir, const QString &movie_dir);
     void stop();
 signals:
     void newMicrograph(const QString & id);

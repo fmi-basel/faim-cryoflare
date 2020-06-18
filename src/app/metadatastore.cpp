@@ -291,9 +291,10 @@ void MetaDataStore::updateData(const ParsedData &data, bool save)
     }
 }
 
-void MetaDataStore::start(const QString &project_dir)
+void MetaDataStore::start(const QString &project_dir, const QString &movie_dir)
 {
     data_folder_watcher_->setProjectDir(project_dir);
+    data_folder_watcher_->setMovieDir(movie_dir);
     data_folder_watcher_->start();
 }
 

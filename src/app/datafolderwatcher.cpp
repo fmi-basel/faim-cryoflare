@@ -15,6 +15,7 @@ DataFolderWatcher::DataFolderWatcher(QObject *parent):
     root_folder_(),
     watcher_(new FileSystemWatcher()),
     project_dir_(),
+    movie_dir_(),
     watched_dirs_(),
     future_watchers_()
 {
@@ -35,6 +36,11 @@ void DataFolderWatcher::setProjectDir(const QString &project_dir)
         watcher_->addPath(project_dir_);
         watched_dirs_.append(project_dir_);
     }
+}
+
+void DataFolderWatcher::setMovieDir(const QString &movie_dir)
+{
+    movie_dir_=movie_dir;
 }
 
 void DataFolderWatcher::start()
@@ -98,8 +104,9 @@ void DataFolderWatcher::onDirChanged(const QString &path, QList<QFileInfo> chang
             }
         }
         if(! matching_files.empty()){
+            std::function<ParsedData(const QFileInfo&)> reader = [project_dir= project_dir_, movie_dir=movie_dir_, func=pair.second](const QFileInfo& info){ return func(info,project_dir,movie_dir); };
             QFutureWatcher<ParsedData>* watcher=new  QFutureWatcher<ParsedData>();
-            watcher->setFuture(QtConcurrent::mappedReduced(matching_files,pair.second,mergeParsedData));
+            watcher->setFuture(QtConcurrent::mappedReduced(matching_files,reader,mergeParsedData));
             connect(watcher,&QFutureWatcher<ParsedData>::finished, this,[=]() {fileReadFinished(watcher);});
             future_watchers_.append(watcher);
         }
