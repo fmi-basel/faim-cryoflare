@@ -240,6 +240,7 @@ ParsedData readEPUGridSquareDM(const QFileInfo &info, const QString& project_dir
     QDateTime last_modified=QFileInfo(meta_file).lastModified();
     if (!meta_file.open(QIODevice::ReadOnly)){
         qDebug() << "Cannot open grid square meta data: " << meta_path;
+        qDebug() << "Error was: " << meta_file.errorString() << " (" << meta_file.error() << ")";
         return result;
     }
     QDomDocument meta_dom_document;

@@ -63,6 +63,7 @@ public:
         }
         if(! array.contains(child)){
             array.append(child);
+            insert("children",array);
         }
     }
     void update(const Data& other){

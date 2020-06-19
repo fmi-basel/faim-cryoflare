@@ -76,21 +76,19 @@ void ProcessWrapper::onStarted_()
     if(-1!=gpu_id_){
         script_input.append(QString("gpu_id=%1\n").arg(gpu_id_).toLatin1());
     }
-    if(data.contains("square_id")){
-        if(meta_data_store_->hasGridsquare(data.value("square_id").toString())){
-            Data grid_data=meta_data_store_->gridsquare(data.value("square_id").toString());
+    QString hole_id=data.parent();
+    if(meta_data_store_->hasFoilhole(hole_id)){
+        Data hole_data=meta_data_store_->foilhole(hole_id);
+        foreach(QString key,hole_data.keys()){
+            QString val=hole_data.value(key).toString();
+            script_input.append(QString("hole_%1=%2\n").arg(key,val).toLatin1());
+        }
+        QString square_id=hole_data.parent();
+        if(meta_data_store_->hasGridsquare(square_id)){
+            Data grid_data=meta_data_store_->gridsquare(square_id);
             foreach(QString key,grid_data.keys()){
                 QString val=grid_data.value(key).toString();
                 script_input.append(QString("grid_%1=%2\n").arg(key,val).toLatin1());
-            }
-        }
-    }
-    if(data.contains("hole_id")){
-        if(meta_data_store_->hasFoilhole(data.value("hole_id").toString())){
-            Data hole_data=meta_data_store_->foilhole(data.value("hole_id").toString());
-            foreach(QString key,hole_data.keys()){
-                QString val=hole_data.value(key).toString();
-                script_input.append(QString("hole_%1=%2\n").arg(key,val).toLatin1());
             }
         }
     }
