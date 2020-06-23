@@ -64,6 +64,8 @@ void crash_message_handler(QtMsgType type, const QMessageLogContext &context, co
     }
 }
 
+Q_DECLARE_METATYPE(QList<QFileInfo>);
+
 int main(int argc, char* argv[])
 {
     //qInstallMessageHandler(crash_message_handler);
@@ -75,6 +77,8 @@ int main(int argc, char* argv[])
     QCoreApplication::setOrganizationName("Friedrich Miescher Institute");
     QCoreApplication::setOrganizationDomain("fmi.ch");
     QCoreApplication::setApplicationName("CryoFLARE");
+    qRegisterMetaType<QList<QFileInfo> >("QList<QFileInfo>");
+
 
     Settings settings;
     QDir cryoflare_dir(CRYOFLARE_DIRECTORY);
