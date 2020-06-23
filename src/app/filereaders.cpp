@@ -203,7 +203,7 @@ ParsedData readEPUTargetLocationDM(const QFileInfo &info, const QString& project
     Data data;
     ParsedData result;
     QString id=info.fileName().remove(0,15).remove(8,4);
-    QString fh_meta_path=info.absolutePath();
+    QString fh_meta_path=info.absoluteFilePath();
     QFile fh_meta_file(fh_meta_path);
     QDateTime last_modified=QFileInfo(fh_meta_file).lastModified();
     if (!fh_meta_file.open(QIODevice::ReadOnly)){
@@ -261,11 +261,17 @@ ParsedData readEPUGridSquareDM(const QFileInfo &info, const QString& project_dir
         data.setId(hole_id);
         data.setParent(square_id);
         QString x=target_node.toElement().elementsByTagName("c:x").at(0).toElement().text();
-        data.insert("x",x);
+        if(x!=""){
+            data.insert("x",x);
+        }
         QString y=target_node.toElement().elementsByTagName("c:y").at(0).toElement().text();
-        data.insert("y",y);
+        if(y!=""){
+            data.insert("y",y);
+        }
         QString selected=target_node.toElement().elementsByTagName("Selected").at(0).toElement().text();
-        data.insert("selected",selected);
+        if(selected!=""){
+            data.insert("selected",selected);
+        }
         target_node = target_node.nextSibling();
         data.setTimestamp(last_modified);
         result.foil_holes.append(data);
