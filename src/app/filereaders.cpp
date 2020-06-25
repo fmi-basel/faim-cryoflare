@@ -51,6 +51,7 @@ ParsedData readEPUMicrographXML(const QFileInfo &info, const QString& project_di
     if(splitted_name.size()>=7){
         //original EPU file not from flat folder
         result.setParent(splitted_name.at(1));
+        result.setParent(splitted_name.at(1));
         result.insert("template_id",splitted_name.at(3));
         result.insert("acquisition_id",splitted_name.at(4));
     }
@@ -254,9 +255,6 @@ ParsedData readEPUGridSquareDM(const QFileInfo &info, const QString& project_dir
     QDomNode target_node = target_location_array.firstChild();
     while(!target_node.isNull()) {
         QString hole_id=target_node.toElement().elementsByTagName("b:key").at(0).toElement().text();
-        if(hole_id==""){
-           hole_id="";
-        }
         Data data;
         data.setId(hole_id);
         data.setParent(square_id);
