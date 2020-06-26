@@ -45,29 +45,14 @@ void FileSystemWatcherImpl::addPath(const QString &path)
     QFileInfoList child_items;
     if( finfo.exists()){
         if(finfo.isDir()){
-            QMap<QString,QDateTime> mod_times_local;
-            child_items=QDir(path).entryInfoList(QDir::AllEntries|QDir::NoDotAndDotDot);
-            foreach(QFileInfo info, child_items){
-                mod_times_local[info.canonicalFilePath()]=info.lastModified();
-            }
-            QMutexLocker locker(&mutex);
             dirs_.append(path);
             dirs_.sort();
-            foreach(QString key, mod_times_local.keys()){
-                mod_times_[key]=mod_times_local.value(key);
-            }
         }else{
-            QFileInfo info(path);
-            QDateTime modified=info.lastModified();
             QMutexLocker locker(&mutex);
             files_.append(path);
             files_.sort();
-            mod_times_[path]=modified;
+            mod_times_[path]=QDateTime();
         }
-    }
-    //emit only after unlocking mutex to avoid deadlocks
-    if(! child_items.empty()){
-        emit directoryChanged(path,child_items);
     }
 }
 
@@ -130,6 +115,7 @@ void FileSystemWatcherImpl::start()
     if(!running_){
         running_=true;
         timer_->start();
+	update();
     }
 }
 
