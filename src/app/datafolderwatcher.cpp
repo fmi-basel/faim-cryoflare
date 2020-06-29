@@ -86,6 +86,7 @@ void DataFolderWatcher::onDirChanged(const QString &path, QList<QFileInfo> chang
                 if(info.fileName().contains(child.pattern)){
                     QString abs_path=info.absoluteFilePath();
                     if(!watched_dirs_.contains(abs_path)){
+                        watched_dirs_.append(abs_path);
                         watcher_->addPath(abs_path);
                     }
                 }
