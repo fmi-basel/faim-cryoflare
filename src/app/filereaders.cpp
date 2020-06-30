@@ -126,6 +126,9 @@ ParsedData readEPUMicrographXML(const QFileInfo &info, const QString& project_di
     QDomNode image_shift=dom_document.elementsByTagName("ImageShift").at(0);
     result.insert("image_shift_x",image_shift.toElement().elementsByTagName("a:_x").at(0).toElement().text());
     result.insert("image_shift_y",image_shift.toElement().elementsByTagName("a:_y").at(0).toElement().text());
+    QDomNode beam_shift=dom_document.elementsByTagName("BeamShift").at(0);
+    result.insert("beam_shift_x",beam_shift.toElement().elementsByTagName("a:_x").at(0).toElement().text());
+    result.insert("beam_shift_y",beam_shift.toElement().elementsByTagName("a:_y").at(0).toElement().text());
 
 
 
