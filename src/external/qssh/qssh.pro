@@ -13,6 +13,7 @@ CONFIG += staticlib
 CONFIG += warn_off
 
 PRE_TARGETDEPS = ../botan2/libbotan2.a
+LIBS = ../botan2/libbotan2.a
 INCLUDEPATH += ../botan2
 
 # The following define makes your compiler emit warnings if you use
