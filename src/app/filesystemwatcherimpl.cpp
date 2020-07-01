@@ -44,11 +44,11 @@ void FileSystemWatcherImpl::addPath(const QString &path)
     QFileInfo finfo(path);
     QFileInfoList child_items;
     if( finfo.exists()){
+        QMutexLocker locker(&mutex);
         if(finfo.isDir()){
             dirs_.append(path);
             dirs_.sort();
         }else{
-            QMutexLocker locker(&mutex);
             files_.append(path);
             files_.sort();
             mod_times_[path]=QDateTime();
