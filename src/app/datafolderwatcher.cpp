@@ -86,6 +86,7 @@ void DataFolderWatcher::onDirChanged(const QString &path, QList<QFileInfo> chang
                 if(info.fileName().contains(child.pattern)){
                     QString abs_path=info.absoluteFilePath();
                     if(!watched_dirs_.contains(abs_path)){
+			//qDebug() << QDateTime::currentDateTime() << "adding new directory to watch: " << abs_path;
                         watched_dirs_.append(abs_path);
                         watcher_->addPath(abs_path);
                     }
@@ -106,6 +107,7 @@ void DataFolderWatcher::onDirChanged(const QString &path, QList<QFileInfo> chang
         }
         if(! matching_files.empty()){
             std::function<ParsedData(const QFileInfo&)> reader = [project_dir= project_dir_, movie_dir=movie_dir_, func=pair.second](const QFileInfo& info){ return func(info,project_dir,movie_dir); };
+            //qDebug() << QDateTime::currentDateTime() << "parsing " << matching_files.size() << " files in directory " << path << " matching pattern " << pair.first.pattern();
             QFutureWatcher<ParsedData>* watcher=new  QFutureWatcher<ParsedData>();
             watcher->setFuture(QtConcurrent::mappedReduced(matching_files,reader,mergeParsedData));
             connect(watcher,&QFutureWatcher<ParsedData>::finished, this,[=]() {fileReadFinished(watcher);});

@@ -48,13 +48,6 @@ ParsedData readEPUMicrographXML(const QFileInfo &info, const QString& project_di
     result.insert("xml_file",path);
     result.insert("name",name);
     QStringList splitted_name=name.split("_");
-    if(splitted_name.size()>=7){
-        //original EPU file not from flat folder
-        result.setParent(splitted_name.at(1));
-        result.setParent(splitted_name.at(1));
-        result.insert("template_id",splitted_name.at(3));
-        result.insert("acquisition_id",splitted_name.at(4));
-    }
     QDomDocument dom_document;
     QFile file(path);
     if (!file.open(QIODevice::ReadOnly)){
@@ -116,7 +109,8 @@ ParsedData readEPUMicrographXML(const QFileInfo &info, const QString& project_di
     QDateTime time=QDateTime::fromString(timestamp,Qt::ISODate);
     result.insert("timestamp",time.toString("yyyy-MM-dd hh:mm:ss"));
     result.insert("short_name",time.toString("yyyyMMdd_hhmmss"));
-    result.setId(time.toString("yyyyMMdd_hhmmss"));
+    QString id=time.toString("yyyyMMdd_hhmmss");
+    result.setId(id);
     QDomNode position=dom_document.elementsByTagName("Position").at(0);
     result.insert("x",position.toElement().elementsByTagName("X").at(0).toElement().text());
     result.insert("y",position.toElement().elementsByTagName("Y").at(0).toElement().text());
@@ -129,10 +123,6 @@ ParsedData readEPUMicrographXML(const QFileInfo &info, const QString& project_di
     QDomNode beam_shift=dom_document.elementsByTagName("BeamShift").at(0);
     result.insert("beam_shift_x",beam_shift.toElement().elementsByTagName("a:_x").at(0).toElement().text());
     result.insert("beam_shift_y",beam_shift.toElement().elementsByTagName("a:_y").at(0).toElement().text());
-
-
-
-
     QString avg_s_path= info.absoluteDir().absolutePath();
     QString relative_path=QDir(project_dir).relativeFilePath(avg_s_path);
     QString stack_s_path=QString("%1/%2").arg(movie_dir).arg(relative_path);
@@ -147,6 +137,17 @@ ParsedData readEPUMicrographXML(const QFileInfo &info, const QString& project_di
             stack_frames.append(QString("%1/%2-*-%3.???").arg(stack_s_path).arg(result.value("name").toString()).arg(i,4,10,QChar('0')));
         }
         result.insert("stack_frames",stack_frames.join(" "));
+    }
+    if(splitted_name.size()>=7){
+        //original EPU file not from flat folder
+        QString fh_id=splitted_name.at(1);
+        result.setParent(fh_id);
+        Data fh_data;
+        fh_data.setId(fh_id);
+        fh_data.addChild(id);
+        data.foil_holes.append(fh_data);
+        result.insert("template_id",splitted_name.at(3));
+        result.insert("acquisition_id",splitted_name.at(4));
     }
 
     data.micrographs.append(result);
