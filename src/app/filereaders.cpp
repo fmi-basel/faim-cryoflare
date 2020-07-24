@@ -7,6 +7,11 @@
 #include <QJsonDocument>
 #include <QPair>
 
+
+QString getPosFromDomNode(const QDomNode & node, const QString &name){
+    return QString("%1").arg(node.toElement().elementsByTagName(name).at(0).toElement().text().toDouble()*1.0e6,0,'f',2);
+}
+
 DataFolderWatcher *createEPUFolderWatcher(QObject *parent)
 {
     DataFolderWatcher * watcher=new DataFolderWatcher(parent);
@@ -112,9 +117,9 @@ ParsedData readEPUMicrographXML(const QFileInfo &info, const QString& project_di
     QString id=time.toString("yyyyMMdd_hhmmss");
     result.setId(id);
     QDomNode position=dom_document.elementsByTagName("Position").at(0);
-    result.insert("x",position.toElement().elementsByTagName("X").at(0).toElement().text());
-    result.insert("y",position.toElement().elementsByTagName("Y").at(0).toElement().text());
-    result.insert("z",position.toElement().elementsByTagName("Z").at(0).toElement().text());
+    result.insert("x",getPosFromDomNode(position,"X"));
+    result.insert("y",getPosFromDomNode(position,"Y"));
+    result.insert("z",getPosFromDomNode(position,"Z"));
     result.insert("a",position.toElement().elementsByTagName("A").at(0).toElement().text());
     result.insert("b",position.toElement().elementsByTagName("B").at(0).toElement().text());
     QDomNode image_shift=dom_document.elementsByTagName("ImageShift").at(0);
@@ -184,9 +189,9 @@ ParsedData readEPUGridSquareXML(const QFileInfo &info, const QString& project_di
     file.close();
     grid_data.setId(square_id);
     QDomNode position=dom_document.elementsByTagName("Position").at(0);
-    grid_data.insert("x",position.toElement().elementsByTagName("X").at(0).toElement().text());
-    grid_data.insert("y",position.toElement().elementsByTagName("Y").at(0).toElement().text());
-    grid_data.insert("z",position.toElement().elementsByTagName("Z").at(0).toElement().text());
+    grid_data.insert("x",getPosFromDomNode(position,"X"));
+    grid_data.insert("y",getPosFromDomNode(position,"Y"));
+    grid_data.insert("z",getPosFromDomNode(position,"Z"));
     grid_data.insert("a",position.toElement().elementsByTagName("A").at(0).toElement().text());
     grid_data.insert("b",position.toElement().elementsByTagName("B").at(0).toElement().text());
     QDomNode image_shift=dom_document.elementsByTagName("ImageShift").at(0);
