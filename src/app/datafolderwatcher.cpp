@@ -109,7 +109,7 @@ void DataFolderWatcher::onDirChanged(const QString &path, QList<QFileInfo> chang
             std::function<ParsedData(const QFileInfo&)> reader = [project_dir= project_dir_, movie_dir=movie_dir_, func=pair.second](const QFileInfo& info){ return func(info,project_dir,movie_dir); };
             //qDebug() << QDateTime::currentDateTime() << "parsing " << matching_files.size() << " files in directory " << path << " matching pattern " << pair.first.pattern();
             QFutureWatcher<ParsedData>* watcher=new  QFutureWatcher<ParsedData>();
-            watcher->setFuture(QtConcurrent::mappedReduced(matching_files,reader,mergeParsedData));
+            watcher->setFuture(QtConcurrent::mappedReduced(matching_files,reader,mergeParsedData,QtConcurrent::OrderedReduce));
             connect(watcher,&QFutureWatcher<ParsedData>::finished, this,[=]() {fileReadFinished(watcher);});
             future_watchers_.append(watcher);
         }

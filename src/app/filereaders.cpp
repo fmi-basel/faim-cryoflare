@@ -7,7 +7,9 @@
 #include <QJsonDocument>
 #include <QPair>
 
-
+QString stringRound(const QString & s,int digits) {
+  return QString("%1").arg(s.toDouble(),0,'f',digits);
+}
 QString getPosFromDomNode(const QDomNode & node, const QString &name){
     return QString("%1").arg(node.toElement().elementsByTagName(name).at(0).toElement().text().toDouble()*1.0e6,0,'f',2);
 }
@@ -227,9 +229,9 @@ ParsedData readEPUTargetLocationDM(const QFileInfo &info, const QString& project
         return result;
     }
     fh_meta_file.close();
-    QString x=fh_meta_dom_document.elementsByTagName("a:x").at(0).toElement().text();
+    QString x=stringRound(fh_meta_dom_document.elementsByTagName("a:x").at(0).toElement().text(),2);
     data.insert("x",x);
-    QString y=fh_meta_dom_document.elementsByTagName("a:y").at(0).toElement().text();
+    QString y=stringRound(fh_meta_dom_document.elementsByTagName("a:y").at(0).toElement().text(),2);
     data.insert("y",y);
     QString selected=fh_meta_dom_document.elementsByTagName("Selected").at(0).toElement().text();
     data.insert("selected",selected);
@@ -267,11 +269,11 @@ ParsedData readEPUGridSquareDM(const QFileInfo &info, const QString& project_dir
         Data data;
         data.setId(hole_id);
         data.setParent(square_id);
-        QString x=target_node.toElement().elementsByTagName("c:x").at(0).toElement().text();
+        QString x=stringRound(target_node.toElement().elementsByTagName("c:x").at(0).toElement().text(),2);
         if(x!=""){
             data.insert("x",x);
         }
-        QString y=target_node.toElement().elementsByTagName("c:y").at(0).toElement().text();
+        QString y=stringRound(target_node.toElement().elementsByTagName("c:y").at(0).toElement().text(),2);
         if(y!=""){
             data.insert("y",y);
         }

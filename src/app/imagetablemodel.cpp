@@ -187,7 +187,7 @@ Qt::ItemFlags ImageTableModel::flags(const QModelIndex &index) const
 
 Data ImageTableModel::image(int row)
 {
-    return meta_data_store_->at(row);
+    return meta_data_store_->micrograph(id(row));
 }
 
 QString ImageTableModel::id(int row)
