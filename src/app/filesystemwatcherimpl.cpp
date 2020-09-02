@@ -34,7 +34,7 @@ FileSystemWatcherImpl::FileSystemWatcherImpl(QObject *parent) :
     mutex(),
     running_(false)
 {
-    timer_->setInterval(5000);
+    timer_->setInterval(1000);
     timer_->setSingleShot(true);
     connect(timer_, &QTimer::timeout, this, &FileSystemWatcherImpl::update);
 }

@@ -71,11 +71,11 @@ ParsedData readEPUMicrographXML(const QFileInfo &info, const QString& project_di
     QDomNode node = custom_data.firstChild();
     while(!node.isNull()) {
         if(node.firstChild().toElement().text()=="AppliedDefocus"){
-            result.insert("defocus",QString("%1").arg(node.lastChild().toElement().text().toDouble()*1.0e10));
+            result.insert("defocus",QString("%1").arg(node.lastChild().toElement().text().toDouble()*1.0e10,0,'f',2));
         }   else if(node.firstChild().toElement().text()=="PhasePlateUsed"){
             result.insert("phase_plate",node.lastChild().toElement().text());
         }    else if(node.firstChild().toElement().text()=="Dose"){
-            result.insert("dose",QString("%1").arg(node.lastChild().toElement().text().toDouble()*1.0e-20));
+            result.insert("dose",QString("%1").arg(node.lastChild().toElement().text().toDouble()*1.0e-20,0,'f',2));
         }    else if(node.firstChild().toElement().text()=="PhasePlateApertureName"){
             QString phase_plate_str=node.lastChild().toElement().text().split(" ").last();
             result.insert("phase_plate_num",phase_plate_str.right(phase_plate_str.size()-1));
@@ -84,6 +84,7 @@ ParsedData readEPUMicrographXML(const QFileInfo &info, const QString& project_di
         }
         node = node.nextSibling();
     }
+    result.insert("instrument_id",dom_document.elementsByTagName("InstrumentID").at(0).toElement().text());
     QDomNode camera=dom_document.elementsByTagName("camera").at(0);
     QString camera_name=camera.toElement().elementsByTagName("Name").at(0).toElement().text();
     result.insert("camera",camera_name);
@@ -92,7 +93,12 @@ ParsedData readEPUMicrographXML(const QFileInfo &info, const QString& project_di
     }else if (QString("EF-CCD")==camera_name){
         result.insert("num_frames",camera.toElement().elementsByTagName("b:NumberOffractions").at(0).toElement().text());
     }
-    result.insert("exposure_time",camera.toElement().elementsByTagName("ExposureTime").at(0).toElement().text());
+    QDomNode readout_area=dom_document.elementsByTagName("ReadoutArea").at(0);
+    QString camera_height=readout_area.toElement().elementsByTagName("a:height").at(0).toElement().text();
+    result.insert("camera_height",camera_height);
+    QString camera_width=readout_area.toElement().elementsByTagName("a:width").at(0).toElement().text();
+    result.insert("camera_width",camera_width);
+    result.insert("exposure_time",stringRound(camera.toElement().elementsByTagName("ExposureTime").at(0).toElement().text(),2));
     QDomNode pixel_size=dom_document.elementsByTagName("pixelSize").at(0);
     QDomNodeList pixel_size_values=pixel_size.toElement().elementsByTagName("numericValue");
     QDomNode cam_specific_input=dom_document.elementsByTagName("CameraSpecificInput").at(0);
@@ -101,14 +107,16 @@ ParsedData readEPUMicrographXML(const QFileInfo &info, const QString& project_di
     for(int i=0;i<inputs.size();++i){
         QDomNode input=inputs.at(i);
         QString key=input.firstChild().toElement().text();
-        QString value=input.lastChild().toElement().text();
+        QDomElement value_element=input.lastChild().toElement();
         if(key=="SuperResolutionFactor"){
-            result.insert("super_resolution_factor",value.toDouble());
+            result.insert("super_resolution_factor",value_element.text().toDouble());
+        } else if(key=="FractionationSettings"){
+            result.insert("fractionation_type",value_element.attribute("i:type").remove(0,2));
         }
     }
-    result.insert("apix_x",QString("%1").arg(pixel_size_values.at(0).toElement().text().toDouble()*1e10/result.value("super_resolution_factor").toDouble()));
-    result.insert("apix_y",QString("%1").arg(pixel_size_values.at(1).toElement().text().toDouble()*1e10/result.value("super_resolution_factor").toDouble()));
-    result.insert("acceleration_voltage",QString("%1").arg(dom_document.elementsByTagName("AccelerationVoltage").at(0).toElement().text().toDouble()/1000.0));
+    result.insert("apix_x",QString("%1").arg(pixel_size_values.at(0).toElement().text().toDouble()*1e10/result.value("super_resolution_factor").toDouble(),0,'f',2));
+    result.insert("apix_y",QString("%1").arg(pixel_size_values.at(1).toElement().text().toDouble()*1e10/result.value("super_resolution_factor").toDouble(),0,'f',2));
+    result.insert("acceleration_voltage",QString("%1").arg(dom_document.elementsByTagName("AccelerationVoltage").at(0).toElement().text().toDouble()/1000.0,0,'f',2));
     QDomNode nominal_magnification=dom_document.elementsByTagName("NominalMagnification").at(0);
     result.insert("nominal_magnification",nominal_magnification.toElement().text());
     QDomNode datetime=dom_document.elementsByTagName("acquisitionDateTime").at(0);
@@ -122,8 +130,8 @@ ParsedData readEPUMicrographXML(const QFileInfo &info, const QString& project_di
     result.insert("x",getPosFromDomNode(position,"X"));
     result.insert("y",getPosFromDomNode(position,"Y"));
     result.insert("z",getPosFromDomNode(position,"Z"));
-    result.insert("a",position.toElement().elementsByTagName("A").at(0).toElement().text());
-    result.insert("b",position.toElement().elementsByTagName("B").at(0).toElement().text());
+    result.insert("a",getPosFromDomNode(position,"A"));
+    result.insert("b",getPosFromDomNode(position,"B"));
     QDomNode image_shift=dom_document.elementsByTagName("ImageShift").at(0);
     result.insert("image_shift_x",image_shift.toElement().elementsByTagName("a:_x").at(0).toElement().text());
     result.insert("image_shift_y",image_shift.toElement().elementsByTagName("a:_y").at(0).toElement().text());
@@ -136,15 +144,6 @@ ParsedData readEPUMicrographXML(const QFileInfo &info, const QString& project_di
     result.insert("destination_path",QDir::currentPath());
     result.insert("stack_source_path",stack_s_path);
     result.insert("avg_source_path",avg_s_path);
-    QStringList stack_frames;
-    if(QString("BM-Falcon")==result.value("camera").toString()){
-        result.insert("stack_frames",QString("%1/%2_frames.mrc").arg(stack_s_path).arg(result.value("name").toString()));
-    }else if(QString("EF-CCD")==result.value("camera").toString()){
-        for(int i=1;i<=result.value("num_frames").toInt();++i){
-            stack_frames.append(QString("%1/%2-*-%3.???").arg(stack_s_path).arg(result.value("name").toString()).arg(i,4,10,QChar('0')));
-        }
-        result.insert("stack_frames",stack_frames.join(" "));
-    }
     if(splitted_name.size()>=7){
         //original EPU file not from flat folder
         QString fh_id=splitted_name.at(1);
@@ -156,7 +155,76 @@ ParsedData readEPUMicrographXML(const QFileInfo &info, const QString& project_di
         result.insert("template_id",splitted_name.at(3));
         result.insert("acquisition_id",splitted_name.at(4));
     }
+    // xml file naming K2:              N/A    
+    // gain ref file naming K2:         FoilHole_<hole_id>_Data_<template_id>_<acquisition_id>_<date>_<HHMM>-gain-ref.MRC -> todo check for EPU 2.8    
+    // stack file naming K2:            FoilHole_<hole_id>_Data_<template_id>_<acquisition_id>_<date>_<HHMM>-<?? id>.mrc  -> todo check for EPU 2.8
 
+    // xml file naming F3:              FoilHole_<hole_id>_Data_<template_id>_<acquisition_id>_<date>_<HHMMSS>_Fractions.xml    
+    // gain ref file naming F3:         N/A    
+    // stack file naming F3:            FoilHole_<hole_id>_Data_<template_id>_<acquisition_id>_<date>_<HHMMSS>_Fractions.mrc    
+    
+    // xml file naming F4 mrc:          FoilHole_<hole_id>_Data_<template_id>_<acquisition_id>_<date>_<HHMMSS>_Fractions.xml    
+    // gain ref file naming F4 mrc:     N/A    
+    // stack file naming F4 mrc:        FoilHole_<hole_id>_Data_<template_id>_<acquisition_id>_<date>_<HHMMSS>_Fractions.mrc    
+
+    // xml file naming F4 eer:          N/A    
+    // gain ref file naming F4 eer:     ???????    
+    // stack file naming F4 eer:        FoilHole_<hole_id>_Data_<template_id>_<acquisition_id>_<date>_<HHMMSS>_EER.eer  
+
+    QStringList stack_name_filter;
+    QStringList gain_name_filter;
+    if(QString("BM-Falcon")==result.value("camera").toString()){
+        if(result.value("fractionation_type").toString()=="EerFractionation"){
+            //todo figure out gain
+            stack_name_filter<<QString("FoilHole_%1_Data_%2_%3_????????_??????_EER.eer").arg(result.parent()).arg(result.value("template_id").toString()).arg(result.value("acquisition_id").toString());
+            result.insert("detector","Falcon-4");
+        }else{
+            stack_name_filter<<QString("FoilHole_%1_Data_%2_%3_????????_??????_Fractions.mrc").arg(result.parent()).arg(result.value("template_id").toString()).arg(result.value("acquisition_id").toString());
+            QStringList stack_xml_name_filter(QString("FoilHole_%1_Data_%2_%3_????????_??????_Fractions.xml").arg(result.parent()).arg(result.value("template_id").toString()).arg(result.value("acquisition_id").toString()));
+            QStringList files=QDir(stack_s_path).entryList(stack_xml_name_filter,QDir::Files,QDir::Time|QDir::Reversed);
+            if(!files.empty()){
+                QString source_stack_xml_path=QDir(stack_s_path).absoluteFilePath(files.last());
+                result.insert("source_stack_xml",source_stack_xml_path);
+                QFile file(source_stack_xml_path);
+                QDomDocument stack_dom_document;
+                if (!file.open(QIODevice::ReadOnly)){
+                    qDebug() << "Cannot open source stack XML file: " << source_stack_xml_path;
+                    qDebug() << "Setting detector to generic Falcon camera";
+                    result.insert("detector","FalconX");    
+                } else if (!stack_dom_document.setContent(&file)) {
+                    qDebug() << "Cannot parse source stack XML file: " << path;
+                    qDebug() << "Setting detector to generic Falcon camera";
+                    file.close();
+                    result.insert("detector","Falcon-X");   
+                }else {
+                    QString detector_name=stack_dom_document.elementsByTagName("Detector").at(0).toElement().text();
+                    if(! detector_name.isEmpty()){
+                        result.insert("detector",detector_name);   
+                    }else{
+                        result.insert("detector","Falcon-X");   
+                    }
+                }
+            }else{
+                result.insert("detector","Falcon-X");    
+            }
+        }
+    }else if(QString("EF-CCD")==result.value("camera").toString()){
+        stack_name_filter<<QString("FoilHole_%1_Data_%2_%3_????????_[0-9]*[0-9]-[0-9]*[0-9].mrc").arg(result.parent()).arg(result.value("template_id").toString()).arg(result.value("acquisition_id").toString());
+        gain_name_filter<<QString("FoilHole_%1_Data_%2_%3_????????_[0-9]*[0-9]-gain-ref.MRC").arg(result.parent()).arg(result.value("template_id").toString()).arg(result.value("acquisition_id").toString());
+        result.insert("detector","KX");
+    }
+    if(!stack_name_filter.empty()){
+        QStringList files=QDir(stack_s_path).entryList(stack_name_filter,QDir::Files,QDir::Time|QDir::Reversed);
+        if(!files.empty()){
+            result.insert("source_stack",QDir(stack_s_path).absoluteFilePath(files.last()));
+        }
+    }
+    if(!gain_name_filter.empty()){
+        QStringList files=QDir(stack_s_path).entryList(gain_name_filter,QDir::Files,QDir::Time|QDir::Reversed);
+        if(!files.empty()){
+            result.insert("source_gain_reference",QDir(stack_s_path).absoluteFilePath(files.last()));
+        }
+    }
     data.micrographs.append(result);
     return data;
 }
@@ -194,8 +262,8 @@ ParsedData readEPUGridSquareXML(const QFileInfo &info, const QString& project_di
     grid_data.insert("x",getPosFromDomNode(position,"X"));
     grid_data.insert("y",getPosFromDomNode(position,"Y"));
     grid_data.insert("z",getPosFromDomNode(position,"Z"));
-    grid_data.insert("a",position.toElement().elementsByTagName("A").at(0).toElement().text());
-    grid_data.insert("b",position.toElement().elementsByTagName("B").at(0).toElement().text());
+    grid_data.insert("a",getPosFromDomNode(position,"A"));
+    grid_data.insert("b",getPosFromDomNode(position,"B"));
     QDomNode image_shift=dom_document.elementsByTagName("ImageShift").at(0);
     grid_data.insert("image_shift_x",image_shift.toElement().elementsByTagName("a:_x").at(0).toElement().text());
     grid_data.insert("image_shift_y",image_shift.toElement().elementsByTagName("a:_y").at(0).toElement().text());
