@@ -23,13 +23,25 @@
 set -u
 set -e
 ######################## get parameters from GUI ###############################
+#CRYOFLARE_DEBUG=1
 . data_connector.sh
-######################## write data ############################################
-aggregate_folder=/data/FMI/AGGREGATE_DATA
-date_string=`date +%y%m%d`
-logfile=${aggregate_folder}/${date_string}.log
-(
-        flock -n 9 || exit 1
-        echo $short_name,$x,$y,$z,$apix_x,$exposure_time,$dose,$motion_max_shift,$ice_ratio,$ice_thickness,$picking_num_particles,$ctf_max_resolution,$measured_defocus,$astigmatism,$defocus_angle,$phase_shift >> $logfile
-) 9>> $logfile
+######################## load modules ##########################################
+module purge
+module load EMAN2/2.20
+janni_denoise_exe=/scratch/miniconda3/envs/cryolo/bin/janni_denoise.py
+janni_model=/scratch/miniconda3/envs/cryolo/models/gmodel_janni_20190703.h5 
+######################## define output files ###################################
+denoised_big=${aligned_micrograph/.mrc/_denoised_big.mrc}
+FILES  denoised_big
+######################## run processing if files are missing ###################
+if FILES_MISSING; then
+  ori_dir=$scratch/ori
+  denoised_dir=$scratch/denoised
+  mkdir -p $ori_dir
+  mkdir -p $denoised_dir
+  ln -s ${destination_path}/${aligned_micrograph} $ori_dir/
+  RUN $janni_denoise_exe denoise -g $gpu_id $ori_dir ${denoised_dir} $janni_model
+  mv ${denoised_dir}/ori/${aligned_micrograph##*/} $denoised_big
+fi
+
 

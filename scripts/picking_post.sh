@@ -19,17 +19,25 @@
 # You should have received a copy of the GNU General Public License
 # along with CryoFLARE.  If not, see http://www.gnu.org/licenses/.
 #
-################################################################################
+######################## get parameters from GUI ###############################
 set -u
 set -e
 ######################## get parameters from GUI ###############################
 . data_connector.sh
-######################## write data ############################################
-aggregate_folder=/data/FMI/AGGREGATE_DATA
-date_string=`date +%y%m%d`
-logfile=${aggregate_folder}/${date_string}.log
-(
-        flock -n 9 || exit 1
-        echo $short_name,$x,$y,$z,$apix_x,$exposure_time,$dose,$motion_max_shift,$ice_ratio,$ice_thickness,$picking_num_particles,$ctf_max_resolution,$measured_defocus,$astigmatism,$defocus_angle,$phase_shift >> $logfile
-) 9>> $logfile
+######################## load modules ##########################################
+module purge
+module load EMAN2/2.20
+######################## define output files ###################################
+picking_boxes_png=${picking_boxes/_autopick.box/_boxes.png}
 
+FILES  picking_boxes_png
+######################## run processing if files are missing ###################
+if FILES_MISSING; then
+  full_png=$scratch/${short_name}.png
+  RUN e2proc2d.py ${aligned_micrograph} $full_png
+  draw_boxes.sh  $full_png $picking_boxes  $picking_rejected_boxes $picking_boxes_png 0x100
+fi
+######################## extract output parameters #############################
+picking_num_particles=`cat $picking_boxes|wc -l`
+######################## export result parameters ##############################
+RESULTS picking_num_particles 

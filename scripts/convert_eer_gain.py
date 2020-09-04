@@ -19,25 +19,27 @@
 # You should have received a copy of the GNU General Public License
 # along with CryoFLARE.  If not, see http://www.gnu.org/licenses/.
 #
+# application of sensor defects on the gain reference data  was adapted
+# from an example script kindly provided by Thermo Fisher Scientific
+#
 ################################################################################
 import sys
-import re
-
-pattern=re.compile("\d{8}_\d{6}")
-star_file=sys.argv[1]
-imagelist=sys.argv[2:]
-
-lines_filtered=[]
-with open(star_file,"r") as f:
-	lines=f.readlines()
-	for line in lines:
-		match=pattern.search(line)
-		if match:
-			image=match.group(0)
-			if image in imagelist:
-				lines_filtered.append(line)
-		else:
-			lines_filtered.append(line)
-with open(star_file,"w") as f:
-	for line in lines_filtered:
-		f.write(line)
+import numpy as np
+from EMAN2 import EMNumPy
+eer_gain_name=sys.argv[1]
+defects_name=sys.argv[2]
+mrc_gain_name=sys.argv[3]
+with open(eer_gain_name,'rb') as f:            
+        buffer=f.read()
+lin_data=np.frombuffer(buffer,dtype=np.dtype(np.int32),count=4096**2,offset=49)
+eer_gain=lin_data.reshape((4096,4096)).astype('float64')
+defects=np.load(defects_name)
+combined_gain=eer_gain*defects
+valid_indices = np.where(combined_gain>0)
+mean=combined_gain[valid_indices].mean()
+std=combined_gain[valid_indices].std()
+num_sigma=16
+hot_indices=np.where(combined_gain>mean+std*num_sigma)
+combined_gain[hot_indices]=0
+e = EMNumPy.numpy2em(combined_gain.astype('float32'))
+e.write_image(mrc_gain_name)	

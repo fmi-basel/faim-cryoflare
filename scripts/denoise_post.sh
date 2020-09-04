@@ -24,12 +24,17 @@ set -u
 set -e
 ######################## get parameters from GUI ###############################
 . data_connector.sh
-######################## write data ############################################
-aggregate_folder=/data/FMI/AGGREGATE_DATA
-date_string=`date +%y%m%d`
-logfile=${aggregate_folder}/${date_string}.log
-(
-        flock -n 9 || exit 1
-        echo $short_name,$x,$y,$z,$apix_x,$exposure_time,$dose,$motion_max_shift,$ice_ratio,$ice_thickness,$picking_num_particles,$ctf_max_resolution,$measured_defocus,$astigmatism,$defocus_angle,$phase_shift >> $logfile
-) 9>> $logfile
-
+######################## load modules ##########################################
+module purge
+module load EMAN2/2.20
+######################## define output files ###################################
+denoised_png=${aligned_micrograph/.mrc/_denoised.png}
+denoised_boxes_png=${aligned_micrograph/.mrc/_denoise_boxes.png}
+denoised_big_png=$scratch/denoise_big.png
+FILES  denoised_boxes_png denoised_png
+######################## run processing if files are missing ###################
+if FILES_MISSING; then
+  RUN e2proc2d.py --meanshrink 7 $denoised_big  $denoised_png
+  RUN e2proc2d.py $denoised_big  $denoised_big_png
+  draw_boxes.sh  $denoised_big_png $picking_boxes  $picking_rejected_boxes $denoised_boxes_png 0x0
+fi

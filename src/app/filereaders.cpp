@@ -156,8 +156,8 @@ ParsedData readEPUMicrographXML(const QFileInfo &info, const QString& project_di
         result.insert("acquisition_id",splitted_name.at(4));
     }
     // xml file naming K2:              N/A    
-    // gain ref file naming K2:         FoilHole_<hole_id>_Data_<template_id>_<acquisition_id>_<date>_<HHMM>-gain-ref.MRC -> todo check for EPU 2.8    
-    // stack file naming K2:            FoilHole_<hole_id>_Data_<template_id>_<acquisition_id>_<date>_<HHMM>-<?? id>.mrc  -> todo check for EPU 2.8
+    // gain ref file naming K2:         FoilHole_<hole_id>_Data_<template_id>_<acquisition_id>_<date>_<HHMMSS>-gain-ref.MRC    
+    // stack file naming K2:            FoilHole_<hole_id>_Data_<template_id>_<acquisition_id>_<date>_<HHMMSS>-<?? id>.mrc  
 
     // xml file naming F3:              FoilHole_<hole_id>_Data_<template_id>_<acquisition_id>_<date>_<HHMMSS>_Fractions.xml    
     // gain ref file naming F3:         N/A    
@@ -171,59 +171,16 @@ ParsedData readEPUMicrographXML(const QFileInfo &info, const QString& project_di
     // gain ref file naming F4 eer:     ???????    
     // stack file naming F4 eer:        FoilHole_<hole_id>_Data_<template_id>_<acquisition_id>_<date>_<HHMMSS>_EER.eer  
 
-    QStringList stack_name_filter;
-    QStringList gain_name_filter;
     if(QString("BM-Falcon")==result.value("camera").toString()){
         if(result.value("fractionation_type").toString()=="EerFractionation"){
-            //todo figure out gain
-            stack_name_filter<<QString("FoilHole_%1_Data_%2_%3_????????_??????_EER.eer").arg(result.parent()).arg(result.value("template_id").toString()).arg(result.value("acquisition_id").toString());
-            result.insert("detector","Falcon-4");
+            result.insert("source_stack",QDir::cleanPath(stack_s_path + QDir::separator()+name+"_EER.eer"));
         }else{
-            stack_name_filter<<QString("FoilHole_%1_Data_%2_%3_????????_??????_Fractions.mrc").arg(result.parent()).arg(result.value("template_id").toString()).arg(result.value("acquisition_id").toString());
-            QStringList stack_xml_name_filter(QString("FoilHole_%1_Data_%2_%3_????????_??????_Fractions.xml").arg(result.parent()).arg(result.value("template_id").toString()).arg(result.value("acquisition_id").toString()));
-            QStringList files=QDir(stack_s_path).entryList(stack_xml_name_filter,QDir::Files,QDir::Time|QDir::Reversed);
-            if(!files.empty()){
-                QString source_stack_xml_path=QDir(stack_s_path).absoluteFilePath(files.last());
-                result.insert("source_stack_xml",source_stack_xml_path);
-                QFile file(source_stack_xml_path);
-                QDomDocument stack_dom_document;
-                if (!file.open(QIODevice::ReadOnly)){
-                    qDebug() << "Cannot open source stack XML file: " << source_stack_xml_path;
-                    qDebug() << "Setting detector to generic Falcon camera";
-                    result.insert("detector","FalconX");    
-                } else if (!stack_dom_document.setContent(&file)) {
-                    qDebug() << "Cannot parse source stack XML file: " << path;
-                    qDebug() << "Setting detector to generic Falcon camera";
-                    file.close();
-                    result.insert("detector","Falcon-X");   
-                }else {
-                    QString detector_name=stack_dom_document.elementsByTagName("Detector").at(0).toElement().text();
-                    if(! detector_name.isEmpty()){
-                        result.insert("detector",detector_name);   
-                    }else{
-                        result.insert("detector","Falcon-X");   
-                    }
-                }
-            }else{
-                result.insert("detector","Falcon-X");    
-            }
+            result.insert("source_stack",QDir::cleanPath(stack_s_path + QDir::separator()+name+"_Fractions.mrc"));
+            result.insert("source_stack_xml",QDir::cleanPath(stack_s_path + QDir::separator()+name+"_Fractions.xml"));
         }
     }else if(QString("EF-CCD")==result.value("camera").toString()){
-        stack_name_filter<<QString("FoilHole_%1_Data_%2_%3_????????_[0-9]*[0-9]-[0-9]*[0-9].mrc").arg(result.parent()).arg(result.value("template_id").toString()).arg(result.value("acquisition_id").toString());
-        gain_name_filter<<QString("FoilHole_%1_Data_%2_%3_????????_[0-9]*[0-9]-gain-ref.MRC").arg(result.parent()).arg(result.value("template_id").toString()).arg(result.value("acquisition_id").toString());
-        result.insert("detector","KX");
-    }
-    if(!stack_name_filter.empty()){
-        QStringList files=QDir(stack_s_path).entryList(stack_name_filter,QDir::Files,QDir::Time|QDir::Reversed);
-        if(!files.empty()){
-            result.insert("source_stack",QDir(stack_s_path).absoluteFilePath(files.last()));
-        }
-    }
-    if(!gain_name_filter.empty()){
-        QStringList files=QDir(stack_s_path).entryList(gain_name_filter,QDir::Files,QDir::Time|QDir::Reversed);
-        if(!files.empty()){
-            result.insert("source_gain_reference",QDir(stack_s_path).absoluteFilePath(files.last()));
-        }
+        result.insert("source_stack",QDir::cleanPath(stack_s_path + QDir::separator()+QString("FoilHole_%1_Data_%2_%3_????????_[0-9]*[0-9]-[0-9]*[0-9].mrc").arg(result.parent()).arg(result.value("template_id").toString()).arg(result.value("acquisition_id").toString())));
+        result.insert("source_gain_ref",QDir::cleanPath(stack_s_path + QDir::separator()+QString("FoilHole_%1_Data_%2_%3_????????_[0-9]*[0-9]-gain-ref.MRC").arg(result.parent()).arg(result.value("template_id").toString()).arg(result.value("acquisition_id").toString())));
     }
     data.micrographs.append(result);
     return data;

@@ -1,4 +1,55 @@
-import sys,tempfile,os,atexit,shutil,__main__
+################################################################################
+#
+# Author: Andreas Schenk
+# Friedrich Miescher Institute, Basel, Switzerland
+#
+# This file is part of CryoFLARE
+#
+# Copyright (C) 2020 by the CryoFLARE Authors
+#
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free
+# Software Foundation; either version 3.0 of the License.
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+# details.
+#
+# You should have received a copy of the GNU General Public License
+# along with CryoFLARE.  If not, see http://www.gnu.org/licenses/.
+#
+################################################################################
+import sys,tempfile,os,atexit,shutil,fcntl,__main__
+import relion_tools
+def RELION_CREATE_JOB(jobtype,job_id,jobalias,starname,nodetype,inputstar):
+	jobfolder="job%03d" % (jobid)
+	rln_jobpath=os.path.join(jobtype,jobfolder)
+	jobalias_link=os.path.join(jobtype,jobalias)
+	default_pipeline="default_pipeline.star"
+	gui_projectdir=".gui_projectdir"
+	### create folders and aliases ###
+	os.mkdir(rln_jobpath)
+    with open(rln_jobpath, os.O_RDONLY) as dir_fd:
+        fcntl.flock(dir_fd,fcntl.LOCK_EX)
+            if not os.path.exists(jobalias_link):
+                os.symlinke(os.path.join("..",rln_jobpath),jobalias_link)
+        fcntl.flock(dir_fd,fcntl.LOCK_UN)
+  	SHARED_FILES("jobalias_link")
+	### create node files ###
+    os.mkdirs(os.path.join(".Nodes",nodetype,jobalias_link),exist_ok=True)
+    os.mkdirs(os.path.join(".Nodes",nodetype,ln_jobpath),exist_ok=True)
+    with open(os.path.join(".Nodes",nodetype,jobalias_link,starname)):
+        pass
+    with open(os.path.join(".Nodes",nodetype,rln_jobpath,starname)):
+        pass
+    with open(".gui_projectdir,"a"):
+        pass
+    import relion_tools
+    relion_tools.add_to_pipeline(default_pipeline,jobtype,job_id,jobalias,inputstar,output_nodes rln_jobpath+"/"+starname+":"+nodetype)
+    SHARED_FILES("default_pipeline","gui_projectdir")
+
+
+
 
 def RESULTS(*args):
     for name in args:
