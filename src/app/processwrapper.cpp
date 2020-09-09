@@ -157,9 +157,10 @@ void ProcessWrapper::handleSuccess_()
     QString raw_file_token("RAW_FILE_EXPORT:");
     QString result_file_token("FILE_EXPORT:");
     QString shared_result_file_token("SHARED_FILE_EXPORT:");
+    QString shared_raw_result_file_token("SHARED_RAW_FILE_EXPORT:");
     QString output;
     QString line;
-    QMap<QString,QString> data,raw_files,files,shared_files;
+    QMap<QString,QString> data,raw_files,files,shared_files,shared_raw_files;
     int linecount=0;
     do {
         line = output_stream.readLine();
@@ -197,10 +198,18 @@ void ProcessWrapper::handleSuccess_()
                 continue;
             }
             shared_files.insert(splitted[0].trimmed(),splitted[1].trimmed());
+        }else if(line.startsWith(shared_raw_result_file_token)){
+            line.remove(0,shared_raw_result_file_token.size());
+            QStringList splitted=line.split("=");
+            if(splitted.size()<2){
+                qDebug() << "invalid result line: " << line;
+                continue;
+            }
+            shared_raw_files.insert(splitted[0].trimmed(),splitted[1].trimmed());
         }
     } while (!line.isNull());
     data.insert(task_->definition->taskString(),"FINISHED");
-    meta_data_store_->updateMicrograph(task_->id,data,raw_files,files,shared_files);
+    meta_data_store_->updateMicrograph(task_->id,data,raw_files,files,shared_files,shared_raw_files);
     writeLog_(output);
     writeErrorLog_(process_->readAllStandardError());
     TaskPtr task=task_;

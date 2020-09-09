@@ -69,15 +69,16 @@ public:
     QSet<QString> rawKeys() const;
     QSet<QString> outputKeys() const;
     QSet<QString> sharedKeys() const;
+    QSet<QString> sharedRawKeys() const;
     QList<QString> micrographIDs() const;
     QList<QString> selectedMicrographIDs() const;
     void setMicrographExport(const QString& id,bool export_flag);
     void removeMicrographResults(const QString &id, const TaskDefinitionPtr& definition);
     void createReport(const QString& file_name, const QString & type);
-    void exportMicrographs(const SftpUrl& destination, const SftpUrl& raw_export_path, const QStringList& output_keys, const QStringList& raw_keys, const QStringList& shared_keys, bool duplicate_raw);
+    void exportMicrographs(const SftpUrl& destination, const SftpUrl& raw_export_path, const QStringList& output_keys, const QStringList& raw_keys, const QStringList& shared_keys, const QStringList& shared_raw_keys, bool duplicate_raw);
     QString value(const QString& id, QString key) const;
 public slots:
-    void updateMicrograph(const QString &id, const QMap<QString,QString>& new_data, const QMap<QString,QString>& raw_files=QMap<QString,QString>(), const QMap<QString,QString>& files=QMap<QString,QString>(), const QMap<QString,QString>& shared_files=QMap<QString,QString>());
+    void updateMicrograph(const QString &id, const QMap<QString,QString>& new_data, const QMap<QString,QString>& raw_files=QMap<QString,QString>(), const QMap<QString,QString>& files=QMap<QString,QString>(), const QMap<QString,QString>& shared_files=QMap<QString,QString>(),const QMap<QString,QString>& shared_raw_files=QMap<QString,QString>());
     void updateData(const ParsedData& data, bool save=true);
     void start(const QString& project_dir, const QString &movie_dir);
     void stop();

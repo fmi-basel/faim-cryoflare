@@ -26,7 +26,7 @@
 #include "remotefiledialog.h"
 #include "sshauthenticationdialog.h"
 
-ExportDialog::ExportDialog(const QStringList &raw_keys, const QStringList &output_keys, const QStringList &shared_keys, QWidget *parent) :
+ExportDialog::ExportDialog(const QStringList &raw_keys, const QStringList &output_keys,const QStringList& shared_raw_keys, const QStringList &shared_keys, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::ExportDialog),
     connection_(nullptr)
@@ -38,6 +38,8 @@ ExportDialog::ExportDialog(const QStringList &raw_keys, const QStringList &outpu
     ui->data_list->selectAll();
     ui->raw_data_list->addItems(raw_keys);
     ui->raw_data_list->selectAll();
+    ui->shared_raw_data_list->addItems(shared_raw_keys);
+    ui->shared_raw_data_list->selectAll();
     ui->shared_data_list->addItems(shared_keys);
     ui->shared_data_list->selectAll();
 }
@@ -113,6 +115,15 @@ QStringList ExportDialog::selectedSharedKeys() const
 {
     QStringList result;
     foreach(QListWidgetItem* i, ui->shared_data_list->selectedItems()){
+        result << i->text();
+    }
+    return result;
+}
+
+QStringList ExportDialog::selectedSharedRawKeys() const
+{
+    QStringList result;
+    foreach(QListWidgetItem* i, ui->shared_raw_data_list->selectedItems()){
         result << i->text();
     }
     return result;

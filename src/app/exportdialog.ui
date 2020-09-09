@@ -148,6 +148,24 @@ along with CryoFLARE.  If not, see http://www.gnu.org/licenses/ .
        <item>
         <widget class="QLabel" name="label_5">
          <property name="text">
+          <string>Shared raw data</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QListWidget" name="shared_raw_data_list">
+         <property name="selectionMode">
+          <enum>QAbstractItemView::MultiSelection</enum>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QVBoxLayout" name="verticalLayout_5">
+       <item>
+        <widget class="QLabel" name="label_6">
+         <property name="text">
           <string>Shared data</string>
          </property>
         </widget>

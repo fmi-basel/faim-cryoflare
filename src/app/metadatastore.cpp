@@ -187,6 +187,15 @@ QSet<QString> MetaDataStore::sharedKeys() const
     return result;
 }
 
+QSet<QString> MetaDataStore::sharedRawKeys() const
+{
+    QSet<QString> result;
+    foreach(Data data, micrographs_){
+        QJsonObject shared_raw_files=data.value("shared_raw_files").toObject();
+        result.unite(QSet<QString>::fromList(shared_raw_files.keys()));
+    }
+    return result;
+}
 
 void MetaDataStore::saveMicrographData_(const QString &id)
 {
@@ -283,6 +292,9 @@ void MetaDataStore::updateData(const ParsedData &data, bool save)
         if(!mic_data.contains("shared_files")){
             mic_data.insert("shared_files",QJsonObject());
         }
+        if(!mic_data.contains("shared_raw_files")){
+            mic_data.insert("shared_raw_files",QJsonObject());
+        }
         micrographs_.insert(d.id(),mic_data);
         if(save){
             saveMicrographData_(d.id());
@@ -359,7 +371,7 @@ void MetaDataStore::setMicrographExport(const QString &id, bool export_flag)
     saveMicrographData_(id);
 }
 
-void MetaDataStore::updateMicrograph(const QString &id, const QMap<QString,QString>& new_data,  const QMap<QString, QString> &raw_files,  const QMap<QString, QString> &files,  const QMap<QString, QString> &shared_files)
+void MetaDataStore::updateMicrograph(const QString &id, const QMap<QString,QString>& new_data,  const QMap<QString, QString> &raw_files,  const QMap<QString, QString> &files,  const QMap<QString, QString> &shared_files,const QMap<QString,QString>& shared_raw_files)
 {
     Data& data=micrographs_[id];
     foreach(QString key,new_data.keys()){
@@ -386,9 +398,17 @@ void MetaDataStore::updateMicrograph(const QString &id, const QMap<QString,QStri
     foreach(QString key,shared_files.keys()){
         old_shared_files.insert(key,shared_files.value(key));
     }
+    QVariantMap old_shared_raw_files;
+    if(data.contains("shared_raw_files")){
+        old_shared_raw_files=data.value("shared_raw_files").toObject().toVariantMap();
+    }
+    foreach(QString key,shared_raw_files.keys()){
+        old_shared_raw_files.insert(key,shared_raw_files.value(key));
+    }
     data.insert("raw_files",QJsonObject::fromVariantMap(old_raw_files));
     data.insert("files",QJsonObject::fromVariantMap(old_files));
     data.insert("shared_files",QJsonObject::fromVariantMap(old_shared_files));
+    data.insert("shared_raw_files",QJsonObject::fromVariantMap(old_shared_raw_files));
     data.setTimestamp(QDateTime::currentDateTime());
     saveMicrographData_(id);
 }
@@ -409,6 +429,7 @@ void MetaDataStore::removeMicrographResults(const QString &id, const TaskDefinit
     data.insert("raw_files",QJsonObject());
     data.insert("files",QJsonObject());
     data.insert("shared_files",QJsonObject());
+    data.insert("shared_raw_files",QJsonObject());
     QList<TaskDefinitionPtr> definition_list;
     definition_list.append(definition);
     while(! definition_list.empty()){
@@ -441,7 +462,7 @@ void MetaDataStore::createReport(const QString &file_name, const QString &type)
         if(type=="CSV" || type=="CSV filtered"){
             QStringList header;
             foreach(InputOutputVariable v, result_labels){
-                header.append(v.label);
+                header.append(v.key);
             }
             out << header.join(",") << "\n";
             foreach(Data data,micrographs_){
@@ -451,7 +472,7 @@ void MetaDataStore::createReport(const QString &file_name, const QString &type)
                 }
                 QStringList row;
                 foreach(InputOutputVariable v, result_labels){
-                    row.append(data.value(v.key).toString());
+                    row.append(data.value(v.label).toString());
                 }
                 out << row.join(",") << "\n";
             }
@@ -465,7 +486,7 @@ void MetaDataStore::createReport(const QString &file_name, const QString &type)
                 }
                 QStringList row;
                 foreach(InputOutputVariable v, result_labels){
-                    child_object.insert(v.key,data.value(v.key));
+                    child_object.insert(v.label,data.value(v.label));
                 }
                 root_object.insert(data.value("id").toString(),child_object);
             }
@@ -474,7 +495,7 @@ void MetaDataStore::createReport(const QString &file_name, const QString &type)
         }
     }
 }
-void MetaDataStore::exportMicrographs(const SftpUrl &export_path, const SftpUrl &raw_export_path, const QStringList &output_keys, const QStringList &raw_keys, const QStringList &shared_keys, bool duplicate_raw)
+void MetaDataStore::exportMicrographs(const SftpUrl &export_path, const SftpUrl &raw_export_path, const QStringList &output_keys, const QStringList &raw_keys, const QStringList &shared_keys, const QStringList& shared_raw_keys, bool duplicate_raw)
 {
     bool separate_raw_export=export_path!=raw_export_path;
     Settings settings;
@@ -483,6 +504,8 @@ void MetaDataStore::exportMicrographs(const SftpUrl &export_path, const SftpUrl 
     QStringList raw_files;
     QSet<QString> filtered_shared_files;
     QSet<QString> unfiltered_shared_files;
+    QSet<QString> filtered_shared_raw_files;
+    QSet<QString> unfiltered_shared_raw_files;
     QDir parent_dir=QDir::current();
     parent_dir.cdUp();
     foreach(QString id, selectedMicrographIDs()){
@@ -510,9 +533,22 @@ void MetaDataStore::exportMicrographs(const SftpUrl &export_path, const SftpUrl 
                 }
             }
         }
+        file_object=data.value("shared_raw_files").toObject();
+        foreach(QString key,file_object.keys()){
+            if(shared_raw_keys.contains(key)){
+                QString f=file_object.value(key).toString();
+                if(f.endsWith(".star")){
+                    filtered_shared_raw_files.insert(parent_dir.relativeFilePath(QDir::current().absoluteFilePath(f)));
+                }else{
+                    unfiltered_shared_raw_files.insert(parent_dir.relativeFilePath(QDir::current().absoluteFilePath(f)));
+                }
+            }
+        }
     }
     if( (!separate_raw_export) || duplicate_raw){
         files.append(raw_files);
+        filtered_shared_files.unite(filtered_shared_raw_files);
+        unfiltered_shared_files.unite(unfiltered_shared_raw_files);
     }
     files.append(unfiltered_shared_files.toList());
     if(!files.empty() || !filtered_shared_files.empty()){
@@ -521,8 +557,10 @@ void MetaDataStore::exportMicrographs(const SftpUrl &export_path, const SftpUrl 
         exporter->addImages(files,false);
         exporters_.enqueue(exporter);
     }
-    if(separate_raw_export && !raw_files.empty()){
+    raw_files.append(unfiltered_shared_raw_files.toList());
+    if(separate_raw_export && ! (raw_files.empty() && filtered_shared_raw_files.empty() )){
         ParallelExporter* raw_exporter=new ParallelExporter(parent_dir.path(),raw_export_path,selectedMicrographIDs(),num_processes);
+        raw_exporter->addImages(filtered_shared_raw_files.toList(),true);
         raw_exporter->addImages(raw_files,false);
         exporters_.enqueue(raw_exporter);
     }
