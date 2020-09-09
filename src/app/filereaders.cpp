@@ -114,8 +114,8 @@ ParsedData readEPUMicrographXML(const QFileInfo &info, const QString& project_di
             result.insert("fractionation_type",value_element.attribute("i:type").remove(0,2));
         }
     }
-    result.insert("apix_x",QString("%1").arg(pixel_size_values.at(0).toElement().text().toDouble()*1e10/result.value("super_resolution_factor").toDouble(),0,'f',2));
-    result.insert("apix_y",QString("%1").arg(pixel_size_values.at(1).toElement().text().toDouble()*1e10/result.value("super_resolution_factor").toDouble(),0,'f',2));
+    result.insert("apix_x",QString("%1").arg(pixel_size_values.at(0).toElement().text().toDouble()*1e10/result.value("super_resolution_factor").toDouble(),0,'f',3));
+    result.insert("apix_y",QString("%1").arg(pixel_size_values.at(1).toElement().text().toDouble()*1e10/result.value("super_resolution_factor").toDouble(),0,'f',3));
     result.insert("acceleration_voltage",QString("%1").arg(dom_document.elementsByTagName("AccelerationVoltage").at(0).toElement().text().toDouble()/1000.0,0,'f',2));
     QDomNode nominal_magnification=dom_document.elementsByTagName("NominalMagnification").at(0);
     result.insert("nominal_magnification",nominal_magnification.toElement().text());
