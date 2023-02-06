@@ -5,7 +5,7 @@
 #
 # This file is part of CryoFLARE
 #
-# Copyright (C) 2017-2019 by the CryoFLARE Authors
+# Copyright (C) 2017-2020 by the CryoFLARE Authors
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free
@@ -209,5 +209,9 @@ DISTFILES += \
     git_versio.sh
 
 
+# debug flags for address sanitizer
 #QMAKE_LFLAGS_DEBUG += -fsanitize=address -fsanitize=undefined  -static-libasan -static-libubsan
 #QMAKE_CXXFLAGS_DEBUG += -fsanitize=address -fsanitize=undefined  -static-libasan -static-libubsan
+# debug flags for profiler
+#QMAKE_CXXFLAGS_RELEASE += -pg
+#QMAKE_LFLAGS_RELEASE += -pg

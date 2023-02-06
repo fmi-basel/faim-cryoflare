@@ -53,6 +53,7 @@ public slots:
     void unselectBelow();
     void invertSelection();
     void updateColumnVisibility();
+    void jumpToMicrograph(int index);
 
 protected:
     QAction *select_all_;

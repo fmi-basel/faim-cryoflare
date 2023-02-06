@@ -42,10 +42,10 @@ public:
 
     QColor selectedColor() const;
     void setSelectedColor(const QColor &selectedColor);
-
 public slots:
     void enableSelection(bool selecting);
-    void update();
+    void update(const QModelIndex &topleft,const QModelIndex &bottomright);
+    virtual void setVisible(bool visible);
 protected:
     virtual void drawChart_();
     virtual void drawSeries_();

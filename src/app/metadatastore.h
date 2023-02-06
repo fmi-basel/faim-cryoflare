@@ -86,17 +86,17 @@ signals:
     void newMicrograph(const QString & id);
     void newFoilhole(const QString & id);
     void newGridsquare(const QString & id);
-    void micrographUpdated(const QString & id);
-    void foilholeUpdated(const QString & id);
-    void gridsquareUpdated(const QString & id);
+    void micrographUpdated(const QString & id, const QStringList & keys);
+    void foilholeUpdated(const QString & id, const QStringList & keys);
+    void gridsquareUpdated(const QString & id, const QStringList & keys);
     void saveData(QJsonObject data,const QString& basename);
 protected slots:
     void readPersistentData_();
 
 protected:
-    void saveMicrographData_(const QString& id);
-    void saveFoilholeData_(const QString& id);
-    void saveGridsquareData_(const QString& id);
+    void saveMicrographData_(const QString& id, const QStringList & keys);
+    void saveFoilholeData_(const QString& id, const QStringList & keys);
+    void saveGridsquareData_(const QString& id, const QStringList & keys);
     void exportFinished_();
     void startNextExport_();
     DataFolderWatcher * createFolderWatcher_(const QString& mode="EPU", const QString& pattern="");

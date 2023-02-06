@@ -27,6 +27,7 @@
 #include <QAreaSeries>
 #include <QLineSeries>
 #include <QValueAxis>
+#include <QElapsedTimer>
 
 HistogramChartView::HistogramChartView(QWidget *parent):
     ChartView (parent)
@@ -58,29 +59,34 @@ void HistogramChartView::drawSeries_()
     QtCharts::QLineSeries *full_series = new QtCharts::QLineSeries();
     double half_gap=0.05;
     double width=all.width();
+    double half_margin=width*(0.5-half_gap);
     foreach(QPointF p,all.dataPoints()){
-        full_series->append(p.x()+width*half_gap,0.0);
-        full_series->append(p.x()+width*half_gap,p.y());
-        full_series->append(p.x()+width-width*half_gap,p.y());
-        full_series->append(p.x()+width-width*half_gap,0);
+        double pxl=p.x()-half_margin;
+        double pxr=p.x()+half_margin;
+        full_series->append(pxl,0.0);
+        full_series->append(pxl,p.y());
+        full_series->append(pxr,p.y());
+        full_series->append(pxr,0);
     }
     full_series->setColor(color_);
     QtCharts::QAreaSeries *aseries = new QtCharts::QAreaSeries(full_series);
     aseries->setBrush(QBrush(color_));
-    aseries->setPen(QPen(Qt::white,0));
+    aseries->setPen(Qt::NoPen);
     chart()->addSeries(aseries);
 
     QtCharts::QLineSeries *selected_series = new QtCharts::QLineSeries();
     foreach(QPointF p,selected.dataPoints()){
-        selected_series->append(p.x()+width*half_gap,0.0);
-        selected_series->append(p.x()+width*half_gap,p.y());
-        selected_series->append(p.x()+width-width*half_gap,p.y());
-        selected_series->append(p.x()+width-width*half_gap,0);
+        double pxl=p.x()-half_margin;
+        double pxr=p.x()+half_margin;
+        selected_series->append(pxl,0.0);
+        selected_series->append(pxl,p.y());
+        selected_series->append(pxr,p.y());
+        selected_series->append(pxr,0);
     }
     selected_series->setColor(selected_color_);
     QtCharts::QAreaSeries *selected_aseries = new QtCharts::QAreaSeries(selected_series);
     selected_aseries->setBrush(QBrush(selected_color_));
-    selected_aseries->setPen(QPen(Qt::white,0));
+    selected_aseries->setPen(Qt::NoPen);
     chart()->addSeries(selected_aseries);
 }
 

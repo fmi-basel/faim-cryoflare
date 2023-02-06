@@ -227,11 +227,22 @@ void ImageTableModel::onTasksChanged()
 }
 
 
-void ImageTableModel::onMicrographUpdated(const QString &id)
+void ImageTableModel::onMicrographUpdated(const QString &id, const QStringList &keys)
 {
+    int maxcol=0,mincol=columns_.size();
+    for(int i=0;i<columns_.size();++i){
+        if(keys.contains(columns_[i].label)){
+ 		maxcol=std::max<int>(maxcol,i+1);
+		mincol=std::min<int>(mincol,i+1);       
+        }
+    }
+    if(keys.contains("export")){
+        maxcol=std::max<int>(maxcol,0);
+        mincol=std::min<int>(mincol,0);
+    }
     int idx=micrograph_id_.indexOf(id);
-    if(idx>=0){
-        dataChanged(index(idx,0),index(idx,columns_.size()));
+    if(idx>=0 && maxcol>=mincol){
+        emit dataChanged(index(idx,mincol),index(idx,maxcol));
     }
 }
 

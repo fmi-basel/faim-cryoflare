@@ -27,12 +27,19 @@
 
 class LinearChartView : public ChartView
 {
+Q_OBJECT
 public:
     LinearChartView(QWidget *parent = Q_NULLPTR);
+
+signals:
+    void indexClicked(int index);
 
 protected:
     virtual void drawSeries_();
     virtual void deselectData_(float start, float end, bool invert=false);
+public slots:
+    void showDetails(const QPointF &pf, bool state);
+    void handleDoubleClicked(const QPointF &pf);
 };
 
 #endif // LINEARCHARTVIEW_H

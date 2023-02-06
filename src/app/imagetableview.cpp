@@ -169,3 +169,10 @@ QAction *ImageTableView::selectAllAction() const
 {
     return select_all_;
 }
+void ImageTableView::jumpToMicrograph(int row)
+{
+   QModelIndex new_index=model()->index(row,currentIndex().column());
+   setCurrentIndex(new_index);
+   scrollTo(new_index);  
+}
+

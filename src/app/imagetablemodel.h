@@ -55,7 +55,7 @@ public:
     Data image(int row);
     QString id(int row);
 public slots:
-    void onMicrographUpdated(const QString &id);
+    void onMicrographUpdated(const QString &id, const QStringList &keys);
     void onMicrographAdded(const QString &id);
     void onTasksChanged();
 
