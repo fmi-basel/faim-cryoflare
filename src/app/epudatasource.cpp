@@ -71,7 +71,6 @@ void EPUDataSource::onDirChanged(const QString &path)
     QDir dir(path);
     QString relative_path=QDir(epu_project_dir_).relativeFilePath(path);
     QString dirname=dir.dirName();
-    QStringList watched_directories=watcher_->directories();
     if (path==epu_project_dir_){
         addSubdirectories_(dir,QStringList() << "Images-Disc*" << "Metadata");
     }else if(relative_path.startsWith("Images-Disc")){
