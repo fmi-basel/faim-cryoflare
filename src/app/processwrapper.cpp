@@ -5,7 +5,7 @@
 //
 // This file is part of CryoFLARE
 //
-// Copyright (C) 2017-2019 by the CryoFLARE Authors
+// Copyright (C) 2017-2020 by the CryoFLARE Authors
 //
 // This program is free software; you can redistribute it and/or modify it under
 // the terms of the GNU General Public License as published by the Free
@@ -76,21 +76,19 @@ void ProcessWrapper::onStarted_()
     if(-1!=gpu_id_){
         script_input.append(QString("gpu_id=%1\n").arg(gpu_id_).toLatin1());
     }
-    if(data.contains("square_id")){
-        if(meta_data_store_->hasGridsquare(data.value("square_id").toString())){
-            Data grid_data=meta_data_store_->gridsquare(data.value("square_id").toString());
+    QString hole_id=data.parent();
+    if(meta_data_store_->hasFoilhole(hole_id)){
+        Data hole_data=meta_data_store_->foilhole(hole_id);
+        foreach(QString key,hole_data.keys()){
+            QString val=hole_data.value(key).toString();
+            script_input.append(QString("hole_%1=%2\n").arg(key,val).toLatin1());
+        }
+        QString square_id=hole_data.parent();
+        if(meta_data_store_->hasGridsquare(square_id)){
+            Data grid_data=meta_data_store_->gridsquare(square_id);
             foreach(QString key,grid_data.keys()){
                 QString val=grid_data.value(key).toString();
                 script_input.append(QString("grid_%1=%2\n").arg(key,val).toLatin1());
-            }
-        }
-    }
-    if(data.contains("hole_id")){
-        if(meta_data_store_->hasFoilhole(data.value("hole_id").toString())){
-            Data hole_data=meta_data_store_->foilhole(data.value("hole_id").toString());
-            foreach(QString key,hole_data.keys()){
-                QString val=hole_data.value(key).toString();
-                script_input.append(QString("hole_%1=%2\n").arg(key,val).toLatin1());
             }
         }
     }
@@ -159,9 +157,10 @@ void ProcessWrapper::handleSuccess_()
     QString raw_file_token("RAW_FILE_EXPORT:");
     QString result_file_token("FILE_EXPORT:");
     QString shared_result_file_token("SHARED_FILE_EXPORT:");
+    QString shared_raw_result_file_token("SHARED_RAW_FILE_EXPORT:");
     QString output;
     QString line;
-    QMap<QString,QString> data,raw_files,files,shared_files;
+    QMap<QString,QString> data,raw_files,files,shared_files,shared_raw_files;
     int linecount=0;
     do {
         line = output_stream.readLine();
@@ -199,10 +198,18 @@ void ProcessWrapper::handleSuccess_()
                 continue;
             }
             shared_files.insert(splitted[0].trimmed(),splitted[1].trimmed());
+        }else if(line.startsWith(shared_raw_result_file_token)){
+            line.remove(0,shared_raw_result_file_token.size());
+            QStringList splitted=line.split("=");
+            if(splitted.size()<2){
+                qDebug() << "invalid result line: " << line;
+                continue;
+            }
+            shared_raw_files.insert(splitted[0].trimmed(),splitted[1].trimmed());
         }
     } while (!line.isNull());
     data.insert(task_->definition->taskString(),"FINISHED");
-    meta_data_store_->updateMicrograph(task_->id,data,raw_files,files,shared_files);
+    meta_data_store_->updateMicrograph(task_->id,data,raw_files,files,shared_files,shared_raw_files);
     writeLog_(output);
     writeErrorLog_(process_->readAllStandardError());
     TaskPtr task=task_;

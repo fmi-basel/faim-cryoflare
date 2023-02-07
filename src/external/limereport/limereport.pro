@@ -1,6 +1,7 @@
 TEMPLATE = subdirs
 
-
+SUBDIRS = limereport designer
+designer.depends = limereport
 !contains(CONFIG, no_zint){
     CONFIG += zint
 }
@@ -8,15 +9,11 @@ TEMPLATE = subdirs
 include(common.pri)
 contains(CONFIG, zint){
     SUBDIRS += 3rdparty
+    limereport.depends = 3rdparty
 }
 
 export($$CONFIG)
-SUBDIRS += \
-        limereport
 
-CONFIG   += ordered
-
-SUBDIRS += designer
 
 
 

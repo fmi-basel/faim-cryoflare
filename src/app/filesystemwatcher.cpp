@@ -5,7 +5,7 @@
 //
 // This file is part of CryoFLARE
 //
-// Copyright (C) 2017-2019 by the CryoFLARE Authors
+// Copyright (C) 2017-2020 by the CryoFLARE Authors
 //
 // This program is free software; you can redistribute it and/or modify it under
 // the terms of the GNU General Public License as published by the Free
@@ -49,11 +49,12 @@ FileSystemWatcher::~FileSystemWatcher()
 
 void FileSystemWatcher::init_impl()
 {
-    connect(thread_, SIGNAL(started()), impl_, SLOT(start()));
-    connect(thread_, SIGNAL(finished()), impl_, SLOT(deleteLater()));
+    connect(thread_, &QThread::finished, impl_, &FileSystemWatcherImpl::deleteLater);
     impl_->moveToThread(thread_);
-    connect(impl_, SIGNAL(directoryChanged(const QString &)), this, SIGNAL(directoryChanged(const QString &)));
-    connect(impl_, SIGNAL(fileChanged(const QString &)), this, SIGNAL(fileChanged(const QString &)));
+    connect(this, &FileSystemWatcher::startImpl_, impl_, &FileSystemWatcherImpl::start);
+    connect(this, &FileSystemWatcher::stopImpl, impl_, &FileSystemWatcherImpl::stop);
+    connect(impl_, &FileSystemWatcherImpl::directoryChanged, this, &FileSystemWatcher::directoryChanged);
+    connect(impl_, &FileSystemWatcherImpl::fileChanged, this, &FileSystemWatcher::fileChanged);
     connect(this,&FileSystemWatcher::destroyed,impl_,&FileSystemWatcherImpl::deleteLater);
     connect(this,&FileSystemWatcher::destroyed,thread_,&QThread::deleteLater);
     thread_->start();
@@ -94,5 +95,15 @@ void FileSystemWatcher::removePaths(const QStringList &paths)
 void FileSystemWatcher::removeAllPaths()
 {
     impl_->removeAllPaths();
+}
+
+void FileSystemWatcher::start()
+{
+    emit startImpl_(QPrivateSignal());
+}
+
+void FileSystemWatcher::stop()
+{
+    emit stopImpl(QPrivateSignal());
 }
 

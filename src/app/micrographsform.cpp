@@ -5,7 +5,7 @@
 //
 // This file is part of CryoFLARE
 //
-// Copyright (C) 2019 by the CryoFLARE Authors
+// Copyright (C) 2020 by the CryoFLARE Authors
 //
 // This program is free software; you can redistribute it and/or modify it under
 // the terms of the GNU General Public License as published by the Free
@@ -19,6 +19,7 @@
 // along with CryoFLARE.  If not, see <http://www.gnu.org/licenses/>.
 //
 //------------------------------------------------------------------------------
+#include "chartview.h"
 #include "micrographsform.h"
 #include "pathedit.h"
 #include "settings.h"
@@ -74,7 +75,8 @@ MicrographsForm::MicrographsForm(QMainWindow *parent) :
     ui->histogram->setRenderHints(QPainter::HighQualityAntialiasing|QPainter::TextAntialiasing|QPainter::SmoothPixmapTransform|QPainter::Antialiasing);
     ui->histogram->setOptimizationFlag(QGraphicsView::DontSavePainterState);
     ui->histogram->setOptimizationFlag(QGraphicsView::DontAdjustForAntialiasing);
-
+    connect(ui->linear_chart, &LinearChartView::indexClicked,ui->image_list , &ImageTableView::jumpToMicrograph);
+    
     micrograph_menu_->addAction(ui->image_list->selectAllAction());
     micrograph_menu_->addAction(ui->image_list->unselectAllAction());
     micrograph_menu_->addAction(ui->image_list->selectAboveAction());
@@ -107,7 +109,7 @@ MicrographsForm::MicrographsForm(QMainWindow *parent) :
     hide_action=new QAction("Phase Plate Chart");
     hide_action->setCheckable(true);
     hide_action->setChecked(true);
-    connect(hide_action,&QAction::triggered,ui->phase_plate,&ChartView::setVisible);
+    connect(hide_action,&QAction::triggered,ui->phase_plate,&PositionChartView::setVisible);
     chart_menu_->addAction(hide_action);
 }
 

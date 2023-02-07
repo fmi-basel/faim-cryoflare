@@ -5,7 +5,7 @@
 //
 // This file is part of CryoFLARE
 //
-// Copyright (C) 2017-2019 by the CryoFLARE Authors
+// Copyright (C) 2017-2020 by the CryoFLARE Authors
 //
 // This program is free software; you can redistribute it and/or modify it under
 // the terms of the GNU General Public License as published by the Free
@@ -52,11 +52,12 @@ public:
     void removeAllPaths();
 
 signals:
-    void directoryChanged(const QString & path);
+    void directoryChanged(const QString & path, const QList<QFileInfo> & changed_files);
     void fileChanged(const QString & path);
 
 public slots:
     void start();
+    void stop();
     void update();
 
 protected:
@@ -65,6 +66,7 @@ protected:
     QStringList dirs_;
     QMap<QString,QDateTime> mod_times_;
     mutable QMutex mutex;
+    bool running_;
 };
 
 #endif // FILESYSTEMWATCHERIMPL_H

@@ -1,34 +1,41 @@
 #!/bin/bash --noprofile  
+################################################################################
+#
+# Author: Andreas Schenk
+# Friedrich Miescher Institute, Basel, Switzerland
+#
+# This file is part of CryoFLARE
+#
+# Copyright (C) 2017-2020 by the CryoFLARE Authors
+#
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free
+# Software Foundation; either version 3.0 of the License.
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+# details.
+#
+# You should have received a copy of the GNU General Public License
+# along with CryoFLARE.  If not, see http://www.gnu.org/licenses/.
+#
+################################################################################
 set -u
 set -e
 ######################## get parameters from GUI ###############################
-
 . data_connector.sh
-
-
 ######################## load modules ##########################################
-
 module purge
-module load eman2/2.2
-
-
+#module load iplt
+module load EMAN2/2.20
+iplt_exe=/<path_to>/iplt
+script_path=/<path_to>/scripts
 ######################## define output files ###################################
-
-
-if [ -n "motioncor2_aligned_avg" ]; then
-    average_var=motioncor2_aligned_avg # use average from motioncor2
-else
-    average_var=unblur_aligned_avg # use average from unblur
-fi
-
-deconvolute_png=${!average_var/.mrc/_deconv.png}
-deconvolute_boxes_png=${!average_var/.mrc/_deconv_boxes.png}
+deconvolute_png=${aligned_micrograph/.mrc/_deconv.png}
+deconvolute_boxes_png=${aligned_micrograph/.mrc/_deconv_boxes.png}
 FILES  deconvolute_png deconvolute_boxes_png
-
-
 ######################## run processing if files are missing ###################
-
 if FILES_MISSING; then
-  /programs/x86_64-linux/iplt/0.9.7/bin/iplt /usr/prog/sb/em/sw/cryoflare/1.6/scripts/deconv.py ${!average_var}  $deconvolute_png $apix_x $gctf_defocus_u $gctf_defocus_v $gctf_defocus_angle
-  draw_boxes.sh  $deconvolute_png $gautomatch_box_file  $gautomatch_rejected_box_file $deconvolute_boxes_png 0x0
+  $iplt_exe $script_path/deconv.py ${aligned_micrograph}  $deconvolute_png $apix_x $defocus_u $defocus_v $defocus_angle
+  draw_boxes.sh  $deconvolute_png $picking_boxes  $picking_rejected_boxes $deconvolute_boxes_png 0x0
 fi

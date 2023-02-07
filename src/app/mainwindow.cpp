@@ -5,7 +5,7 @@
 //
 // This file is part of CryoFLARE
 //
-// Copyright (C) 2017-2019 by the CryoFLARE Authors
+// Copyright (C) 2017-2020 by the CryoFLARE Authors
 //
 // This program is free software; you can redistribute it and/or modify it under
 // the terms of the GNU General Public License as published by the Free
@@ -168,7 +168,7 @@ void MainWindow::onSettings()
 void MainWindow::onExport()
 {
     Settings settings;
-    ExportDialog dialog(meta_data_store_->rawKeys().toList(),meta_data_store_->outputKeys().toList(),meta_data_store_->sharedKeys().toList());
+    ExportDialog dialog(meta_data_store_->rawKeys().toList(),meta_data_store_->outputKeys().toList(),meta_data_store_->sharedRawKeys().toList(),meta_data_store_->sharedKeys().toList());
     dialog.setDuplicateRaw(settings.value("duplicate_raw_export").toBool());
     dialog.setSeparateRawPath(settings.value("separate_raw_export").toBool());
     dialog.setDestinationPath(QUrl::fromUserInput(settings.value("export_path").toString()));
@@ -183,7 +183,7 @@ void MainWindow::onExport()
             settings.setValue("raw_export_path",dialog.rawDestinationPath().toString(QUrl::RemovePassword));
         }
         settings.saveToFile(CRYOFLARE_INI, QStringList(), QStringList() << "export_path" << "raw_export_path" << "separate_raw_export" << "duplicate_raw_export");
-        meta_data_store_->exportMicrographs(dialog.destinationPath(),dialog.rawDestinationPath(),dialog.selectedOutputKeys(),dialog.selectedRawKeys(),dialog.selectedSharedKeys(),dialog.duplicateRaw());
+        meta_data_store_->exportMicrographs(dialog.destinationPath(),dialog.rawDestinationPath(),dialog.selectedOutputKeys(),dialog.selectedRawKeys(),dialog.selectedSharedKeys(),dialog.selectedSharedRawKeys(),dialog.duplicateRaw());
     }
 }
 

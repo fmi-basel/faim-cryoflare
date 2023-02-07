@@ -5,7 +5,7 @@
 //
 // This file is part of CryoFLARE
 //
-// Copyright (C) 2017-2019 by the CryoFLARE Authors
+// Copyright (C) 2017-2020 by the CryoFLARE Authors
 //
 // This program is free software; you can redistribute it and/or modify it under
 // the terms of the GNU General Public License as published by the Free
@@ -25,6 +25,7 @@
 
 #include <QObject>
 #include <QThread>
+#include <QFileInfo>
 
 
 //fw decl
@@ -43,10 +44,14 @@ public:
     void removePath(const QString & path);
     void removePaths(const QStringList & paths);
     void removeAllPaths();
-
+public slots:
+    void start();
+    void stop();
 signals:
-    void directoryChanged(const QString & path);
+    void directoryChanged(const QString & path, const QList<QFileInfo> & changed_files);
     void fileChanged(const QString & path);
+    void startImpl_(QPrivateSignal);
+    void stopImpl(QPrivateSignal);
 public slots:
 protected:
     void init_impl();

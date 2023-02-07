@@ -26,6 +26,7 @@
 #include <QPushButton>
 #include <QTimer>
 #include <QValueAxis>
+#include <QOpenGLWidget>
 
 ChartView::ChartView(QWidget *parent):
     QtCharts::QChartView(parent),
@@ -38,6 +39,7 @@ ChartView::ChartView(QWidget *parent):
     rubberband_(new QRubberBand(QRubberBand::Rectangle,this)),
     timer_(new QTimer(this))
 {
+    setViewport(new QOpenGLWidget);
     QIcon icon;
     icon.addFile(":/icons/fit-to-window.png",QSize(),QIcon::Normal,QIcon::On);
     icon.addFile(":/icons/fit-to-window-inactive.png",QSize(),QIcon::Normal,QIcon::Off);
@@ -66,7 +68,7 @@ void ChartView::setActiveColumn(int column)
 {
     active_column_=column;
     fit_button_->setChecked(true);
-    update();
+    update(QModelIndex(),QModelIndex());
 }
 
 void ChartView::enableSelection(bool selecting)
@@ -74,14 +76,25 @@ void ChartView::enableSelection(bool selecting)
     selecting_=selecting;
 }
 
-void ChartView::update()
+void ChartView::update(const QModelIndex &topleft,const QModelIndex &bottomright)
 {
-    timer_->start();
+    if(! topleft.isValid() || ! bottomright.isValid()){
+        // general update needed
+        timer_->start();
+    } else{
+        // only some columns were updated
+        if(topleft.column()==0 || (active_column_>=topleft.column() && active_column_<=bottomright.column()) ){
+           timer_->start();
+        }
+    }
 }
 
 void ChartView::drawChart_()
 {
     if(!model_){
+        return;
+    }
+    if(!isVisible()){
         return;
     }
     bool keep_zoom=!fit_button_->isChecked() && ! chart()->series().empty();
@@ -168,6 +181,14 @@ QColor ChartView::selectedColor() const
 void ChartView::setSelectedColor(const QColor &selected_color)
 {
     selected_color_ = selected_color;
+}
+
+void ChartView::setVisible(bool visible)
+{
+    QChartView::setVisible(visible);
+    if(visible){
+        update(QModelIndex(),QModelIndex());
+    }
 }
 
 QColor ChartView::color() const

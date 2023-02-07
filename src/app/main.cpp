@@ -5,7 +5,7 @@
 //
 // This file is part of CryoFLARE
 //
-// Copyright (C) 2017-2019 by the CryoFLARE Authors
+// Copyright (C) 2017-2020 by the CryoFLARE Authors
 //
 // This program is free software; you can redistribute it and/or modify it under
 // the terms of the GNU General Public License as published by the Free
@@ -64,17 +64,8 @@ void crash_message_handler(QtMsgType type, const QMessageLogContext &context, co
     }
 }
 
-DataSourceBase * createDataSource(const QString& mode, const QString& pattern){
-    if(mode=="EPU"){
-        return new EPUDataSource;
-    }else if(mode=="flat_EPU"){
-        return new FlatFolderDataSource(pattern,true);
-    }else if(mode=="json"){
-        return new FlatFolderDataSource(pattern,false);
-    }else{
-        return new EPUDataSource;
-    }
-}
+Q_DECLARE_METATYPE(QList<QFileInfo>);
+
 int main(int argc, char* argv[])
 {
     //qInstallMessageHandler(crash_message_handler);
@@ -86,6 +77,8 @@ int main(int argc, char* argv[])
     QCoreApplication::setOrganizationName("Friedrich Miescher Institute");
     QCoreApplication::setOrganizationDomain("fmi.ch");
     QCoreApplication::setApplicationName("CryoFLARE");
+    qRegisterMetaType<QList<QFileInfo> >("QList<QFileInfo>");
+
 
     Settings settings;
     QDir cryoflare_dir(CRYOFLARE_DIRECTORY);
@@ -126,12 +119,7 @@ int main(int argc, char* argv[])
     QScopedPointer<MetaDataStore> meta_data_store(new MetaDataStore(task_configuration.data()));
     //QObject::connect(app.data(),&QCoreApplication::aboutToQuit,meta_data_store.data(),&MetaDataStore::deleteLater);
 
-    QScopedPointer<DataSourceBase> data_source(createDataSource(settings.value("import").toString(),settings.value("import_image_pattern").toString()));
-    QObject::connect(data_source.data(),&DataSourceBase::newMicrograph,meta_data_store.data(),&MetaDataStore::addMicrograph);
-    QObject::connect(data_source.data(),&DataSourceBase::newGridsquare,meta_data_store.data(),&MetaDataStore::addGridsquare);
-    QObject::connect(data_source.data(),&DataSourceBase::newFoilhole,meta_data_store.data(),&MetaDataStore::addFoilhole);
-
-    QScopedPointer<MicrographProcessor> processor(new MicrographProcessor(meta_data_store.data(),data_source.data(),task_configuration.data()));
+    QScopedPointer<MicrographProcessor> processor(new MicrographProcessor(meta_data_store.data(),task_configuration.data()));
 
     MainWindow w(meta_data_store.data(),processor.data(),task_configuration.data());
     QObject::connect(&w,&MainWindow::settingsChanged,task_configuration.data(),&TaskConfiguration::updateConfiguration);

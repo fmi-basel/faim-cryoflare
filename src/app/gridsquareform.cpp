@@ -5,7 +5,7 @@
 //
 // This file is part of CryoFLARE
 //
-// Copyright (C) 2019 by the CryoFLARE Authors
+// Copyright (C) 2020 by the CryoFLARE Authors
 //
 // This program is free software; you can redistribute it and/or modify it under
 // the terms of the GNU General Public License as published by the Free
@@ -95,16 +95,14 @@ void GridsquareForm::updateMarkers()
         QString id=gridsquare_model_->data(idx).toString();
         QString result_label=current_label->text();
         Data grid_data=meta_data_store_->gridsquare(id);
-        QJsonArray hole_ids=grid_data.value("hole_ids").toArray();
+        QSet<QString> hole_ids=grid_data.children();
         if(result_label=="Acquisition state"){
-            foreach(QJsonValue fh_id,hole_ids){
-                Data fh_data=meta_data_store_->foilhole(fh_id.toString());
+            foreach(QString fh_id,hole_ids){
+                Data fh_data=meta_data_store_->foilhole(fh_id);
                 if(fh_data.value("selected").toString()=="true"){
                     QColor color(0,127,0,100);
-                    if(fh_data.contains("micrograph_ids")){
-                        if(!fh_data.value("micrograph_ids").toArray().empty()){
-                            color=QColor(0,0,127,100);
-                        }
+                    if(!fh_data.children().empty()){
+                        color=QColor(0,0,127,100);
                     }
                     ui->gridsquare_view->addMarker(QPointF(fh_data.value("x").toString().toDouble(),fh_data.value("y").toString().toDouble()),marker_size,fh_data.value("id").toString(),color);
                 }
@@ -120,11 +118,11 @@ void GridsquareForm::updateMarkers()
             QList<QString> ids;
             foreach(QJsonValue fh_id,hole_ids){
                 Data fh_data=meta_data_store_->foilhole(fh_id.toString());
-                QJsonArray micrograph_ids=fh_data.value("micrograph_ids").toArray();
+                QSet<QString> micrograph_ids=fh_data.children();
                 int num=0;
                 qreal sum=0;
-                foreach(QJsonValue micrograph_id,micrograph_ids){
-                    Data data=meta_data_store_->micrograph(micrograph_id.toString());
+                foreach(QString micrograph_id,micrograph_ids){
+                    Data data=meta_data_store_->micrograph(micrograph_id);
                     QString export_val=data.value("export").toString("true");
                     bool export_flag=export_val.compare("true", Qt::CaseInsensitive) == 0 || export_val==QString("1") ;
                     if(data.contains(result_label) && export_flag){
@@ -187,15 +185,15 @@ void GridsquareForm::deselectMicrographs(QStringList &ids, bool invert)
     if(invert){
         foreach(QString id, ids){
             Data fh_data=meta_data_store_->foilhole(id);
-            QJsonArray micrograph_ids=fh_data.value("micrograph_ids").toArray();
-            foreach(QJsonValue micrograph_id,micrograph_ids){
-                meta_data_store_->setMicrographExport(micrograph_id.toString(),false);
+            QSet<QString> micrograph_ids=fh_data.children();
+            foreach(QString micrograph_id,micrograph_ids){
+                meta_data_store_->setMicrographExport(micrograph_id,false);
             }
         }
     }else{
         foreach(QString id,meta_data_store_->micrographIDs()){
             Data data=meta_data_store_->micrograph(id);
-            if(!ids.contains(data.value("hole_id").toString())){
+            if(!ids.contains(data.parent())){
                 meta_data_store_->setMicrographExport(id,false);
             }
         }

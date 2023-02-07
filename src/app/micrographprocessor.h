@@ -5,7 +5,7 @@
 //
 // This file is part of CryoFLARE
 //
-// Copyright (C) 2017-2019 by the CryoFLARE Authors
+// Copyright (C) 2017-2020 by the CryoFLARE Authors
 //
 // This program is free software; you can redistribute it and/or modify it under
 // the terms of the GNU General Public License as published by the Free
@@ -33,13 +33,12 @@
 class Settings;
 class QProcess;
 class MetaDataStore;
-class DataSourceBase    ;
 
 class MicrographProcessor: public QObject
 {
     Q_OBJECT
 public:
-    MicrographProcessor(MetaDataStore* meta_data_store,DataSourceBase* data_source, TaskConfiguration* task_configuration);
+    MicrographProcessor(MetaDataStore* meta_data_store, TaskConfiguration* task_configuration);
     ~MicrographProcessor();
 public slots:
     void startStop(bool start=true);
@@ -62,7 +61,6 @@ private:
     ProcessQueue* cpu_queue_;
     ProcessQueue* gpu_queue_;
     MetaDataStore* meta_data_store_;
-    DataSourceBase* data_source_;
     TaskConfiguration* task_configuration_;
 
 };

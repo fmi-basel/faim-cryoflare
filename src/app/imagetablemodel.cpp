@@ -5,7 +5,7 @@
 //
 // This file is part of CryoFLARE
 //
-// Copyright (C) 2017-2019 by the CryoFLARE Authors
+// Copyright (C) 2017-2020 by the CryoFLARE Authors
 //
 // This program is free software; you can redistribute it and/or modify it under
 // the terms of the GNU General Public License as published by the Free
@@ -65,7 +65,7 @@ QVariant ImageTableModel::data(const QModelIndex &index, int role) const
         if(role==Qt::BackgroundRole){
             return QBrush(QColor(136, 138, 133));
         }
-        QString value=meta_data_store_->micrograph(micrograph_id_.value(index.row())).value("export").toString("true");
+        QString value=meta_data_store_->value(micrograph_id_.value(index.row()),"export");
         bool state=value.compare("true", Qt::CaseInsensitive) == 0 || value==QString("1");
         if(role==Qt::CheckStateRole){
             if (state)
@@ -95,7 +95,7 @@ QVariant ImageTableModel::data(const QModelIndex &index, int role) const
     }
     // handle other columns
     if(role==SortRole){
-        QVariant v=QVariant(meta_data_store_->micrograph(micrograph_id_.value(index.row())).value(columns_[index.column()-1].label).toString());
+        QVariant v=QVariant(meta_data_store_->value(micrograph_id_.value(index.row()),columns_[index.column()-1].label));
         switch(columns_[index.column()-1].type){
         case String:
             return v;
@@ -114,7 +114,7 @@ QVariant ImageTableModel::data(const QModelIndex &index, int role) const
             return "-";
         }
     }else if(role==Qt::DisplayRole){
-        return meta_data_store_->micrograph(micrograph_id_.value(index.row())).value(columns_[index.column()-1].label).toString();
+        return meta_data_store_->value(micrograph_id_.value(index.row()),columns_[index.column()-1].label);
     }else if (role==SummaryRole){
         return columns_[index.column()-1].summary_type;
     }
@@ -187,7 +187,7 @@ Qt::ItemFlags ImageTableModel::flags(const QModelIndex &index) const
 
 Data ImageTableModel::image(int row)
 {
-    return meta_data_store_->at(row);
+    return meta_data_store_->micrograph(id(row));
 }
 
 QString ImageTableModel::id(int row)
@@ -227,11 +227,22 @@ void ImageTableModel::onTasksChanged()
 }
 
 
-void ImageTableModel::onMicrographUpdated(const QString &id)
+void ImageTableModel::onMicrographUpdated(const QString &id, const QStringList &keys)
 {
+    int maxcol=0,mincol=columns_.size();
+    for(int i=0;i<columns_.size();++i){
+        if(keys.contains(columns_[i].label)){
+ 		maxcol=std::max<int>(maxcol,i+1);
+		mincol=std::min<int>(mincol,i+1);       
+        }
+    }
+    if(keys.contains("export")){
+        maxcol=std::max<int>(maxcol,0);
+        mincol=std::min<int>(mincol,0);
+    }
     int idx=micrograph_id_.indexOf(id);
-    if(idx>=0){
-        dataChanged(index(idx,0),index(idx,columns_.size()));
+    if(idx>=0 && maxcol>=mincol){
+        emit dataChanged(index(idx,mincol),index(idx,maxcol));
     }
 }
 

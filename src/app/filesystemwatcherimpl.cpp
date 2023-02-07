@@ -5,7 +5,7 @@
 //
 // This file is part of CryoFLARE
 //
-// Copyright (C) 2017-2019 by the CryoFLARE Authors
+// Copyright (C) 2017-2020 by the CryoFLARE Authors
 //
 // This program is free software; you can redistribute it and/or modify it under
 // the terms of the GNU General Public License as published by the Free
@@ -31,9 +31,10 @@ FileSystemWatcherImpl::FileSystemWatcherImpl(QObject *parent) :
     files_(),
     dirs_(),
     mod_times_(),
-    mutex()
+    mutex(),
+    running_(false)
 {
-    timer_->setInterval(5000);
+    timer_->setInterval(1000);
     timer_->setSingleShot(true);
     connect(timer_, &QTimer::timeout, this, &FileSystemWatcherImpl::update);
 }
@@ -41,35 +42,17 @@ FileSystemWatcherImpl::FileSystemWatcherImpl(QObject *parent) :
 void FileSystemWatcherImpl::addPath(const QString &path)
 {
     QFileInfo finfo(path);
-    bool emit_signal=false;
+    QFileInfoList child_items;
     if( finfo.exists()){
+        QMutexLocker locker(&mutex);
         if(finfo.isDir()){
-            QMap<QString,QDateTime> mod_times_local;
-            QFileInfoList child_items=QDir(path).entryInfoList(QDir::AllEntries|QDir::NoDotAndDotDot);
-            foreach(QFileInfo info, child_items){
-                mod_times_local[info.canonicalFilePath()]=info.lastModified();
-            }
-            if(child_items.size()>0){
-                emit_signal=true;
-            }
-            QMutexLocker locker(&mutex);
             dirs_.append(path);
             dirs_.sort();
-            foreach(QString key, mod_times_local.keys()){
-                mod_times_[key]=mod_times_local.value(key);
-            }
         }else{
-            QFileInfo info(path);
-            QDateTime modified=info.lastModified();
-            QMutexLocker locker(&mutex);
             files_.append(path);
             files_.sort();
-            mod_times_[path]=modified;
+            mod_times_[path]=QDateTime();
         }
-    }
-    //emit only after unlocking mutex to avoid deadlocks
-    if(emit_signal){
-        emit directoryChanged(path);
     }
 }
 
@@ -129,11 +112,21 @@ void FileSystemWatcherImpl::removeAllPaths()
 
 void FileSystemWatcherImpl::start()
 {
-    timer_->start();
+    if(!running_){
+        running_=true;
+        timer_->start();
+	update();
+    }
+}
+
+void FileSystemWatcherImpl::stop()
+{
+    running_=false;
+    timer_->stop();
 }
 
 void FileSystemWatcherImpl::update(){
-    QStringList emit_dirs;
+    QList<QPair<QString,QList<QFileInfo> > > emit_dirs;
     QStringList emit_files;
     mutex.lock();
     QStringList dirs_local=dirs_;
@@ -144,17 +137,17 @@ void FileSystemWatcherImpl::update(){
     // make sure that mutex is ulocked for filesystem access, as filesystem might potentially hang
     foreach(QString path,dirs_local){
         QFileInfoList entry_list=QDir(path).entryInfoList(QDir::AllEntries|QDir::NoDotAndDotDot);
-        bool has_changes=false;
+        QList<QFileInfo> changed_files;
         foreach(QFileInfo info, entry_list){
             QString child_path=info.canonicalFilePath();
             QDateTime last_modified=info.lastModified();
             if(! mod_times_local.contains(child_path) || mod_times_local.value(child_path)!=last_modified){
-                has_changes=true;
+                changed_files << info;
                 mod_times_updates[child_path]=last_modified;
             }
         }
-        if(has_changes){
-            emit_dirs<<path;
+        if(! changed_files.empty()){
+            emit_dirs<<QPair<QString,QList<QFileInfo> >(path,changed_files);
         }
     }
     foreach(QString path,files_local){
@@ -175,10 +168,12 @@ void FileSystemWatcherImpl::update(){
         emit_files.clear();
     }
     mutex.unlock();
-    timer_->start();
+    if(running_){
+        timer_->start();
+    }
     //emit only after unlocking mutex to avoid deadlocks
-    foreach(QString path,emit_dirs){
-        emit directoryChanged(path);
+   for(int i=0;i<emit_dirs.size();++i){
+        emit directoryChanged(emit_dirs[i].first,emit_dirs[i].second);
     }
     foreach(QString path, emit_files){
         emit fileChanged(path);

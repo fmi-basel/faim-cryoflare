@@ -24,15 +24,8 @@ TEMPLATE  = subdirs
 CONFIG+=static
 
  
-SUBDIRS += \
-           mrcio  \
-           external
+SUBDIRS += app  mrcio external
  
-#mrcio.subdir  = mrcio
-#app.subdir  = app
-
-#app.depends = mrcio
+app.depends = mrcio external
   
-CONFIG += ordered
-SUBDIRS += app
 

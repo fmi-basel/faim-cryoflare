@@ -5,7 +5,7 @@
 //
 // This file is part of CryoFLARE
 //
-// Copyright (C) 2019 by the CryoFLARE Authors
+// Copyright (C) 2020 by the CryoFLARE Authors
 //
 // This program is free software; you can redistribute it and/or modify it under
 // the terms of the GNU General Public License as published by the Free
@@ -25,12 +25,15 @@
 #include <QObject>
 #include "dataptr.h"
 
+//fw decl
+class MetaDataStore;
 class DataSourceBase : public QObject
 {
     Q_OBJECT
 public:
-    explicit DataSourceBase(QObject *parent = nullptr);
+    explicit DataSourceBase(MetaDataStore *parent);
     virtual ~DataSourceBase();
+    MetaDataStore * store_;
 
 signals:
     void newMicrograph(const Data& ptr);

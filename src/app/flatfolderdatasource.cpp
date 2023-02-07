@@ -5,7 +5,7 @@
 //
 // This file is part of CryoFLARE
 //
-// Copyright (C) 2019 by the CryoFLARE Authors
+// Copyright (C) 2020 by the CryoFLARE Authors
 //
 // This program is free software; you can redistribute it and/or modify it under
 // the terms of the GNU General Public License as published by the Free
@@ -28,8 +28,8 @@
 #include "filesystemwatcher.h"
 #include "flatfolderdatasource.h"
 
-FlatFolderDataSource::FlatFolderDataSource(const QString &pattern, bool xml):
-    DataSourceBase(),
+FlatFolderDataSource::FlatFolderDataSource(MetaDataStore *store, const QString &pattern, bool xml):
+    DataSourceBase(store),
     watcher_(new FileSystemWatcher()),
     project_dir_(),
     movie_dir_(),

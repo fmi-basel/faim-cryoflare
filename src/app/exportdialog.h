@@ -5,7 +5,7 @@
 //
 // This file is part of CryoFLARE
 //
-// Copyright (C) 2019 by the CryoFLARE Authors
+// Copyright (C) 2020 by the CryoFLARE Authors
 //
 // This program is free software; you can redistribute it and/or modify it under
 // the terms of the GNU General Public License as published by the Free
@@ -36,7 +36,7 @@ class ExportDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit ExportDialog(const QStringList& raw_keys, const QStringList& output_keys,const QStringList& shared_keys, QWidget *parent = nullptr);
+    explicit ExportDialog(const QStringList& raw_keys, const QStringList& output_keys,const QStringList& shared_raw_keys,const QStringList& shared_keys, QWidget *parent = nullptr);
     ~ExportDialog();
     SftpUrl destinationPath() const;
     SftpUrl rawDestinationPath() const;
@@ -49,6 +49,7 @@ public:
     QStringList selectedOutputKeys() const;
     QStringList selectedRawKeys() const;
     QStringList selectedSharedKeys() const;
+    QStringList selectedSharedRawKeys() const;
 
 public slots:
     void verifyDestinations();

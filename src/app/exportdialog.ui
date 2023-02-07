@@ -8,7 +8,7 @@ Friedrich Miescher Institute, Basel, Switzerland
 
 This file is part of CryoFLARE
 
-Copyright (C) 2017-2019 by the CryoFLARE Authors
+Copyright (C) 2017-2020 by the CryoFLARE Authors
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free
@@ -147,6 +147,24 @@ along with CryoFLARE.  If not, see http://www.gnu.org/licenses/ .
       <layout class="QVBoxLayout" name="verticalLayout_4">
        <item>
         <widget class="QLabel" name="label_5">
+         <property name="text">
+          <string>Shared raw data</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QListWidget" name="shared_raw_data_list">
+         <property name="selectionMode">
+          <enum>QAbstractItemView::MultiSelection</enum>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QVBoxLayout" name="verticalLayout_5">
+       <item>
+        <widget class="QLabel" name="label_6">
          <property name="text">
           <string>Shared data</string>
          </property>

@@ -5,7 +5,7 @@
 #
 # This file is part of CryoFLARE
 #
-# Copyright (C) 2017-2019 by the CryoFLARE Authors
+# Copyright (C) 2017-2020 by the CryoFLARE Authors
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free
@@ -20,7 +20,7 @@
 #
 #------------------------------------------------------------------------------
 
-QT       += core gui xml charts printsupport network script sql
+QT       += core gui xml charts printsupport network script sql concurrent
 greaterThan(QT_MAJOR_VERSION, 5): QT += widgets
 
 TARGET = cryoflare
@@ -47,6 +47,8 @@ PRE_TARGETDEPS += $$GITVERSION
 QMAKE_EXTRA_TARGETS += version_target
 
 SOURCES += \
+    datafolderwatcher.cpp \
+    filereaders.cpp \
     main.cpp\
     mainwindow.cpp \
     filesystemwatcher.cpp \
@@ -108,6 +110,8 @@ SOURCES += \
 
 
 HEADERS  += \
+    datafolderwatcher.h \
+    filereaders.h \
     mainwindow.h \
     filesystemwatcher.h \
     filesystemwatcherimpl.h \
@@ -205,5 +209,9 @@ DISTFILES += \
     git_versio.sh
 
 
+# debug flags for address sanitizer
 #QMAKE_LFLAGS_DEBUG += -fsanitize=address -fsanitize=undefined  -static-libasan -static-libubsan
 #QMAKE_CXXFLAGS_DEBUG += -fsanitize=address -fsanitize=undefined  -static-libasan -static-libubsan
+# debug flags for profiler
+#QMAKE_CXXFLAGS_RELEASE += -pg
+#QMAKE_LFLAGS_RELEASE += -pg

@@ -5,7 +5,7 @@
 //
 // This file is part of CryoFLARE
 //
-// Copyright (C) 2019 by the CryoFLARE Authors
+// Copyright (C) 2020 by the CryoFLARE Authors
 //
 // This program is free software; you can redistribute it and/or modify it under
 // the terms of the GNU General Public License as published by the Free
@@ -33,7 +33,7 @@ class EPUDataSource : public DataSourceBase
 {
     Q_OBJECT
 public:
-    EPUDataSource();
+    EPUDataSource(MetaDataStore *store);
     virtual ~EPUDataSource();
 public slots:
     virtual void start();
@@ -43,9 +43,11 @@ public slots:
 protected slots:
     virtual void onDirChanged(const QString & path);
 protected:
-    void parseGridSquares_(const QDir &dir);
-    void parseFoilHoles_(const QDir &dir);
+    void parseGridSquareXMLs_(const QDir &dir);
+    void parseGridSquareDMs_(const QDir &dir);
+    void parseTargetLocations_(const QDir &dir);
     void parseMicrographs_(const QDir &dir);
+    void addSubdirectories_(const QDir& directory, const QStringList& subdirs);
     QScopedPointer<FileSystemWatcher> watcher_;
     QString epu_project_dir_;
     QString movie_dir_;
