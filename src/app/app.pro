@@ -53,7 +53,6 @@ SOURCES += \
     mainwindow.cpp \
     filesystemwatcher.cpp \
     filesystemwatcherimpl.cpp \
-    epuimageinfo.cpp \
     processwrapper.cpp \
     task.cpp \
     imagetablemodel.cpp \
@@ -84,7 +83,6 @@ SOURCES += \
     lastimagetimer.cpp \
     metadatastore.cpp \
     datasourcebase.cpp \
-    epudatasource.cpp \
     collection.cpp \
     collectionstartingcondition.cpp \
     collectiondefinition.cpp \
@@ -115,7 +113,6 @@ HEADERS  += \
     mainwindow.h \
     filesystemwatcher.h \
     filesystemwatcherimpl.h \
-    epuimageinfo.h \
     processwrapper.h \
     task.h \
     imagetablemodel.h \
@@ -147,7 +144,6 @@ HEADERS  += \
     lastimagetimer.h \
     metadatastore.h \
     datasourcebase.h \
-    epudatasource.h \
     collection.h \
     collectionstartingcondition.h \
     collectiondefinition.h \

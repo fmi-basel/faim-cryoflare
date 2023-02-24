@@ -27,7 +27,6 @@
 #include "metadatastore.h"
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "epuimageinfo.h"
 #include "pathedit.h"
 #include <QtDebug>
 #include <QFileDialog>

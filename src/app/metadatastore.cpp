@@ -29,7 +29,6 @@
 #include "settings.h"
 #include "metadatastore.h"
 #include "flatfolderdatasource.h"
-#include "epudatasource.h"
 #include "imagetablemodel.h"
 #include "filereaders.h"
 #include "sftpurl.h"
