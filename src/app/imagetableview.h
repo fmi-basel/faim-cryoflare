@@ -35,33 +35,33 @@ public:
     explicit ImageTableView(QWidget *parent = nullptr);
     virtual void setModel(QAbstractItemModel *m);
     QAction *selectAllAction() const;
-    QAction *unselectAllAction() const;
+    QAction *deselectAllAction() const;
     QAction *selectAboveAction() const;
-    QAction *unselectAboveAction() const;
+    QAction *deselectAboveAction() const;
     QAction *selectBelowAction() const;
-    QAction *unselectBelowAction() const;
+    QAction *deselectBelowAction() const;
     QAction *invertSelectionAction() const;
 
 signals:
 
 public slots:
     void selectEverything();
-    void unselectEverything();
+    void deselectEverything();
     void selectAbove();
-    void unselectAbove();
+    void deselectAbove();
     void selectBelow();
-    void unselectBelow();
+    void deselectBelow();
     void invertSelection();
     void updateColumnVisibility();
     void jumpToMicrograph(int index);
 
 protected:
     QAction *select_all_;
-    QAction *unselect_all_;
+    QAction *deselect_all_;
     QAction *select_above_;
-    QAction *unselect_above_;
+    QAction *deselect_above_;
     QAction *select_below_;
-    QAction *unselect_below_;
+    QAction *deselect_below_;
     QAction *invert_selection_;
 
 };

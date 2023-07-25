@@ -25,6 +25,7 @@
 #include <QJsonObject>
 #include <QString>
 #include <QSet>
+#include <QMap>
 #include <QSharedPointer>
 #include <QDateTime>
 #include <QJsonArray>
@@ -73,7 +74,7 @@ public:
         QSet<QString> result;
         if(contains("children")){
             foreach(QJsonValue val, value("children").toArray())
-            result << val.toString();
+            result.insert(val.toString());
         }
         return result;
     }

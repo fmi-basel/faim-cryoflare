@@ -50,12 +50,13 @@ public:
     virtual int columnCount(const QModelIndex &parent) const;
     virtual QVariant data(const QModelIndex &index, int role) const;
     virtual bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole);
+    virtual void setExports(const QSet<int> & rows, bool export_mics);
     virtual QVariant headerData(int section, Qt::Orientation orientation, int role) const;
     virtual Qt::ItemFlags flags(const QModelIndex &index) const;
     Data image(int row);
     QString id(int row);
 public slots:
-    void onMicrographUpdated(const QString &id, const QStringList &keys);
+    void onMicrographsUpdated(const QSet<QString> &ids, const QSet<QString> &keys);
     void onMicrographAdded(const QString &id);
     void onTasksChanged();
 

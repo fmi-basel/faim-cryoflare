@@ -22,6 +22,9 @@
 #ifndef METADATASTORE_H
 #define METADATASTORE_H
 
+#include <QSet>
+#include <QString>
+#include <QList>
 #include <QObject>
 #include <QVector>
 #include <QMap>
@@ -72,11 +75,13 @@ public:
     QSet<QString> sharedRawKeys() const;
     QList<QString> micrographIDs() const;
     QList<QString> selectedMicrographIDs() const;
-    void setMicrographExport(const QString& id,bool export_flag);
+    void setMicrographsExport(const QSet<QString>& ids,bool export_flag);
     void removeMicrographResults(const QString &id, const TaskDefinitionPtr& definition);
     void createReport(const QString& file_name, const QString & type);
     void exportMicrographs(const SftpUrl& destination, const SftpUrl& raw_export_path, const QStringList& output_keys, const QStringList& raw_keys, const QStringList& shared_keys, const QStringList& shared_raw_keys, bool duplicate_raw);
     QString value(const QString& id, QString key) const;
+    void stopUpdates();
+    void resumeUpdates();
 public slots:
     void updateMicrograph(const QString &id, const QMap<QString,QString>& new_data, const QMap<QString,QString>& raw_files=QMap<QString,QString>(), const QMap<QString,QString>& files=QMap<QString,QString>(), const QMap<QString,QString>& shared_files=QMap<QString,QString>(),const QMap<QString,QString>& shared_raw_files=QMap<QString,QString>());
     void updateData(const ParsedData& data, bool save=true);
@@ -86,17 +91,17 @@ signals:
     void newMicrograph(const QString & id);
     void newFoilhole(const QString & id);
     void newGridsquare(const QString & id);
-    void micrographUpdated(const QString & id, const QStringList & keys);
-    void foilholeUpdated(const QString & id, const QStringList & keys);
-    void gridsquareUpdated(const QString & id, const QStringList & keys);
+    void micrographsUpdated(const QSet<QString> & ids, const QSet<QString> & keys);
+    void foilholeUpdated(const QString & id, const QSet<QString> & keys);
+    void gridsquareUpdated(const QString & id, const QSet<QString> & keys);
     void saveData(QJsonObject data,const QString& basename);
 protected slots:
     void readPersistentData_();
 
 protected:
-    void saveMicrographData_(const QString& id, const QStringList & keys);
-    void saveFoilholeData_(const QString& id, const QStringList & keys);
-    void saveGridsquareData_(const QString& id, const QStringList & keys);
+    void saveMicrographData_(const QString& id, const QSet<QString> & keys);
+    void saveFoilholeData_(const QString& id, const QSet<QString> & keys);
+    void saveGridsquareData_(const QString& id, const QSet<QString> & keys);
     void exportFinished_();
     void startNextExport_();
     DataFolderWatcher * createFolderWatcher_(const QString& mode="EPU", const QString& pattern="");
@@ -108,6 +113,9 @@ protected:
     QThread worker_;
     QQueue<ParallelExporter*> exporters_;
     ParallelExporter* current_exporter_;
+    bool updates_stopped_;
+    QSet<QString> queued_mic_ids_;
+    QSet<QString> queued_mic_keys_;
 };
 
 #endif // METADATASTORE_H

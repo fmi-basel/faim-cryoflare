@@ -182,21 +182,23 @@ void GridsquareForm::updateResultLabels()
 
 void GridsquareForm::deselectMicrographs(QStringList &ids, bool invert)
 {
+    QSet<QString> ids_to_update;
     if(invert){
         foreach(QString id, ids){
             Data fh_data=meta_data_store_->foilhole(id);
             QSet<QString> micrograph_ids=fh_data.children();
             foreach(QString micrograph_id,micrograph_ids){
-                meta_data_store_->setMicrographExport(micrograph_id,false);
+                ids_to_update.insert(micrograph_id);
             }
         }
     }else{
         foreach(QString id,meta_data_store_->micrographIDs()){
             Data data=meta_data_store_->micrograph(id);
             if(!ids.contains(data.parent())){
-                meta_data_store_->setMicrographExport(id,false);
+                ids_to_update.insert(id);
             }
         }
     }
+    meta_data_store_->setMicrographsExport(ids_to_update,false);
     updateMarkers();
 }

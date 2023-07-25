@@ -21,6 +21,7 @@
 //------------------------------------------------------------------------------
 
 #include <QAction>
+#include <QAbstractProxyModel>
 #include <QHeaderView>
 #include "imagetableview.h"
 #include "imagetablemodel.h"
@@ -28,28 +29,28 @@
 ImageTableView::ImageTableView(QWidget *parent) :
     QTableView(parent),
     select_all_(new QAction("Select all",this)),
-    unselect_all_(new QAction("Unselect all",this)),
+    deselect_all_(new QAction("Deselect all",this)),
     select_above_(new QAction("Select above",this)),
-    unselect_above_(new QAction("Unselect above",this)),
+    deselect_above_(new QAction("Deselect above",this)),
     select_below_(new QAction("Select below",this)),
-    unselect_below_(new QAction("Unselect below",this)),
+    deselect_below_(new QAction("Deselect below",this)),
     invert_selection_(new QAction("Invert selection",this))
 
 {
     setContextMenuPolicy(Qt::ActionsContextMenu);
     addAction(select_all_);
-    addAction(unselect_all_);
+    addAction(deselect_all_);
     addAction(select_above_);
-    addAction(unselect_above_);
+    addAction(deselect_above_);
     addAction(select_below_);
-    addAction(unselect_below_);
+    addAction(deselect_below_);
     addAction(invert_selection_);
     connect(select_all_,SIGNAL(triggered()),this,SLOT(selectEverything()));
-    connect(unselect_all_,SIGNAL(triggered()),this,SLOT(unselectEverything()));
+    connect(deselect_all_,SIGNAL(triggered()),this,SLOT(deselectEverything()));
     connect(select_above_,SIGNAL(triggered()),this,SLOT(selectAbove()));
-    connect(unselect_above_,SIGNAL(triggered()),this,SLOT(unselectAbove()));
+    connect(deselect_above_,SIGNAL(triggered()),this,SLOT(deselectAbove()));
     connect(select_below_,SIGNAL(triggered()),this,SLOT(selectBelow()));
-    connect(unselect_below_,SIGNAL(triggered()),this,SLOT(unselectBelow()));
+    connect(deselect_below_,SIGNAL(triggered()),this,SLOT(deselectBelow()));
     connect(invert_selection_,SIGNAL(triggered()),this,SLOT(invertSelection()));
     horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     horizontalHeader()->setResizeContentsPrecision(0);
@@ -66,66 +67,161 @@ void ImageTableView::setModel(QAbstractItemModel *m)
 
 void ImageTableView::selectEverything()
 {
-    QAbstractItemModel *m=model();
-    for(int i=0;i<m->rowCount();++i){
-        m->setData(m->index(i,0),Qt::Checked,Qt::CheckStateRole);
+    QSet<int> rows;
+    QAbstractProxyModel* proxy_model=qobject_cast<QAbstractProxyModel*>(model());
+    ImageTableModel *m(nullptr);
+    if(proxy_model){
+        m=qobject_cast<ImageTableModel*>(proxy_model->sourceModel());
+    }else{
+        m=qobject_cast<ImageTableModel*>(model());
     }
+    if(!m){
+        throw "Invalid ImageTableModel";
+    }
+    for(int i=0;i<m->rowCount();++i){
+        rows.insert(i);
+    }
+    m->setExports(rows,true);
 }
 
-void ImageTableView::unselectEverything()
+void ImageTableView::deselectEverything()
 {
-    QAbstractItemModel *m=model();
-    for(int i=0;i<m->rowCount();++i){
-        m->setData(m->index(i,0),Qt::Unchecked,Qt::CheckStateRole);
+    QSet<int> rows;
+    QAbstractProxyModel* proxy_model=qobject_cast<QAbstractProxyModel*>(model());
+    ImageTableModel *m(nullptr);
+    if(proxy_model){
+        m=qobject_cast<ImageTableModel*>(proxy_model->sourceModel());
+    }else{
+        m=qobject_cast<ImageTableModel*>(model());
     }
+    if(!m){
+        throw "Invalid ImageTableModel";
+    }
+    for(int i=0;i<m->rowCount();++i){
+        rows.insert(i);
+    }
+    m->setExports(rows,false);
 }
 
 void ImageTableView::selectAbove()
 {
-    QAbstractItemModel *m=model();
+    QSet<int> rows;
+    QAbstractProxyModel* proxy_model=qobject_cast<QAbstractProxyModel*>(model());
+    ImageTableModel *m(nullptr);
+    if(proxy_model){
+        m=qobject_cast<ImageTableModel*>(proxy_model->sourceModel());
+    }else{
+        m=qobject_cast<ImageTableModel*>(model());
+    }
+    if(!m){
+        throw "Invalid ImageTableModel";
+    }
     int row=currentIndex().row();
     for(int i=0;i<=row;++i){
-        m->setData(m->index(i,0),Qt::Checked,Qt::CheckStateRole);
+        if(proxy_model){
+            rows.insert(proxy_model->mapToSource(proxy_model->index(i,0)).row());
+        }else{
+            rows.insert(i);
+        }
     }
+    m->setExports(rows,true);
 }
 
-void ImageTableView::unselectAbove()
+void ImageTableView::deselectAbove()
 {
-    QAbstractItemModel *m=model();
+    QSet<int> rows;
+    QAbstractProxyModel* proxy_model=qobject_cast<QAbstractProxyModel*>(model());
+    ImageTableModel *m(nullptr);
+    if(proxy_model){
+        m=qobject_cast<ImageTableModel*>(proxy_model->sourceModel());
+    }else{
+        m=qobject_cast<ImageTableModel*>(model());
+    }
+    if(!m){
+        throw "Invalid ImageTableModel";
+    }
     int row=currentIndex().row();
     for(int i=0;i<=row;++i){
-        m->setData(m->index(i,0),Qt::Unchecked,Qt::CheckStateRole);
+        if(proxy_model){
+            rows.insert(proxy_model->mapToSource(proxy_model->index(i,0)).row());
+        }else{
+            rows.insert(i);
+        }
     }
+    m->setExports(rows,false);
 }
 
 void ImageTableView::selectBelow()
 {
-    QAbstractItemModel *m=model();
+    QSet<int> rows;
+    QAbstractProxyModel* proxy_model=qobject_cast<QAbstractProxyModel*>(model());
+    ImageTableModel *m(nullptr);
+    if(proxy_model){
+        m=qobject_cast<ImageTableModel*>(proxy_model->sourceModel());
+    }else{
+        m=qobject_cast<ImageTableModel*>(model());
+    }
+    if(!m){
+        throw "Invalid ImageTableModel";
+    }
     int row=currentIndex().row();
     for(int i=row;i<m->rowCount();++i){
-        m->setData(m->index(i,0),Qt::Checked,Qt::CheckStateRole);
+        if(proxy_model){
+            rows.insert(proxy_model->mapToSource(proxy_model->index(i,0)).row());
+        }else{
+            rows.insert(i);
+        }
     }
+    m->setExports(rows,true);
 }
 
-void ImageTableView::unselectBelow()
+void ImageTableView::deselectBelow()
 {
-    QAbstractItemModel *m=model();
+    QSet<int> rows;
+    QAbstractProxyModel* proxy_model=qobject_cast<QAbstractProxyModel*>(model());
+    ImageTableModel *m(nullptr);
+    if(proxy_model){
+        m=qobject_cast<ImageTableModel*>(proxy_model->sourceModel());
+    }else{
+        m=qobject_cast<ImageTableModel*>(model());
+    }
+    if(!m){
+        throw "Invalid ImageTableModel";
+    }
     int row=currentIndex().row();
     for(int i=row;i<m->rowCount();++i){
-        m->setData(m->index(i,0),Qt::Unchecked,Qt::CheckStateRole);
+        if(proxy_model){
+            rows.insert(proxy_model->mapToSource(proxy_model->index(i,0)).row());
+        }else{
+            rows.insert(i);
+        }
     }
+    m->setExports(rows,false);
 }
 
 void ImageTableView::invertSelection()
 {
-    QAbstractItemModel *m=model();
+    QAbstractProxyModel* proxy_model=qobject_cast<QAbstractProxyModel*>(model());
+    ImageTableModel *m(nullptr);
+    if(proxy_model){
+        m=qobject_cast<ImageTableModel*>(proxy_model->sourceModel());
+    }else{
+        m=qobject_cast<ImageTableModel*>(model());
+    }
+    if(!m){
+        throw "Invalid ImageTableModel";
+    }
+    QSet<int> select_rows;
+    QSet<int> deselect_rows;
     for(int i=0;i<m->rowCount();++i){
         if(m->data(m->index(i,0),Qt::CheckStateRole)==Qt::Checked){
-            m->setData(m->index(i,0),Qt::Unchecked,Qt::CheckStateRole);
+            deselect_rows.insert(i);
         }else{
-            m->setData(m->index(i,0),Qt::Checked,Qt::CheckStateRole);
+            select_rows.insert(i);
        }
     }
+    m->setExports(select_rows,true);
+    m->setExports(deselect_rows,false);
 }
 
 void ImageTableView::updateColumnVisibility()
@@ -140,9 +236,9 @@ QAction *ImageTableView::invertSelectionAction() const
     return invert_selection_;
 }
 
-QAction *ImageTableView::unselectBelowAction() const
+QAction *ImageTableView::deselectBelowAction() const
 {
-    return unselect_below_;
+    return deselect_below_;
 }
 
 QAction *ImageTableView::selectBelowAction() const
@@ -150,9 +246,9 @@ QAction *ImageTableView::selectBelowAction() const
     return select_below_;
 }
 
-QAction *ImageTableView::unselectAboveAction() const
+QAction *ImageTableView::deselectAboveAction() const
 {
-    return unselect_above_;
+    return deselect_above_;
 }
 
 QAction *ImageTableView::selectAboveAction() const
@@ -160,9 +256,9 @@ QAction *ImageTableView::selectAboveAction() const
     return select_above_;
 }
 
-QAction *ImageTableView::unselectAllAction() const
+QAction *ImageTableView::deselectAllAction() const
 {
-    return unselect_all_;
+    return deselect_all_;
 }
 
 QAction *ImageTableView::selectAllAction() const

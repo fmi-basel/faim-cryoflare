@@ -42,15 +42,22 @@ ProcessWrapper::ProcessWrapper(QObject *parent, MetaDataStore* meta_data_store, 
     connect(process_,QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished) ,this,&ProcessWrapper::onFinished_);
     connect(timeout_timer_, &QTimer::timeout, this, &ProcessWrapper::terminate);
     connect(process_,&QProcess::errorOccurred,this,&ProcessWrapper::onError_);
-    QProcessEnvironment env=QProcessEnvironment::systemEnvironment();
-    QString path=env.value("PATH");
-    env.insert("PATH",QCoreApplication::applicationDirPath()+"/scripts:"+path);
-    QString pythonpath=env.value("PYTHONPATH");
-    env.insert("PYTHONPATH",QCoreApplication::applicationDirPath()+"/scripts:"+pythonpath);
-    process_->setProcessEnvironment(env);
+    
+    process_->setProcessEnvironment(getProcessEnvironment_());
     timeout_timer_->setSingleShot(true);
 }
 
+QProcessEnvironment  ProcessWrapper::getProcessEnvironment_()
+{
+    if(process_environment_.isEmpty()){
+        process_environment_=QProcessEnvironment::systemEnvironment();
+        QString path=process_environment_.value("PATH");
+        process_environment_.insert("PATH",QCoreApplication::applicationDirPath()+"/scripts:"+path);
+        QString pythonpath=process_environment_.value("PYTHONPATH");
+        process_environment_.insert("PYTHONPATH",QCoreApplication::applicationDirPath()+"/scripts:"+pythonpath);
+    }
+    return process_environment_;
+} 
 bool ProcessWrapper::running() const
 {
     return process_->state()!=QProcess::NotRunning;
@@ -282,3 +289,4 @@ int ProcessWrapper::gpuID() const
 {
     return gpu_id_;
 }
+QProcessEnvironment ProcessWrapper::process_environment_=QProcessEnvironment();

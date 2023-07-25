@@ -19,7 +19,6 @@
 // along with CryoFLARE.  If not, see <http://www.gnu.org/licenses/>.
 //
 //------------------------------------------------------------------------------
-#include <QDebug>
 #include <QDir>
 #include <QTimer>
 #include <QDebug>
@@ -59,7 +58,10 @@ MetaDataStore::MetaDataStore(TaskConfiguration* task_configuration, QObject *par
     grid_squares_(),
     worker_(),
     exporters_(),
-    current_exporter_(nullptr)
+    current_exporter_(nullptr),
+    updates_stopped_(false),
+    queued_mic_ids_(),
+    queued_mic_keys_()
 {
     Settings settings;
     data_folder_watcher_=createFolderWatcher_(settings.value("import").toString(),settings.value("import_image_pattern").toString());
@@ -196,19 +198,24 @@ QSet<QString> MetaDataStore::sharedRawKeys() const
     return result;
 }
 
-void MetaDataStore::saveMicrographData_(const QString &id, const QStringList & keys)
+void MetaDataStore::saveMicrographData_(const QString &id, const QSet<QString> & keys)
 {
     emit saveData(micrographs_.value(id),id);
-    emit micrographUpdated(id, keys);
+    if(updates_stopped_){
+        queued_mic_ids_.insert(id);
+        queued_mic_keys_.unite(keys);
+    }else{
+        emit micrographsUpdated(QSet<QString>({id}), keys);
+    }
 }
 
-void MetaDataStore::saveFoilholeData_(const QString &id, const QStringList & keys)
+void MetaDataStore::saveFoilholeData_(const QString &id, const QSet<QString> & keys)
 {
     emit saveData(foil_holes_.value(id),QString("%1/%2").arg(CRYOFLARE_FOILHOLES_DIRECTORY).arg(id));
     emit foilholeUpdated(id, keys);
 }
 
-void MetaDataStore::saveGridsquareData_(const QString &id, const QStringList & keys)
+void MetaDataStore::saveGridsquareData_(const QString &id, const QSet<QString> & keys)
 {
     emit saveData(grid_squares_.value(id),QString("%1/%2").arg(CRYOFLARE_GRIDSQUARES_DIRECTORY).arg(id));
     emit gridsquareUpdated(id, keys);
@@ -228,7 +235,7 @@ void MetaDataStore::updateData(const ParsedData &data, bool save)
         }
     };
 
-    auto update_children = [] (MetaDataStore *store, QMap<QString,Data> &container, const Data& d, void (MetaDataStore::*sig)(const QString&),void (MetaDataStore::*save_method)(const QString&,const QStringList&),bool save){
+    auto update_children = [] (MetaDataStore *store, QMap<QString,Data> &container, const Data& d, void (MetaDataStore::*sig)(const QString&),void (MetaDataStore::*save_method)(const QString&,const QSet<QString>&),bool save){
         foreach(QString child,d.children()){
             Data child_data;
             if(! container.contains(child)){
@@ -240,12 +247,12 @@ void MetaDataStore::updateData(const ParsedData &data, bool save)
                 child_data.setParent(d.id());
                 container.insert(child,child_data);
                 if(save){
-                    (store->*save_method)(child,QStringList("parent"));
+                    (store->*save_method)(child,QSet<QString>({"parent"}));
                 }
             }
         }
     };
-    auto update_parent = [] (MetaDataStore *store, QMap<QString,Data> &container, const Data& d, void (MetaDataStore::*sig)(const QString&),void (MetaDataStore::*save_method)(const QString&,const QStringList&),bool save){
+    auto update_parent = [] (MetaDataStore *store, QMap<QString,Data> &container, const Data& d, void (MetaDataStore::*sig)(const QString&),void (MetaDataStore::*save_method)(const QString&,const QSet<QString>&),bool save){
         QString parent_id=d.parent();
         Data parent_data;
         if(! container.contains(parent_id)){
@@ -257,25 +264,11 @@ void MetaDataStore::updateData(const ParsedData &data, bool save)
             parent_data.addChild(d.id());
             container.insert(parent_id,parent_data);
             if(save){
-                (store->*save_method)(parent_id, QStringList("children"));
+                (store->*save_method)(parent_id, QSet<QString>({"children"}));
             }
         }
     };
-    foreach(Data d, data.grid_squares){
-        update_item(this,grid_squares_,d,&MetaDataStore::newGridsquare);
-        if(save){
-            saveGridsquareData_(d.id(), d.keys());
-        }
-        update_children(this,foil_holes_,grid_squares_.value(d.id()),&MetaDataStore::newFoilhole,&MetaDataStore::saveFoilholeData_,save);
-    }
-    foreach(Data d, data.foil_holes){
-        update_item(this,foil_holes_,d,&MetaDataStore::newFoilhole);
-        if(save){
-            saveFoilholeData_(d.id(),d.keys());
-        }
-        update_children(this,micrographs_,foil_holes_.value(d.id()),&MetaDataStore::newMicrograph,&MetaDataStore::saveMicrographData_,save);
-        update_parent(this,grid_squares_,foil_holes_.value(d.id()),&MetaDataStore::newGridsquare,&MetaDataStore::saveGridsquareData_,save);
-    }
+    stopUpdates();
     foreach(Data d, data.micrographs){
         update_item(this,micrographs_,d,&MetaDataStore::newMicrograph);
         Data mic_data=micrographs_.value(d.id());
@@ -296,9 +289,25 @@ void MetaDataStore::updateData(const ParsedData &data, bool save)
         }
         micrographs_.insert(d.id(),mic_data);
         if(save){
-            saveMicrographData_(d.id(),d.keys());
+            saveMicrographData_(d.id(),QSet<QString>::fromList(d.keys()));
         }
         update_parent(this,foil_holes_,mic_data,&MetaDataStore::newFoilhole,&MetaDataStore::saveFoilholeData_,save);
+    }
+    resumeUpdates();
+    foreach(Data d, data.foil_holes){
+        update_item(this,foil_holes_,d,&MetaDataStore::newFoilhole);
+        if(save){
+            saveFoilholeData_(d.id(),QSet<QString>::fromList(d.keys()));
+        }
+        update_children(this,micrographs_,foil_holes_.value(d.id()),&MetaDataStore::newMicrograph,&MetaDataStore::saveMicrographData_,save);
+        update_parent(this,grid_squares_,foil_holes_.value(d.id()),&MetaDataStore::newGridsquare,&MetaDataStore::saveGridsquareData_,save);
+    }
+    foreach(Data d, data.grid_squares){
+        update_item(this,grid_squares_,d,&MetaDataStore::newGridsquare);
+        if(save){
+            saveGridsquareData_(d.id(), QSet<QString>::fromList(d.keys()));
+        }
+        update_children(this,foil_holes_,grid_squares_.value(d.id()),&MetaDataStore::newFoilhole,&MetaDataStore::saveFoilholeData_,save);
     }
 }
 
@@ -365,11 +374,15 @@ QList<QString> MetaDataStore::selectedMicrographIDs() const
     return result;
 }
 
-void MetaDataStore::setMicrographExport(const QString &id, bool export_flag)
+void MetaDataStore::setMicrographsExport(const QSet<QString> &ids, bool export_flag)
 {
-    micrographs_[id].insert("export",export_flag?"true":"false");
-    micrographs_[id].setTimestamp(QDateTime::currentDateTime());
-    saveMicrographData_(id, QStringList("export"));
+    stopUpdates();
+    foreach(const QString id, ids){
+        micrographs_[id].insert("export",export_flag?"true":"false");
+        micrographs_[id].setTimestamp(QDateTime::currentDateTime());
+        saveMicrographData_(id, QSet<QString>({"export"}));
+    }
+    resumeUpdates();
 }
 
 void MetaDataStore::updateMicrograph(const QString &id, const QMap<QString,QString>& new_data,  const QMap<QString, QString> &raw_files,  const QMap<QString, QString> &files,  const QMap<QString, QString> &shared_files,const QMap<QString,QString>& shared_raw_files)
@@ -411,7 +424,7 @@ void MetaDataStore::updateMicrograph(const QString &id, const QMap<QString,QStri
     data.insert("shared_files",QJsonObject::fromVariantMap(old_shared_files));
     data.insert("shared_raw_files",QJsonObject::fromVariantMap(old_shared_raw_files));
     data.setTimestamp(QDateTime::currentDateTime());
-    saveMicrographData_(id, new_data.keys());
+    saveMicrographData_(id, QSet<QString>::fromList(new_data.keys()));
 }
 
 void MetaDataStore::removeMicrographResults(const QString &id, const TaskDefinitionPtr &definition)
@@ -438,7 +451,7 @@ void MetaDataStore::removeMicrographResults(const QString &id, const TaskDefinit
         data.insert(current->taskString(),"REMOVED");
         definition_list.append(current->children);
     }
-    saveMicrographData_(id,QStringList());
+    saveMicrographData_(id,QSet<QString>());
 }
 
 void MetaDataStore::createReport(const QString &file_name, const QString &type)
@@ -594,6 +607,20 @@ QString MetaDataStore::value(const QString &id, QString key) const
         }
     }
     return QString();
+}
+void MetaDataStore::stopUpdates()
+{
+    updates_stopped_=true;
+}
+
+void MetaDataStore::resumeUpdates()
+{
+    updates_stopped_=false;
+    QSet<QString> ids(queued_mic_ids_);
+    QSet<QString> keys(queued_mic_keys_);
+    queued_mic_ids_.clear();
+    queued_mic_keys_.clear();
+    emit micrographsUpdated(ids, keys);
 }
 
 void MetaDataStore::startNextExport_()

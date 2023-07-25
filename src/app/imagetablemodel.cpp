@@ -34,7 +34,7 @@ ImageTableModel::ImageTableModel(MetaDataStore* store, TaskConfiguration *task_c
     task_configuration_(task_config)
 {
     connect(store,&MetaDataStore::newMicrograph,this , &ImageTableModel::onMicrographAdded);
-    connect(store,&MetaDataStore::micrographUpdated,this , &ImageTableModel::onMicrographUpdated);
+    connect(store,&MetaDataStore::micrographsUpdated,this , &ImageTableModel::onMicrographsUpdated);
     connect(task_config,&TaskConfiguration::configurationChanged,this , &ImageTableModel::onTasksChanged);
     foreach(QString id, store->micrographIDs()){
         beginInsertRows(QModelIndex(),rowCount(),rowCount());
@@ -124,13 +124,22 @@ QVariant ImageTableModel::data(const QModelIndex &index, int role) const
 bool ImageTableModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
     if(role==Qt::CheckStateRole && index.column()==0){
-        meta_data_store_->setMicrographExport(micrograph_id_.value(index.row()),value == Qt::Checked);
+        meta_data_store_->setMicrographsExport(QSet<QString>({micrograph_id_.value(index.row())}),value == Qt::Checked);
         return true;
     }else{
         return false;
     }
 }
 
+void ImageTableModel::setExports(const QSet<int> & rows, bool export_mics)
+{
+    QSet<QString> ids;
+    foreach( int row,rows){
+        ids.insert(micrograph_id_.value(row));
+    }
+    meta_data_store_->setMicrographsExport(ids,export_mics);
+}
+ 
 QVariant ImageTableModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
     if(role==VisibilityRole){
@@ -227,22 +236,27 @@ void ImageTableModel::onTasksChanged()
 }
 
 
-void ImageTableModel::onMicrographUpdated(const QString &id, const QStringList &keys)
+void ImageTableModel::onMicrographsUpdated(const QSet<QString> &ids, const QSet<QString> &keys)
 {
     int maxcol=0,mincol=columns_.size();
     for(int i=0;i<columns_.size();++i){
         if(keys.contains(columns_[i].label)){
- 		maxcol=std::max<int>(maxcol,i+1);
-		mincol=std::min<int>(mincol,i+1);       
+ 		    maxcol=std::max<int>(maxcol,i+1);
+		    mincol=std::min<int>(mincol,i+1);       
         }
     }
     if(keys.contains("export")){
         maxcol=std::max<int>(maxcol,0);
         mincol=std::min<int>(mincol,0);
     }
-    int idx=micrograph_id_.indexOf(id);
-    if(idx>=0 && maxcol>=mincol){
-        emit dataChanged(index(idx,mincol),index(idx,maxcol));
+    int maxrow=0,minrow=rowCount();
+    foreach(QString id,ids){
+        int idx=micrograph_id_.indexOf(id);
+ 		    maxrow=std::max<int>(maxrow,idx);
+		    minrow=std::min<int>(minrow,idx);       
+    }
+    if(maxrow>=minrow && maxcol>=mincol){
+        emit dataChanged(index(minrow,mincol),index(maxrow,maxcol));
     }
 }
 

@@ -78,11 +78,11 @@ MicrographsForm::MicrographsForm(QMainWindow *parent) :
     connect(ui->linear_chart, &LinearChartView::indexClicked,ui->image_list , &ImageTableView::jumpToMicrograph);
     
     micrograph_menu_->addAction(ui->image_list->selectAllAction());
-    micrograph_menu_->addAction(ui->image_list->unselectAllAction());
+    micrograph_menu_->addAction(ui->image_list->deselectAllAction());
     micrograph_menu_->addAction(ui->image_list->selectAboveAction());
-    micrograph_menu_->addAction(ui->image_list->unselectAboveAction());
+    micrograph_menu_->addAction(ui->image_list->deselectAboveAction());
     micrograph_menu_->addAction(ui->image_list->selectBelowAction());
-    micrograph_menu_->addAction(ui->image_list->unselectBelowAction());
+    micrograph_menu_->addAction(ui->image_list->deselectBelowAction());
     micrograph_menu_->addAction(ui->image_list->invertSelectionAction());
     micrograph_menu_->addSeparator();
     QAction* reprocess_all=new QAction("Reprocess all images",this);
@@ -558,17 +558,19 @@ void MicrographsForm::phasePlateSelectionFinished(QRect rubberBandRect, QPointF 
         foreach(QGraphicsItem * item,items){
             ids.insert(item->toolTip());
         }
+        QSet<QString> ids_to_update;
         foreach(QString id, meta_data_store_->selectedMicrographIDs() ){
             Data data=meta_data_store_->micrograph(id);
             if(invert){
                 if(ids.contains(data.value(tag).toString())){
-                    meta_data_store_->setMicrographExport(id,false);
+                    ids_to_update.insert(id);
                 }
             }else{
                 if(!ids.contains(data.value(tag).toString())){
-                    meta_data_store_->setMicrographExport(id,false);
+                    ids_to_update.insert(id);
                 }
             }
         }
+        meta_data_store_->setMicrographsExport(ids_to_update,false);
     }
 }
