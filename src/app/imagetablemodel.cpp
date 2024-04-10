@@ -75,7 +75,7 @@ QVariant ImageTableModel::data(const QModelIndex &index, int role) const
                 return Qt::Unchecked;
             }
         }
-        if(role==SortRole){
+        if(role==SortRole || role==Qt::DisplayRole){
             if(state){
                 return 1;
             }else{

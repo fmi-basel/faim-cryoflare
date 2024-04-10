@@ -502,6 +502,7 @@ void MetaDataStore::createReport(const QString &file_name, const QString &type)
                 foreach(InputOutputVariable v, result_labels){
                     child_object.insert(v.label,data.value(v.label));
                 }
+                child_object.insert("export",export_val);
                 root_object.insert(data.value("id").toString(),child_object);
             }
             QJsonDocument doc(root_object);
@@ -509,7 +510,7 @@ void MetaDataStore::createReport(const QString &file_name, const QString &type)
         }
     }
 }
-void MetaDataStore::exportMicrographs(const SftpUrl &export_path, const SftpUrl &raw_export_path, const QStringList &output_keys, const QStringList &raw_keys, const QStringList &shared_keys, const QStringList& shared_raw_keys, bool duplicate_raw)
+void MetaDataStore::exportMicrographs(const SftpUrl &export_path, const SftpUrl &raw_export_path, const QStringList &output_keys, const QStringList &raw_keys, const QStringList &shared_keys, const QStringList& shared_raw_keys, bool duplicate_raw, bool create_reports)
 {
     bool separate_raw_export=export_path!=raw_export_path;
     Settings settings;
@@ -558,6 +559,12 @@ void MetaDataStore::exportMicrographs(const SftpUrl &export_path, const SftpUrl 
                 }
             }
         }
+    }
+    if(create_reports){
+        createReport("metadata.json","JSON");
+	    raw_files.append(parent_dir.relativeFilePath(QDir::current().absoluteFilePath("metadata.json")));
+        createReport("report.pdf","PDF Report");
+	    raw_files.append(parent_dir.relativeFilePath(QDir::current().absoluteFilePath("report.pdf")));
     }
     if( (!separate_raw_export) || duplicate_raw){
         files.append(raw_files);

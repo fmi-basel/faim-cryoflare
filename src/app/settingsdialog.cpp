@@ -22,6 +22,7 @@
 
 #include <QtDebug>
 #include <QCheckBox>
+#include "imagetablemodel.h"
 #include "settings.h"
 #include <QFileDialog>
 #include <QtDebug>
@@ -157,9 +158,10 @@ void load_from_settings(SETTINGS* settings, Ui::SettingsDialog* ui){
 
 }
 
-SettingsDialog::SettingsDialog(TaskConfiguration *task_config, QWidget *parent) :
+SettingsDialog::SettingsDialog(MetaDataStore* meta_data_store,TaskConfiguration *task_config, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::SettingsDialog),
+    meta_data_store_(meta_data_store),
     task_config_(task_config),
     task_tree_menu_(new QMenu(this)),
     task_tree_new_(new QAction("New",this)),
@@ -391,7 +393,9 @@ void SettingsDialog::updateVariables(QTreeWidgetItem *new_item, QTreeWidgetItem 
 
 void SettingsDialog::designReport()
 {
+    QScopedPointer<ImageTableModel> model(new ImageTableModel(meta_data_store_,task_config_));
     LimeReport::ReportEngine report_engine;
+    report_engine.dataManager()->addModel("Images",model.data(),false);
     Settings settings;
     if(QFileInfo::exists(settings.value("report_template").toString())){
       report_engine.loadFromFile(settings.value("report_template").toString());

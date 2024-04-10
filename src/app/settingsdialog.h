@@ -25,6 +25,7 @@
 
 #include <QDialog>
 #include "settings.h"
+#include "metadatastore.h"
 #include <LimeReport>
 #include <inputoutputvariable.h>
 #include "task.h"
@@ -43,7 +44,7 @@ class SettingsDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit SettingsDialog(TaskConfiguration* task_config, QWidget *parent = nullptr);
+    explicit SettingsDialog(MetaDataStore* meta_data_store,TaskConfiguration* task_config, QWidget *parent = nullptr);
     void saveSettings();
     void loadSettings();
     ~SettingsDialog();
@@ -62,6 +63,7 @@ public slots:
     void designReport();
 private:
     Ui::SettingsDialog *ui;
+    MetaDataStore* meta_data_store_;
     TaskConfiguration* task_config_;
     QMenu *task_tree_menu_;
     QAction *task_tree_new_;

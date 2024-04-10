@@ -46,6 +46,8 @@ public:
     void setSeparateRawPath( bool f);
     bool duplicateRaw() const;
     void setDuplicateRaw( bool f);
+    bool exportReportMetadata() const;
+    void setExportReportMetadata( bool f);
     QStringList selectedOutputKeys() const;
     QStringList selectedRawKeys() const;
     QStringList selectedSharedKeys() const;

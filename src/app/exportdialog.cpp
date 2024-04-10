@@ -93,6 +93,17 @@ void ExportDialog::setDuplicateRaw(bool f)
     ui->duplicate_raw->setChecked(f);
 }
 
+bool ExportDialog::exportReportMetadata() const
+{
+    return ui->export_report_metadata->isChecked();
+}
+
+void ExportDialog::setExportReportMetadata(bool f)
+{
+    ui->export_report_metadata->setChecked(f);
+}
+
+
 QStringList ExportDialog::selectedOutputKeys() const
 {
     QStringList result;

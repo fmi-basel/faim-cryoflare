@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
-<comment>
+ <comment>
 ------------------------------------------------------------------------------
 
 Author: Andreas Schenk
@@ -77,6 +77,13 @@ along with CryoFLARE.  If not, see http://www.gnu.org/licenses/ .
       </widget>
      </item>
     </layout>
+   </item>
+   <item>
+    <widget class="QCheckBox" name="export_report_metadata">
+     <property name="text">
+      <string>Export report and metadata file</string>
+     </property>
+    </widget>
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_3">
