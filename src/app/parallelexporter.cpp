@@ -178,7 +178,11 @@ void LocalExportWorker::copyFile_(const WorkItem &item)
         }else{
             source_file=QSharedPointer<QFile>(new QFile(path));
         }
-        if(!source_file->copy(QDir(destination_.path()).absoluteFilePath(item.filename))){
+        QString destination_file(QDir(destination_.path()).absoluteFilePath(item.filename));
+        if(QFile::exists(destination_file)){
+            QFile::remove(destination_file);
+        }
+        if(!source_file->copy(destination_file)){
             error_("Error copying file: "+item.filename);
         }else{
             message_("Copied: "+item.filename);
