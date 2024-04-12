@@ -54,6 +54,8 @@ SOURCES += \
     filesystemwatcher.cpp \
     filesystemwatcherimpl.cpp \
     processwrapper.cpp \
+    sftpsession.cpp \
+    sshsession.cpp \
     task.cpp \
     imagetablemodel.cpp \
     tasktreewidgetitem.cpp \
@@ -114,6 +116,8 @@ HEADERS  += \
     filesystemwatcher.h \
     filesystemwatcherimpl.h \
     processwrapper.h \
+    sftpsession.h \
+    sshsession.h \
     task.h \
     imagetablemodel.h \
     pathedit.h \
@@ -191,6 +195,7 @@ CONFIG(debug, debug|release) {
     LIBS += ../external/limereport/3rdparty/libQtZint.a
 }
 LIBS += -ldl
+LIBS += -lssh
 CONFIG += static
 static {
     DEFINES += STATIC

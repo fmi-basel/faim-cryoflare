@@ -21,7 +21,6 @@
 //------------------------------------------------------------------------------
 
 #include <unistd.h>
-#include <iostream>
 #include <QDir>
 #include <QDebug>
 #include <QApplication>

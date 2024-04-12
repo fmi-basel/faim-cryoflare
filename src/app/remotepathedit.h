@@ -22,25 +22,25 @@
 #ifndef REMOTEPATHEDIT_H
 #define REMOTEPATHEDIT_H
 
-#include "sftpurl.h"
 #include "pathedit.h"
+#include <QUrl>
 
 class RemotePathEdit : public PathEdit
 {
     Q_OBJECT
 public:
     RemotePathEdit(QWidget *parent = 0);
-    SftpUrl remotePath() const;
-    void setRemotePath(const SftpUrl &path);
+    QUrl remotePath() const;
+    void setRemotePath(const QUrl &path);
 
 signals:
-    void pathChanged(SftpUrl);
+    void pathChanged(QUrl);
 public slots:
     void onRemoteBrowse();
 
 private:
     QPushButton *remote_browse_;
-    SftpUrl remote_path_;
+    QUrl remote_path_;
 private slots:
     void updateUrl(const QString& text);
 };

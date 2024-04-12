@@ -22,14 +22,13 @@
 #include <QListWidget>
 #include <QMessageBox>
 #include "exportdialog.h"
+#include <QInputDialog>
+#include "sshsession.h"
 #include "ui_exportdialog.h"
-#include "remotefiledialog.h"
-#include "sshauthenticationdialog.h"
 
 ExportDialog::ExportDialog(const QStringList &raw_keys, const QStringList &output_keys,const QStringList& shared_raw_keys, const QStringList &shared_keys, QWidget *parent) :
     QDialog(parent),
-    ui(new Ui::ExportDialog),
-    connection_(nullptr)
+    ui(new Ui::ExportDialog)
 {
     ui->setupUi(this);
     ui->data_path->setPathType(PathEdit::ExistingDirectory);
@@ -49,12 +48,12 @@ ExportDialog::~ExportDialog()
     delete ui;
 }
 
-SftpUrl ExportDialog::destinationPath() const
+QUrl ExportDialog::destinationPath() const
 {
     return ui->data_path->remotePath();
 }
 
-SftpUrl ExportDialog::rawDestinationPath() const
+QUrl ExportDialog::rawDestinationPath() const
 {
     if(ui->separate_raw_path->isChecked()){
         return ui->raw_data_path->remotePath();
@@ -63,12 +62,12 @@ SftpUrl ExportDialog::rawDestinationPath() const
     }
 }
 
-void ExportDialog::setDestinationPath(const SftpUrl &url)
+void ExportDialog::setDestinationPath(const QUrl &url)
 {
     ui->data_path->setRemotePath(url);
 }
 
-void ExportDialog::setRawDestinationPath(const SftpUrl &url)
+void ExportDialog::setRawDestinationPath(const QUrl &url)
 {
     ui->raw_data_path->setRemotePath(url);
 }
@@ -142,17 +141,28 @@ QStringList ExportDialog::selectedSharedRawKeys() const
 
 void ExportDialog::verifyDestinations()
 {
-    if(destinationPath().isLocalFile()){
-        destinationVerified();
+     if(destinationPath().isLocalFile()){
+        accept();
     }else{
-        connection_=new QSsh::SshConnection(destinationPath().toConnectionParameters(),this);
-        connect(connection_,&QSsh::SshConnection::connected,this,&ExportDialog::destinationVerified);
-        connect(connection_,&QSsh::SshConnection::error,this,&ExportDialog::destinationVerificationError);
-        connection_->connectToHost();
+        SSHSession session;
+        int auth_methods = session.getUserAuthList();
+        if(SSH_AUTH_METHOD_PUBLICKEY & auth_methods && SSH_AUTH_SUCCESS==session.authenticatePubKey()){
+            accept();
+        }else if(SSH_AUTH_METHOD_PASSWORD & auth_methods){
+            bool ok;
+            QString pw = QInputDialog::getText(this, tr("Remote connection"),tr("Password:"), QLineEdit::Password,"", &ok);
+            if (ok && SSH_AUTH_SUCCESS==session.authenticatePassword(pw)){
+                accept();
+            }
+         }
+        //connection_=new QSsh::SshConnection(destinationPath().toConnectionParameters(),this);
+        //connect(connection_,&QSsh::SshConnection::connected,this,&ExportDialog::destinationVerified);
+        //connect(connection_,&QSsh::SshConnection::error,this,&ExportDialog::destinationVerificationError);
+        //connection_->connectToHost();
     }
 }
 
-void ExportDialog::destinationVerified()
+/*void ExportDialog::destinationVerified()
 {
     if(separateRawPath()){
         if(rawDestinationPath().isLocalFile()){
@@ -168,9 +178,9 @@ void ExportDialog::destinationVerified()
         accept();
     }
 
-}
+}*/
 
-void ExportDialog::destinationVerificationError(QSsh::SshError e)
+/*void ExportDialog::destinationVerificationError(QSsh::SshError e)
 {
     SftpUrl dest=destinationPath();
     if(e==QSsh::SshError::SshAuthenticationError){
@@ -214,5 +224,5 @@ void ExportDialog::rawDestinationVerificationError(QSsh::SshError e)
         message_box.setText(QString("Error connecting to %1: %2").arg(raw_dest.toString(QUrl::RemovePassword)).arg(connection_->errorString()));
         message_box.exec();
     }
-}
+}*/
 
