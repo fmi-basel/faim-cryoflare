@@ -78,7 +78,7 @@ void MicrographProcessor::loadSettings()
      int num_cpu=settings->value("num_cpu",10).toInt();
      int num_gpu=settings->value("num_gpu",2).toInt();
      int timeout=settings->value("timeout",300).toInt();
-     QStringList gpu_ids=settings->value("gpu_ids","0").toString().split(",", QString::SkipEmptyParts);
+     QStringList gpu_ids=settings->value("gpu_ids","0").toString().split(",", Qt::SkipEmptyParts);
      if(gpu_ids.empty()){
          for(int i=0;i<num_gpu;++i) {
              gpu_ids << QString("%1").arg(i);
@@ -126,6 +126,9 @@ void MicrographProcessor::enqueueChildren_(const QString& id, const TaskDefiniti
 
 void MicrographProcessor::handleTaskFailed(const QString &id, const TaskDefinitionPtr &taskdef, int exitcode)
 {
+    Q_UNUSED(id)
+    Q_UNUSED(taskdef)
+    Q_UNUSED(exitcode)
     emit queueCountChanged(cpu_queue_->size(),gpu_queue_->size());
 }
 

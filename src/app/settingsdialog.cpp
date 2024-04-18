@@ -58,8 +58,10 @@ void save_task(SETTINGS *settings, QTreeWidgetItem *item)
         }
         settings->setValue("output_variables",variant_list);
     }
-    for(int i=0;i<item->childCount();++i){
-        save_task(settings,item->child(i));
+    if(item){
+        for(int i=0;i<item->childCount();++i){
+            save_task(settings,item->child(i));
+        }
     }
     if(task_item){
         settings->endGroup();
@@ -350,6 +352,8 @@ void SettingsDialog::updateVariables(QTreeWidgetItem *new_item, QTreeWidgetItem 
             VariableType type;
             if(combo_box){
                 type=static_cast<VariableType>(combo_box->currentIndex());
+            }else{
+                type=String;
             }
             bool is_column=ui->output_variable_table->item(i,3)->checkState()==Qt::Checked;
             combo_box=qobject_cast<QComboBox*>(ui->output_variable_table->cellWidget(i,4));
@@ -369,6 +373,8 @@ void SettingsDialog::updateVariables(QTreeWidgetItem *new_item, QTreeWidgetItem 
             VariableType type;
             if(combo_box){
                 type=static_cast<VariableType>(combo_box->currentIndex());
+            }else{
+                type=String;
             }
             old_tree_item->input_variables.append(InputOutputVariable(name,variable,type));
         }

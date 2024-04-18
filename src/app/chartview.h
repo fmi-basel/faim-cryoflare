@@ -49,7 +49,7 @@ public slots:
 protected:
     virtual void drawChart_();
     virtual void drawSeries_();
-    virtual void deselectData_(float start, float end, bool invert=false){}
+    virtual void deselectData_(float start, float end, bool invert=false){Q_UNUSED(start)Q_UNUSED(end)Q_UNUSED(invert)};
     virtual void mousePressEvent(QMouseEvent *event);
     virtual void mouseMoveEvent(QMouseEvent *event);
     virtual void mouseReleaseEvent(QMouseEvent *event);

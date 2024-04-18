@@ -31,11 +31,13 @@ GridsquareTableModel::GridsquareTableModel(MetaDataStore* store, QObject *parent
 
 int GridsquareTableModel::rowCount(const QModelIndex &parent) const
 {
+    Q_UNUSED(parent)
     return gridsquare_id_.size();
 }
 
 int GridsquareTableModel::columnCount(const QModelIndex &parent) const
 {
+    Q_UNUSED(parent)
     return 1;
 }
 

@@ -32,7 +32,7 @@
 #include "parallelexporter.h"
 #include "exportprogressdialog.h"
 
-ExportWorkerBase::ExportWorkerBase(int id, QSharedPointer<ThreadSafeQueue<WorkItem> > queue, const QString &source, const SftpUrl &destination, const QStringList &images, Barrier<ThreadSafeQueue<WorkItem> > &b):
+ExportWorkerBase::ExportWorkerBase(int id, QSharedPointer<ThreadSafeQueue<WorkItem> > queue, const QString &source, const QUrl &destination, const QStringList &images, Barrier<ThreadSafeQueue<WorkItem> > &b):
     QObject(),
     queue_(queue),
     source_(source),
@@ -82,28 +82,26 @@ void ExportWorkerBase::message_(const QString &message)
     message_buffer_.append(ExportMessage(id_,ExportMessage::MESSAGE,message));
 }
 
-QTemporaryFile* ExportWorkerBase::filter_(const QString &source_path) const
+QByteArray ExportWorkerBase::filter_(const QString &source_path) const
 {
-    QTemporaryFile* temp_file=new QTemporaryFile();
-    temp_file->open();
-    temp_file->setPermissions(QFileDevice::ReadOwner|QFileDevice::WriteOwner|QFileDevice::ReadGroup);
+    QByteArray filtered_data;
+    QTextStream out_stream(filtered_data);
     QFile file(source_path);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)){
-        return nullptr;
+        return filtered_data;
     }
     while (!file.atEnd()) {
         QByteArray line = file.readLine();
         QRegularExpressionMatch match = image_name_.match(line);
         if(match.hasMatch()){
             if(images_.contains(match.captured(0))){
-                temp_file->write(line);
+                out_stream<<line;
             }
         }else{
-            temp_file->write(line);
+            out_stream<<line;
         }
     }
-    temp_file->flush();
-    return temp_file;
+    return filtered_data;
 }
 
 int ExportWorkerBase::id() const
@@ -117,7 +115,7 @@ void ExportWorkerBase::processNext_()
 }
 
 
-LocalExportWorker::LocalExportWorker(int id, QSharedPointer<ThreadSafeQueue<WorkItem> > queue, const QString &source, const SftpUrl &destination, const QStringList &images, Barrier<ThreadSafeQueue<WorkItem> > &b):
+LocalExportWorker::LocalExportWorker(int id, QSharedPointer<ThreadSafeQueue<WorkItem> > queue, const QString &source, const QUrl &destination, const QStringList &images, Barrier<ThreadSafeQueue<WorkItem> > &b):
     ExportWorkerBase(id,queue,source,destination,images,b)
 {
 
@@ -166,25 +164,28 @@ void LocalExportWorker::copyFile_(const WorkItem &item)
     if(!QFileInfo(path).exists()){
         error_(QString("Skipping missing file: %1").arg(item.filename));
     }else{
-        // filter file
-        QSharedPointer<QFile> source_file;
-        if(item.filter){
-            QTemporaryFile* temp_file=filter_(path);
-            if(!temp_file){
-                return;
-            }
-            source_file=QSharedPointer<QFile>(temp_file);
-        }else{
-            source_file=QSharedPointer<QFile>(new QFile(path));
-        }
         QString destination_file(QDir(destination_.path()).absoluteFilePath(item.filename));
         if(QFile::exists(destination_file)){
             QFile::remove(destination_file);
         }
-        if(!source_file->copy(destination_file)){
-            error_("Error copying file: "+item.filename);
+        // filter file
+        QSharedPointer<QFile> source_file;
+        if(item.filter){
+            QByteArray data=filter_(path);
+            QFile dest(destination_file);
+            if (!dest.open(QIODevice::WriteOnly | QIODevice::Text)){
+                error_("Error filering and copying file: "+item.filename);
+            }else{
+                dest.write(data);
+                message_("Copied and filtered: "+item.filename);
+            }
         }else{
-            message_("Copied: "+item.filename);
+            QFile source_file(path);
+            if(!source_file.copy(destination_file)){
+                error_("Error copying file: "+item.filename);
+            }else{
+                message_("Copied: "+item.filename);
+            }
         }
     }
 }
@@ -205,38 +206,23 @@ void LocalExportWorker::createDirectory_(const WorkItem& item)
 }
 
 
-RemoteExportWorker::RemoteExportWorker(int id, QSharedPointer<ThreadSafeQueue<WorkItem> > queue, const QString &source, const SftpUrl &destination, const QStringList &images, Barrier<ThreadSafeQueue<WorkItem> > &b):
+RemoteExportWorker::RemoteExportWorker(int id, QSharedPointer<ThreadSafeQueue<WorkItem> > queue, const QString &source, const QUrl &destination, const QStringList &images, Barrier<ThreadSafeQueue<WorkItem> > &b):
     ExportWorkerBase(id,queue,source,destination,images,b),
-    connection_parameters_(destination.toConnectionParameters()),
-    ssh_connection_(nullptr),
-    channel_(),
-    sftp_ops_(),
-    current_item_(),
-    temp_files_()
+    sftp_session_()
 {
 }
 
 void RemoteExportWorker::startImpl_()
 {
     if(!busy()){
-        if(ssh_connection_){
-            switch(ssh_connection_->state()){
-            case QSsh::SshConnection::Unconnected:
-                ssh_connection_->connectToHost();
-                break;
-            case QSsh::SshConnection::Connecting:
-                break;
-            case QSsh::SshConnection::Connected:
-                processNext_();
-                break;
+        if(!sftp_session_.isValid()){
+            message_("Initializing connection");
+            if(!sftp_session_.connect(destination_)){
+                error_("SFTP session inizialization failed");
+                return;
             }
-        }else{
-            message_("Starting connection");
-            ssh_connection_=new QSsh::SshConnection(connection_parameters_, this);
-            connect(ssh_connection_,&QSsh::SshConnection::connected,this,&RemoteExportWorker::connected_);
-            connect(ssh_connection_,&QSsh::SshConnection::error,this,&RemoteExportWorker::connectionFailed_);
-            ssh_connection_->connectToHost();
         }
+        processNext_();
     }
 }
 
@@ -251,228 +237,75 @@ void RemoteExportWorker::processNextImpl_()
     }
     if(result.second.type==WorkItem::BARRIER){
         barrier_.wait();
-        emit next();
     }else{
         result=queue_->checkEmptyAndDequeue();
         if(result.first){
             busy_=false;
             return;
         }
-        current_item_=result.second;
-        switch(current_item_.type){
+        WorkItem current_item=result.second;
+        switch(current_item.type){
         case WorkItem::FILE:
-            copyFile_();
+            copyFile_(current_item);
             break;
         case WorkItem::DIRECTORY:
-            checkDestinationDirectory_();
+            createDirectory_(current_item);
             break;
         default:
             break;
         }
     }
+    emit next();
 }
 
-void RemoteExportWorker::copyFile_()
+void RemoteExportWorker::copyFile_(const WorkItem &item)
 {
-    QString path=source_.absoluteFilePath(current_item_.filename);
+    QString path=source_.absoluteFilePath(item.filename);
     if(!QFileInfo(path).exists()){
-        error_(QString("Skipping missing file: %1").arg(current_item_.filename));
+        error_(QString("Skipping missing file: %1").arg(item.filename));
         emit next();
         return;
     }
     if(QFileInfo(path).isSymLink()){
-        // check for existence of symlink at destination
-        QSsh::SftpJobId id=channel_->statFile(QDir(destination_.path()).absoluteFilePath(current_item_.filename));
-        sftp_ops_.insert(id,LinkStat);
+        QByteArray buffer(2048,0);
+        ssize_t len=readlink(source_.absoluteFilePath(item.filename).toLatin1().data(), buffer.data(), static_cast<size_t>(buffer.size()));
+        if(len>0){
+            QString target=QString::fromLatin1(buffer.data(),len);
+            sftp_session_.createLink(QString(buffer),QDir(destination_.path()).absoluteFilePath(item.filename));
+        }else{
+            error_(QString("Error reading local symlink: %1").arg(item.filename));
+        }
     }else{
-        if(current_item_.filter){
-            QTemporaryFile* temp_file=filter_(path);
-            if(!temp_file){
-                error_(QString("Could not create temporary file for filtering: %1").arg(current_item_.filename));
-                emit next();
-                return;
-            }
-            QSsh::SftpJobId id=channel_->uploadFile(temp_file->fileName(), QDir(destination_.path()).absoluteFilePath(current_item_.filename), QSsh::SftpOverwriteExisting);
-            sftp_ops_.insert(id,Copy);
-            // store pointer to keep temp file around until op finishes
-            temp_files_.insert(id,QSharedPointer<QTemporaryFile>(temp_file));
-        }else{
-            QSsh::SftpJobId id=channel_->uploadFile(path, QDir(destination_.path()).absoluteFilePath(current_item_.filename), QSsh::SftpOverwriteExisting);
-            sftp_ops_.insert(id,Copy);
-        }
-    }
-}
-
-void RemoteExportWorker::checkDestinationDirectory_()
-{
-    QSsh::SftpJobId id=channel_->statFile(QDir(destination_.path()).absoluteFilePath(current_item_.directories.first()));
-    sftp_ops_.insert(id,DirStat);
-}
-
-void RemoteExportWorker::createDirectory_()
-{
-    QSsh::SftpJobId id=channel_->createDirectory(QDir(destination_.path()).absoluteFilePath(current_item_.directories.first()));
-    sftp_ops_.insert(id,MkDir);
-}
-
-
-
-void RemoteExportWorker::createLink_()
-{
-    bool is_open_ssh=true;
-    QByteArray buffer(2048,0);
-    ssize_t len=readlink(source_.absoluteFilePath(current_item_.filename).toLatin1().data(), buffer.data(), static_cast<size_t>(buffer.size()));
-    if(len>0){
-        QSsh::SftpJobId id;
-        if(is_open_ssh){
-            // Open SSH expects reverse order of arguments for symlinks
-            id=channel_->createLink(QString(buffer),QDir(destination_.path()).absoluteFilePath(current_item_.filename));
-        }else{
-            id=channel_->createLink(QDir(destination_.path()).absoluteFilePath(current_item_.filename),QString(buffer));
-        }
-        sftp_ops_.insert(id,Link);
-    }else{
-        error_(QString("Error reading local symlink: %1").arg(current_item_.filename));
-        next();
-    }
-}
-
-
-void RemoteExportWorker::connected_()
-{
-    //message_("Connected");
-    channel_=ssh_connection_->createSftpChannel();
-    connect(channel_.data(),&QSsh::SftpChannel::initialized,this,&RemoteExportWorker::initialized_);
-    connect(channel_.data(),&QSsh::SftpChannel::initializationFailed,this,&RemoteExportWorker::initializationFailed_);
-    connect(channel_.data(),&QSsh::SftpChannel::finished,this,&RemoteExportWorker::sftpOpFinished_);
-    connect(channel_.data(),&QSsh::SftpChannel::fileInfoAvailable,this,&RemoteExportWorker::fileInfo_);
-    channel_->initialize();
-}
-
-void RemoteExportWorker::connectionFailed_()
-{
-    error_("SSH connection failed");
-}
-
-void RemoteExportWorker::initialized_()
-{
-    //message_("Initialized");
-    processNext_();
-}
-
-void RemoteExportWorker::initializationFailed_()
-{
-    error_("SFTP channel inizialization failed");
-}
-
-void RemoteExportWorker::sftpOpFinished_(QSsh::SftpJobId job, const QString &err)
-{
-    //message_(QString("Finished job: %1").arg(job));
-    if(!sftp_ops_.contains(job)){
-        error_(QString("Unknown sftp job id encountered: %1").arg(job));
-    }
-    OpType op=sftp_ops_.take(job);
-    switch (op) {
-    case Copy:
-        if(temp_files_.contains(job)){
-            temp_files_.remove(job);
-        }
-        if(err!=""){
-            error_(QString("Couldn't copy file: %1 (%2)").arg(QDir(destination_.path()).absoluteFilePath(current_item_.filename)).arg(err));
-        }else{
-            message_(QString("Copied file: %1").arg(QDir(destination_.path()).absoluteFilePath(current_item_.filename)));
-        }
-        next();
-        break;
-    case Link:
-        if(err!=""){
-            error_(QString("Couldn't create link: %1").arg(QDir(destination_.path()).absoluteFilePath(current_item_.filename)));
-        }else{
-            message_(QString("Created link: %1").arg(QDir(destination_.path()).absoluteFilePath(current_item_.filename)));
-        }
-        next();
-        break;
-    case LinkStat:
-        if(err!=""){
-            // link doesn't exist at destination and has to be created
-            createLink_();
-        }else{
-            // nothing to do here as succesful LinkStat will be handled in fileInfo_
-        }
-        break;
-    case MkDir:
-        if(err!=""){
-            QString dir_path=current_item_.directories.first();
-            error_(QString("MkDir err: %1 (%2)").arg(QDir(destination_.path()).absoluteFilePath(dir_path)).arg(err));
-            emit  next();
-        }else{
-            current_item_.directories.takeFirst();
-            if(!current_item_.directories.empty()){
-                checkDestinationDirectory_();
+        if(item.filter){
+            QByteArray data=filter_(path);
+            QDataStream data_stream(data);
+            if(sftp_session_.writeFile(data_stream, QDir(destination_.path()).absoluteFilePath(item.filename))){
+                message_(QString("Copied and filtered file: %1").arg(QDir(destination_.path()).absoluteFilePath(item.filename)));
             }else{
-                emit next();
+                error_(QString("Couldn't copy and filter file: %1 (error %2)").arg(QDir(destination_.path()).absoluteFilePath(item.filename)).arg(sftp_session_.getError()));
             }
-        }
-        break;
-    case DirStat:
-        if(err!=""){
-            // directory doesn't exist at destination and has to be created
-            createDirectory_();
         }else{
-            // nothing to do here as succesful DirStat will be handled in fileInfo_
-        }
-        break;
-    case NoOp:
-    default:
-        if(err!=""){
-            error_(err);
-        }
-        break;
-    }
-}
-
-
-void RemoteExportWorker::fileInfo_(QSsh::SftpJobId job, const QList<QSsh::SftpFileInfo> &file_info_list)
-{
-    if(!sftp_ops_.contains(job)){
-        error_(QString("Unknown sftp job id encountered: %1").arg(job));
-    }
-    OpType op=sftp_ops_.value(job);
-    switch(op){
-    case DirStat:
-        // Directory path exists at destiantion. Emit error if it is not a directory
-        if(file_info_list[0].type!=QSsh::FileTypeDirectory){
-            error_(QString("Path %1 exists, but is not a directory.").arg(QDir(destination_.path()).absoluteFilePath(current_item_.directories.first())));
-            current_item_=WorkItem();
-            emit next();
-        }else{
-            current_item_.directories.takeFirst();
-            if(!current_item_.directories.empty()){
-                checkDestinationDirectory_();
+            if(sftp_session_.writeFile(path, QDir(destination_.path()).absoluteFilePath(item.filename))){
+                message_(QString("Copied file: %1").arg(QDir(destination_.path()).absoluteFilePath(item.filename)));
             }else{
-                emit next();
+                error_(QString("Couldn't copy file: %1 (error %2)").arg(QDir(destination_.path()).absoluteFilePath(item.filename)).arg(sftp_session_.getError()));
             }
         }
-        break;
-    case LinkStat:
-        if(file_info_list[0].type==QSsh::FileTypeOther ||file_info_list[0].type==QSsh::FileTypeRegular){
-            // Assume that the link already exists
-        }else{
-            error_(QString("Path %1 exists, but is not a link. Encountered filetype %2.").arg(QDir(destination_.path()).absoluteFilePath(current_item_.filename)).arg(file_info_list[0].type));
-        }
-        emit next();
-        break;
-    default:
-        break;
     }
-
 }
 
+void RemoteExportWorker::createDirectory_(const WorkItem &item)
+{
+    QString dir_path(QDir(destination_.path()).absoluteFilePath(item.directories.first()));
+    if(!sftp_session_.isDir(dir_path)){
+        if(!sftp_session_.mkDir(dir_path)){
+            error_(QString("Couldn't create directory: %1 (error %2)").arg(dir_path).arg(sftp_session_.getError()));
+        }
 
+    }
+}
 
-
-
-ParallelExporter::ParallelExporter(const QString &source, const SftpUrl &destination, const QStringList& images, int num_threads, QObject *parent):
+ParallelExporter::ParallelExporter(const QString &source, const QUrl &destination, const QStringList& images, int num_threads, QObject *parent):
     QObject(parent),
     source_(source),
     destination_(destination),
@@ -523,7 +356,7 @@ void ParallelExporter::addImages(const QStringList &files, bool filter)
         if(path=="."){
             continue;
         }
-        QStringList splitted_path=path.split("/",QString::SkipEmptyParts);
+        QStringList splitted_path=path.split("/",Qt::SkipEmptyParts);
         if(!directories.contains(splitted_path[0])){
             directories.insert(splitted_path[0],QSet<QString>());
         }
@@ -534,8 +367,8 @@ void ParallelExporter::addImages(const QStringList &files, bool filter)
     if(!directories.empty()){
         work_items.append(WorkItem::createBarrier());
         foreach(QString key,directories.keys()){
-            QList<QString> dir_paths=directories[key].toList();
-            qSort(dir_paths);
+            QList<QString> dir_paths=directories[key].values();
+            std::sort(dir_paths.begin(),dir_paths.end());
             work_items.append(WorkItem::createDirectory(dir_paths));
         }
         work_items.append(WorkItem::createBarrier());
@@ -553,7 +386,7 @@ void ParallelExporter::addImages(const QStringList &files, bool filter)
     }
 }
 
-SftpUrl ParallelExporter::destination() const
+QUrl ParallelExporter::destination() const
 {
     return destination_;
 }

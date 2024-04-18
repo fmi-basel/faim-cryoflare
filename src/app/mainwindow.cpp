@@ -167,7 +167,7 @@ void MainWindow::onSettings()
 void MainWindow::onExport()
 {
     Settings settings;
-    ExportDialog dialog(meta_data_store_->rawKeys().toList(),meta_data_store_->outputKeys().toList(),meta_data_store_->sharedRawKeys().toList(),meta_data_store_->sharedKeys().toList());
+    ExportDialog dialog(meta_data_store_->rawKeys().values(),meta_data_store_->outputKeys().values(),meta_data_store_->sharedRawKeys().values(),meta_data_store_->sharedKeys().values());
     dialog.setDuplicateRaw(settings.value("duplicate_raw_export").toBool());
     dialog.setExportReportMetadata(settings.value("export_report_metadata").toBool());
     dialog.setSeparateRawPath(settings.value("separate_raw_export").toBool());

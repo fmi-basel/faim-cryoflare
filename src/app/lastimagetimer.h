@@ -24,7 +24,7 @@
 
 #include <QLabel>
 #include <QTimer>
-#include <QTime>
+#include <QElapsedTimer>
 
 class LastImageTimer : public QLabel
 {
@@ -37,7 +37,7 @@ protected slots:
     void update_();
 protected:
     QTimer timer_;
-    QTime time_;
+    QElapsedTimer elapsed_timer_;
 };
 
 #endif // LASTIMAGETIMER_H

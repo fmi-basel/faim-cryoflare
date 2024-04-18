@@ -50,7 +50,7 @@ void RemotePathEdit::setRemotePath(const QUrl &path)
 
 void RemotePathEdit::onRemoteBrowse()
 {
-    // todo implement path_types for remote locations ( probably in SftpFilesystemModel)
+    // todo implement path_types for remote locations ( probably in SFTPFilesystemModel)
     switch(path_type_){
     case ExistingDirectory:
         break;
@@ -60,10 +60,14 @@ void RemotePathEdit::onRemoteBrowse()
         break;
     }
 
-
-    QUrl new_path=RemoteFileDialog::getRemotePath(remote_path_);
+    QUrl sanitized_path=remote_path_;
+    sanitized_path.setScheme("sftp");
+    if(sanitized_path.port()==-1){
+        sanitized_path.setPort(22);
+    }
+    QUrl new_path=RemoteFileDialog::getRemotePath(sanitized_path);
     if(new_path.isValid()){
-        path_widget_->setText(new_path.toString(QUrl::RemovePassword|QUrl::PreferLocalFile|QUrl::NormalizePathSegments));
+        path_widget_->setText(new_path.toString(QUrl::RemovePassword|QUrl::PreferLocalFile|QUrl::NormalizePathSegments|QUrl::RemoveScheme));
         remote_path_=new_path;
     }
 

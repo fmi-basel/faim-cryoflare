@@ -2,6 +2,7 @@
 #define SFTPSESSION_H
 
 #include <libssh/sftp.h>
+#include "sshsession.h"
 #include <QString>
 #include <QFileDevice>
 
@@ -38,19 +39,28 @@ struct SFTPDirList{
     class SFTPSession
 {
 public:
-    SFTPSession(ssh_session ssh_session);
+    SFTPSession();
     ~SFTPSession();
+    sftp_session session() const;
     bool isValid() const;
-    bool init();
+    bool connect(const QUrl& url);
+    void disconnect();
+    QUrl getUrl() const;
     int getError();
     bool mkDir(const QString& path, QFileDevice::Permissions permissions=QFileDevice::ReadUser|QFileDevice::WriteUser|QFileDevice::ExeUser);
     SFTPDirList listDir(const QString& path);
-    bool writeFile(std::istream &local, const QString& remote, QFileDevice::Permissions permissions=QFileDevice::ReadUser|QFileDevice::WriteUser);
+    bool writeFile(QDataStream &local, const QString& remote, QFileDevice::Permissions permissions=QFileDevice::ReadUser|QFileDevice::WriteUser);
     bool writeFile(const QString& local, const QString& remote,QFileDevice::Permissions permissions=QFileDevice::ReadUser|QFileDevice::WriteUser);
-    bool readFile(const QString& remote, std::ostream &local);
+    bool readFile(const QString& remote, QDataStream &local);
     bool readFile(const QString& remote, const QString& local, QFileDevice::Permissions permissions=QFileDevice::ReadUser|QFileDevice::WriteUser);
-private:
-    sftp_session session_;
+    bool createLink(const QString& target, const QString& destination);
+    SFTPAttributes stat(const QString& remote);
+    bool exists(const QString& remote);
+    bool isDir(const QString& remote);
+ private:
+    SSHSession ssh_session_;
+    QSharedPointer<struct sftp_session_struct> sftp_session_;
+    QUrl url_;
 };
 
 #endif // SFTPSESSION_H

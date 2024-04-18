@@ -38,7 +38,7 @@
 class DataFolderWatcher;
 class TaskConfiguration;
 class ParsedData;
-class SftpUrl;
+class QUrl;
 
 class PersistenDataWriter: public QObject
 {
@@ -78,7 +78,7 @@ public:
     void setMicrographsExport(const QSet<QString>& ids,bool export_flag);
     void removeMicrographResults(const QString &id, const TaskDefinitionPtr& definition);
     void createReport(const QString& file_name, const QString & type);
-    void exportMicrographs(const SftpUrl& destination, const SftpUrl& raw_export_path, const QStringList& output_keys, const QStringList& raw_keys, const QStringList& shared_keys, const QStringList& shared_raw_keys, bool duplicate_raw, bool create_reports=true);
+    void exportMicrographs(const QUrl& destination, const QUrl& raw_export_path, const QStringList& output_keys, const QStringList& raw_keys, const QStringList& shared_keys, const QStringList& shared_raw_keys, bool duplicate_raw, bool create_reports=true);
     QString value(const QString& id, QString key) const;
     void stopUpdates();
     void resumeUpdates();

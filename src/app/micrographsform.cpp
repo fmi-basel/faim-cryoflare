@@ -39,7 +39,6 @@
 #include <QSpinBox>
 #include <QCheckBox>
 #include <QMenuBar>
-#include <cmath>
 MicrographsForm::MicrographsForm(QMainWindow *parent) :
     QWidget(parent),
     ui(new Ui::MicrographsForm),
@@ -69,10 +68,10 @@ MicrographsForm::MicrographsForm(QMainWindow *parent) :
     ui->image_list_summary->setSibling(ui->image_list);
     ui->image_list_summary->setStyleSheet("QHeaderView::section { padding-left: 1 px}");
     ui->image_list->horizontalHeader()->setStyleSheet("QHeaderView::section { padding-left:  8 px}");
-    ui->linear_chart->setRenderHints(QPainter::HighQualityAntialiasing|QPainter::TextAntialiasing|QPainter::SmoothPixmapTransform|QPainter::Antialiasing);
+    ui->linear_chart->setRenderHints(QPainter::TextAntialiasing|QPainter::SmoothPixmapTransform|QPainter::Antialiasing);
     ui->linear_chart->setOptimizationFlag(QGraphicsView::DontSavePainterState);
     ui->linear_chart->setOptimizationFlag(QGraphicsView::DontAdjustForAntialiasing);
-    ui->histogram->setRenderHints(QPainter::HighQualityAntialiasing|QPainter::TextAntialiasing|QPainter::SmoothPixmapTransform|QPainter::Antialiasing);
+    ui->histogram->setRenderHints(QPainter::TextAntialiasing|QPainter::SmoothPixmapTransform|QPainter::Antialiasing);
     ui->histogram->setOptimizationFlag(QGraphicsView::DontSavePainterState);
     ui->histogram->setOptimizationFlag(QGraphicsView::DontAdjustForAntialiasing);
     connect(ui->linear_chart, &LinearChartView::indexClicked,ui->image_list , &ImageTableView::jumpToMicrograph);
@@ -303,7 +302,6 @@ void MicrographsForm::updateTaskWidget_(Settings *settings, QFormLayout *parent_
                     script_input_settings.setValue(settings_key,"");
                     script_input_settings.saveToFile(CRYOFLARE_INI, QStringList(), QStringList() << settings_key);
                 }
-                local_widget=le_widget;
                 connect(le_widget,&PathEdit::pathChanged,this,&MicrographsForm::inputDataChanged);
                 le_widget->setPath(script_input_settings.value(settings_key).toString());
                 local_widget=le_widget;

@@ -141,88 +141,22 @@ QStringList ExportDialog::selectedSharedRawKeys() const
 
 void ExportDialog::verifyDestinations()
 {
-     if(destinationPath().isLocalFile()){
-        accept();
-    }else{
-        SSHSession session;
-        int auth_methods = session.getUserAuthList();
-        if(SSH_AUTH_METHOD_PUBLICKEY & auth_methods && SSH_AUTH_SUCCESS==session.authenticatePubKey()){
-            accept();
-        }else if(SSH_AUTH_METHOD_PASSWORD & auth_methods){
-            bool ok;
-            QString pw = QInputDialog::getText(this, tr("Remote connection"),tr("Password:"), QLineEdit::Password,"", &ok);
-            if (ok && SSH_AUTH_SUCCESS==session.authenticatePassword(pw)){
-                accept();
-            }
-         }
-        //connection_=new QSsh::SshConnection(destinationPath().toConnectionParameters(),this);
-        //connect(connection_,&QSsh::SshConnection::connected,this,&ExportDialog::destinationVerified);
-        //connect(connection_,&QSsh::SshConnection::error,this,&ExportDialog::destinationVerificationError);
-        //connection_->connectToHost();
-    }
-}
-
-/*void ExportDialog::destinationVerified()
-{
-    if(separateRawPath()){
-        if(rawDestinationPath().isLocalFile()){
-            accept();
+    if(!destinationPath().isLocalFile()){
+        SSHSession session=SSHSession::createAuthenticatedSession(destinationPath());
+        if(session.isConnected()){
+            setDestinationPath(session.getUrl());
         }else{
-            connection_->deleteLater();
-            connection_=new QSsh::SshConnection(rawDestinationPath().toConnectionParameters(),this);
-            connect(connection_,&QSsh::SshConnection::connected,this,&ExportDialog::accept);
-            connect(connection_,&QSsh::SshConnection::error,this,&ExportDialog::rawDestinationVerificationError);
-            connection_->connectToHost();
+            return;
         }
-    }else{
-        accept();
     }
-
-}*/
-
-/*void ExportDialog::destinationVerificationError(QSsh::SshError e)
-{
-    SftpUrl dest=destinationPath();
-    if(e==QSsh::SshError::SshAuthenticationError){
-        SshAuthenticationDialog::auth_type auth=SshAuthenticationDialog::getSshAuthentication(QString("Authentication for: %1").arg(dest.toString(QUrl::RemovePassword)));
-        if(auth.second!=""){
-            dest.setAuthType(auth.first);
-            if(auth.first==QSsh::SshConnectionParameters::AuthenticationByPassword){
-                dest.setPassword(auth.second);
-            }else{
-                dest.setKey(auth.second);
-            }
-            setDestinationPath(dest);
-            verifyDestinations();
+    if(separateRawPath() && !rawDestinationPath().isLocalFile()){
+        SSHSession session=SSHSession::createAuthenticatedSession(rawDestinationPath());
+        if(session.isConnected()){
+            setRawDestinationPath(session.getUrl());
+        }else{
+            return;
         }
-    }else{
-        QMessageBox message_box;
-        message_box.setIcon(QMessageBox::Critical);
-        message_box.setText(QString("Error connecting to %1: %2").arg(dest.toString(QUrl::RemovePassword)).arg(connection_->errorString()));
-        message_box.exec();
     }
+    accept();
 }
-
-void ExportDialog::rawDestinationVerificationError(QSsh::SshError e)
-{
-    SftpUrl raw_dest=rawDestinationPath();
-    if(e==QSsh::SshError::SshAuthenticationError){
-        SshAuthenticationDialog::auth_type auth=SshAuthenticationDialog::getSshAuthentication(QString("Authentication for: %1").arg(raw_dest.toString(QUrl::RemovePassword)));
-        if(auth.second!=""){
-            raw_dest.setAuthType(auth.first);
-            if(auth.first==QSsh::SshConnectionParameters::AuthenticationByPassword){
-                raw_dest.setPassword(auth.second);
-            }else{
-                raw_dest.setKey(auth.second);
-            }
-            setRawDestinationPath(raw_dest);
-            verifyDestinations();
-        }
-    }else{
-        QMessageBox message_box;
-        message_box.setIcon(QMessageBox::Critical);
-        message_box.setText(QString("Error connecting to %1: %2").arg(raw_dest.toString(QUrl::RemovePassword)).arg(connection_->errorString()));
-        message_box.exec();
-    }
-}*/
 

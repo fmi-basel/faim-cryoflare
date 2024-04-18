@@ -209,6 +209,8 @@ ParsedData readEPUMicrographXML(const QFileInfo &info, const QString& project_di
 
 ParsedData readEPUGridSquareXML(const QFileInfo &info, const QString& project_dir, const QString &movie_dir)
 {
+    Q_UNUSED(project_dir)
+    Q_UNUSED(movie_dir)
     ParsedData result;
     QString square_id=info.dir().dirName();
     square_id.remove(0,11);
@@ -253,6 +255,8 @@ ParsedData readEPUGridSquareXML(const QFileInfo &info, const QString& project_di
 
 ParsedData readEPUTargetLocationDM(const QFileInfo &info, const QString& project_dir, const QString &movie_dir)
 {
+    Q_UNUSED(project_dir)
+    Q_UNUSED(movie_dir)
     // read 2.6 foil hole metadata
 
     QString square_id=info.dir().dirName();
@@ -290,6 +294,8 @@ ParsedData readEPUTargetLocationDM(const QFileInfo &info, const QString& project
 
 ParsedData readEPUGridSquareDM(const QFileInfo &info, const QString& project_dir, const QString &movie_dir)
 {
+    Q_UNUSED(project_dir)
+    Q_UNUSED(movie_dir)
     // read 2.7 foil hole metadata
     ParsedData result;
     QString meta_path=info.absoluteFilePath();
@@ -345,6 +351,8 @@ DataFolderWatcher *createFlatEPUFolderWatcher(QObject *parent)
 
 ParsedData readImage(const QFileInfo &info, const QString& project_dir, const QString& movie_dir)
 {
+    Q_UNUSED(project_dir)
+    Q_UNUSED(movie_dir)
     ParsedData result;
     QString json_path=QDir(info.absolutePath()).absoluteFilePath(info.completeBaseName()+".json");
     QFile json_file(json_path);

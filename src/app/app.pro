@@ -54,6 +54,7 @@ SOURCES += \
     filesystemwatcher.cpp \
     filesystemwatcherimpl.cpp \
     processwrapper.cpp \
+    sftpfilesystemmodel.cpp \
     sftpsession.cpp \
     sshsession.cpp \
     task.cpp \
@@ -78,9 +79,6 @@ SOURCES += \
     remotefiledialog.cpp \
     remotepathedit.cpp \
     exportprogressdialog.cpp \
-    sshauthenticationdialog.cpp \
-    sshauthenticationstore.cpp \
-    sftpurl.cpp \
     diskusagewidget.cpp \
     lastimagetimer.cpp \
     metadatastore.cpp \
@@ -116,6 +114,7 @@ HEADERS  += \
     filesystemwatcher.h \
     filesystemwatcherimpl.h \
     processwrapper.h \
+    sftpfilesystemmodel.h \
     sftpsession.h \
     sshsession.h \
     task.h \
@@ -141,9 +140,6 @@ HEADERS  += \
     remotefiledialog.h \
     remotepathedit.h \
     exportprogressdialog.h \
-    sshauthenticationdialog.h \
-    sshauthenticationstore.h \
-    sftpurl.h \
     diskusagewidget.h \
     lastimagetimer.h \
     metadatastore.h \
@@ -179,7 +175,6 @@ FORMS    += \
     exportdialog.ui \
     remotefiledialog.ui \
     exportprogressdialog.ui \
-    sshauthenticationdialog.ui \
     micrographsform.ui \
     gridsquareform.ui \
     datachartform.ui

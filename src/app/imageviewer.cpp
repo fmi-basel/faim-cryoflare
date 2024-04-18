@@ -97,7 +97,7 @@ void ImageViewer::resizeEvent(QResizeEvent *event)
 
 void ImageViewer::wheelEvent(QWheelEvent *event)
 {
-    if(event->delta()>0){
+    if(event->angleDelta().y()>0){
         ++scalefactor_;
         scale(2,2);
     }else{
@@ -108,6 +108,7 @@ void ImageViewer::wheelEvent(QWheelEvent *event)
 
 void ImageViewer::drawForeground(QPainter *painter, const QRectF &rect)
 {
+    Q_UNUSED(rect)
     if(! markers_.empty()){
         painter->setPen(Qt::black);
         painter->resetTransform();

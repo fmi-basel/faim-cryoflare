@@ -4,6 +4,7 @@
 #include <libssh/libssh.h>
 #include <QList>
 #include <QUrl>
+#include <QSharedPointer>
 
 struct SSHHostVerification{
     int status;
@@ -23,13 +24,12 @@ struct SSHKbdIntPromptList{
 class SSHSession
 {
 public:
-    SSHSession(const QString& host="Localhost", int port=22);
-    SSHSession(const QUrl& url);
+    SSHSession();
     ~SSHSession();
     static SSHSession createAuthenticatedSession(const QUrl& url);
-    static QUrl createAuthenticatedUrl(const QUrl& url);
     bool isValid() const;
-    bool connect();
+    bool connect(const QUrl& url);
+    QUrl getUrl() const;
     void disconnect();
     bool isConnected() const;
     QString getError();
@@ -41,8 +41,10 @@ public:
     int authenticateKbInt();
     SSHKbdIntPromptList getKbdIntPrompts();
     int setKbdIntAnswers(const QStringList& answers);
+    ssh_session session() const;
 protected:
-    ssh_session session_;
+    QSharedPointer<struct ssh_session_struct> session_;
+    QUrl url_;
 
 };
 

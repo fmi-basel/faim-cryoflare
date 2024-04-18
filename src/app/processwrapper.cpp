@@ -66,7 +66,7 @@ bool ProcessWrapper::running() const
 void ProcessWrapper::start(const TaskPtr &task)
 {
     task_=task;
-    process_->start(task_->definition->script);
+    process_->start(task_->definition->script,QStringList());
     if(timeout_>0){
         timeout_timer_->start(timeout_*1000);
     }
@@ -250,7 +250,7 @@ void ProcessWrapper::writeLog_(const QString &text)
     QFile f(QDir::current().relativeFilePath(task_->definition->name+"_out.log"));
     if (f.open(QIODevice::WriteOnly | QIODevice::Append)) {
         QTextStream stream( &f );
-        foreach(QString line, text.split("\n", QString::SkipEmptyParts)){
+        foreach(QString line, text.split("\n", Qt::SkipEmptyParts)){
             stream << task_->id << ": " << line << "\n";
         }
     }
@@ -261,7 +261,7 @@ void ProcessWrapper::writeErrorLog_(const QString &text)
     QFile ferr(QDir::current().relativeFilePath(task_->definition->name+"_error.log"));
     if (ferr.open(QIODevice::WriteOnly | QIODevice::Append)) {
         QTextStream stream( &ferr );
-        foreach(QString line, text.split("\n", QString::SkipEmptyParts)){
+        foreach(QString line, text.split("\n", Qt::SkipEmptyParts)){
             stream << task_->id << ": " << line << "\n";
         }
     }

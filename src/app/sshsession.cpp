@@ -1,103 +1,107 @@
 #include "sshsession.h"
+#include "qdebug.h"
 #include <QInputDialog>
 #include <QObject>
 #include <QMessageBox>
 
-namespace {
+#define MAX_AUTH_TRIALS 3
 
-struct auth_result{
-    SSHSession session;
-    QUrl url;
-};
-
-auth_result authenticate_(const QUrl &url){
-    SSHSession session(url);
-    if(!session.connect()){
-        QMessageBox::critical(nullptr,QObject::tr("SSH error during connection"),session.getError());
-        return auth_result();
-    }
-    SSHHostVerification host_ver=session.authenticateHost();
-    switch(host_ver.status){
-    case SSH_KNOWN_HOSTS_ERROR:
-        QMessageBox::critical(nullptr,QObject::tr("SSH host verification error"),session.getError());
-        return auth_result();
-    case SSH_KNOWN_HOSTS_OK:
-        break;
-    case SSH_KNOWN_HOSTS_CHANGED:
-        QMessageBox::critical(nullptr,QObject::tr("SSH host verification changed"),QObject::tr("Host key for server changed: it is now:\n%1\nFor security reasons, connection will be stopped").arg(host_ver.hexa));
-        return auth_result();
-    case SSH_KNOWN_HOSTS_OTHER:
-        QMessageBox::critical(nullptr,QObject::tr("SSH host verification changed"),QObject::tr("The host key for this server was not found but an other type of key exists.\nAn attacker might change the default server key to confuse your client into thinking the key does not exist.\nFor security reasons, connection will be stopped."));
-        return auth_result();
-    case SSH_KNOWN_HOSTS_NOT_FOUND:
-    case SSH_KNOWN_HOSTS_UNKNOWN:
-
-    }
-    int auth_methods = session.getUserAuthList();
-    if(SSH_AUTH_METHOD_PUBLICKEY & auth_methods && SSH_AUTH_SUCCESS==session.authenticatePubKey()){
-        return auth_result();
-    }else if(SSH_AUTH_METHOD_PASSWORD & auth_methods){
-        bool ok;
-        QString pw = QInputDialog::getText(nullptr, QObject::tr("Remote connection"),QObject::tr("Password:"), QLineEdit::Password,"", &ok);
-        if (ok && SSH_AUTH_SUCCESS==session.authenticatePassword(pw)){
-            return auth_result();
-        }
-    }
-    return auth_result();
-}
-
-} //anon ns
-
-SSHSession::SSHSession(const QString &host, int port)
-    : session_(ssh_new())
+SSHSession::SSHSession()
+    : session_(ssh_new(),ssh_free),
+    url_()
 {
     if(isValid()){
-        ssh_options_set(session_, SSH_OPTIONS_HOST, host.toLatin1().data());
-        ssh_options_set(session_, SSH_OPTIONS_PORT, &port);
-    }
-}
-
-SSHSession::SSHSession(const QUrl &url)
-    : session_(ssh_new())
-{
-    if(isValid()){
-        ssh_options_set(session_, SSH_OPTIONS_HOST, url.host().toLatin1().data());
-        int port=url.port();
-        ssh_options_set(session_, SSH_OPTIONS_PORT, &port);
-        ssh_options_set(session_, SSH_OPTIONS_USER, url.userName().toLatin1().data());
+        ssh_set_blocking(session(),1);
     }
 }
 
 SSHSession::~SSHSession()
 {
-    if (isValid()){
-        disconnect();
-        ssh_free(session_);
-    }
 }
 
 SSHSession SSHSession::createAuthenticatedSession(const QUrl &url)
 {
-    return authenticate_(url).session;
+    SSHSession session;
+    if(!session.connect(url)){
+        QMessageBox::critical(nullptr,QObject::tr("SSH error during connection"),session.getError());
+        return SSHSession();
+    }
+    SSHHostVerification host_ver=session.authenticateHost();
+    switch(host_ver.status){
+    case SSH_KNOWN_HOSTS_ERROR:
+        QMessageBox::critical(nullptr,QObject::tr("SSH host verification error"),session.getError());
+        return SSHSession();
+    case SSH_KNOWN_HOSTS_OK:
+        break;
+    case SSH_KNOWN_HOSTS_CHANGED:
+        QMessageBox::critical(nullptr,QObject::tr("SSH host verification changed"),QObject::tr("Host key for server changed: it is now:\n%1\nFor security reasons, connection will be stopped").arg(host_ver.hexa));
+        return SSHSession();
+    case SSH_KNOWN_HOSTS_OTHER:
+        QMessageBox::critical(nullptr,QObject::tr("SSH host verification changed"),QObject::tr("The host key for this server was not found but an other type of key exists.\nAn attacker might change the default server key to confuse your client into thinking the key does not exist.\nFor security reasons, connection will be stopped."));
+        return SSHSession();
+    case SSH_KNOWN_HOSTS_NOT_FOUND:
+    case SSH_KNOWN_HOSTS_UNKNOWN:
+        if(QMessageBox::Yes==QMessageBox::question(nullptr, QObject::tr("SSH host unknown"), QObject::tr("The server is unknown. Do you trust the host key?"), QMessageBox::Yes|QMessageBox::No, QMessageBox::Yes)){
+            if(!session.updateKnownHosts()){
+                QMessageBox::critical(nullptr,QObject::tr("SSH known host update"),QObject::tr("Failed to update known host file. Aborting."));
+                return SSHSession();
+            }
+            break;
+        }else{
+            return SSHSession();
+        }
+    default:
+        QMessageBox::critical(nullptr,QObject::tr("SSH host verification error"),QObject::tr("Unknown host verification error (status %1)").arg(host_ver.status));
+    }
+    int auth_methods = session.getUserAuthList();
+    if(SSH_AUTH_METHOD_PUBLICKEY & auth_methods && SSH_AUTH_SUCCESS==session.authenticatePubKey()){
+        return session;
+    }else if(SSH_AUTH_METHOD_PASSWORD & auth_methods){
+        if (SSH_AUTH_SUCCESS==session.authenticatePassword(url.password())){
+            return session;
+        }
+        for(int i=0;i<MAX_AUTH_TRIALS;++i){
+            bool ok;
+            QString pw = QInputDialog::getText(nullptr, QObject::tr("Remote connection"),QObject::tr("Password:"), QLineEdit::Password,"", &ok);
+            if (ok && SSH_AUTH_SUCCESS==session.authenticatePassword(pw)){
+                QUrl auth_url(url);
+                auth_url.setPassword(pw);
+                return session;
+            }
+        }
+    }
+    return SSHSession();
 }
 
-QUrl SSHSession::createAuthenticatedUrl(const QUrl &url)
-{
-    return authenticate_(url).url;
-}
 
 bool SSHSession::isValid() const
 {
     return session_!=NULL;
 }
 
-bool SSHSession::connect()
+bool SSHSession::connect(const QUrl &url)
 {
     if(!isValid()){
         return false;
     }
-    int rc = ssh_connect(session_);
-    return rc == SSH_OK;
+    if(isConnected()){
+        disconnect();
+    }
+    ssh_options_set(session(), SSH_OPTIONS_HOST, url.host().toLatin1().data());
+    int port=url.port();
+    ssh_options_set(session(), SSH_OPTIONS_PORT, &port);
+    ssh_options_set(session(), SSH_OPTIONS_USER, url.userName().toLatin1().data());
+    int rc = ssh_connect(session());
+    if(rc == SSH_OK){
+        url_=url;
+        return true;
+    }
+    return false;
+}
+
+QUrl SSHSession::getUrl() const
+{
+    return url_;
 }
 
 void SSHSession::disconnect()
@@ -105,7 +109,7 @@ void SSHSession::disconnect()
     if(! isConnected() ){
         return;
     }
-    ssh_disconnect(session_);
+    ssh_disconnect(session());
 }
 
 bool SSHSession::isConnected() const
@@ -113,7 +117,7 @@ bool SSHSession::isConnected() const
     if(!isValid()){
         return false;
     }
-    return ssh_is_connected(session_)==1;
+    return ssh_is_connected(session())==1;
 }
 
 QString SSHSession::getError()
@@ -121,14 +125,14 @@ QString SSHSession::getError()
     if(!isValid()){
         return QString("Invalid SSH session");
     }
-    return QString(ssh_get_error(session_));
+    return QString(ssh_get_error(session()));
 }
 
 SSHHostVerification SSHSession::authenticateHost()
 {
     ssh_key srv_pubkey = NULL;
     SSHHostVerification retval;
-    if ((! isConnected()) || (ssh_get_server_publickey(session_, &srv_pubkey) < 0)) {
+    if ((! isConnected()) || (ssh_get_server_publickey(session(), &srv_pubkey) < 0)) {
         return SSHHostVerification{SSH_KNOWN_HOSTS_ERROR,QString()};
     }
 
@@ -140,7 +144,7 @@ SSHHostVerification SSHSession::authenticateHost()
         return SSHHostVerification{SSH_KNOWN_HOSTS_ERROR,QString()};
     }
 
-    enum ssh_known_hosts_e state = ssh_session_is_known_server(session_);
+    enum ssh_known_hosts_e state = ssh_session_is_known_server(session());
     char *hexa;
     switch (state) {
     case SSH_KNOWN_HOSTS_OK:
@@ -168,7 +172,7 @@ bool SSHSession::updateKnownHosts()
     if(!isConnected()){
         return SSH_ERROR;
     }
-    return ssh_session_update_known_hosts(session_) == SSH_OK;
+    return ssh_session_update_known_hosts(session()) == SSH_OK;
 }
 
 int SSHSession::getUserAuthList()
@@ -176,11 +180,11 @@ int SSHSession::getUserAuthList()
     if(!isConnected()){
         return 0;
     }
-    int rc = ssh_userauth_none(session_, NULL);
+    int rc = ssh_userauth_none(session(), NULL);
     if (rc == SSH_AUTH_SUCCESS || rc == SSH_AUTH_ERROR) {
         return 0;
     }
-    return ssh_userauth_list(session_, NULL);
+    return ssh_userauth_list(session(), NULL);
 }
 
 int SSHSession::authenticatePubKey()
@@ -188,7 +192,11 @@ int SSHSession::authenticatePubKey()
     if(!isConnected()){
         return SSH_AUTH_ERROR;
     }
-    return ssh_userauth_publickey_auto(session_, NULL, NULL);
+    int rc = ssh_userauth_publickey_auto(session(), NULL, NULL);
+    if(rc == SSH_AUTH_SUCCESS){
+        url_.setPassword(QString());
+    }
+    return rc;
 }
 
 int SSHSession::authenticatePassword(const QString password)
@@ -196,7 +204,11 @@ int SSHSession::authenticatePassword(const QString password)
     if(!isConnected()){
         return SSH_AUTH_ERROR;
     }
-    return ssh_userauth_password(session_, NULL, password.toLatin1().data());
+    int rc=ssh_userauth_password(session(), NULL, password.toLatin1().data());
+    if(rc == SSH_AUTH_SUCCESS){
+        url_.setPassword(password);
+    }
+    return rc;
 }
 
 int SSHSession::authenticateKbInt()
@@ -204,7 +216,7 @@ int SSHSession::authenticateKbInt()
     if(!isConnected()){
         return SSH_AUTH_ERROR;
     }
-    return ssh_userauth_kbdint(session_, NULL, NULL);
+    return ssh_userauth_kbdint(session(), NULL, NULL);
 }
 
 SSHKbdIntPromptList SSHSession::getKbdIntPrompts()
@@ -214,16 +226,16 @@ SSHKbdIntPromptList SSHSession::getKbdIntPrompts()
         return retval;
     }
 
-    retval.name = QString(ssh_userauth_kbdint_getname(session_));
-    retval.instructions=QString(ssh_userauth_kbdint_getinstruction(session_));
-    int nprompts = ssh_userauth_kbdint_getnprompts(session_);
+    retval.name = QString(ssh_userauth_kbdint_getname(session()));
+    retval.instructions=QString(ssh_userauth_kbdint_getinstruction(session()));
+    int nprompts = ssh_userauth_kbdint_getnprompts(session());
 
      for(int iprompt = 0; iprompt < nprompts; ++iprompt)
     {
         const char *prompt;
         char echo;
 
-        prompt = ssh_userauth_kbdint_getprompt(session_, iprompt, &echo);
+        prompt = ssh_userauth_kbdint_getprompt(session(), iprompt, &echo);
         retval.prompts.append(SSHKbdIntPrompt{prompt,echo!=0});
      }
      return retval;
@@ -237,11 +249,16 @@ int SSHSession::setKbdIntAnswers(const QStringList &answers)
 
     for(int iprompt = 0; iprompt < answers.size(); ++iprompt)
     {
-        if (ssh_userauth_kbdint_setanswer(session_, iprompt, answers.at(iprompt).toLatin1().data()) < 0){
+        if (ssh_userauth_kbdint_setanswer(session(), iprompt, answers.at(iprompt).toLatin1().data()) < 0){
             return SSH_AUTH_ERROR;
         }
     }
-    return ssh_userauth_kbdint(session_, NULL, NULL);
+    return ssh_userauth_kbdint(session(), NULL, NULL);
+}
+
+ssh_session SSHSession::session() const
+{
+    return session_.data();
 }
 
 

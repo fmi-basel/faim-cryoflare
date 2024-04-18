@@ -33,14 +33,13 @@
 #include <QByteArray>
 #include <QRegularExpression>
 #include <QTemporaryFile>
-#include "sftpurl.h"
 #include <QDir>
 #include <QHash>
 #include <QSharedPointer>
 #include <QTimer>
 #include <QAtomicInt>
-#include "../external/qssh/sshconnection.h"
-#include "../external/qssh/sftpchannel.h"
+#include <QUrl>
+#include "sftpsession.h"
 
 //fw decl
 class ExportProgressDialog;
@@ -187,7 +186,7 @@ signals:
     void next();
 public:
 
-    ExportWorkerBase(int id, QSharedPointer<ThreadSafeQueue<WorkItem> > queue, const QString &source, const SftpUrl &destination, const QStringList& images, Barrier<ThreadSafeQueue<WorkItem> >& );
+    ExportWorkerBase(int id, QSharedPointer<ThreadSafeQueue<WorkItem> > queue, const QString &source, const QUrl &destination, const QStringList& images, Barrier<ThreadSafeQueue<WorkItem> >& );
     ~ExportWorkerBase();
     bool busy() const;
     QList<ExportMessage> messages();
@@ -200,10 +199,10 @@ protected:
     void error_(const QString& error);
     void message_(const QString& message);
     virtual void processNextImpl_()=0;
-    QTemporaryFile* filter_(const QString& source_path) const;
+    QByteArray filter_(const QString& source_path) const;
     QSharedPointer<ThreadSafeQueue<WorkItem> > queue_;
     QDir source_;
-    SftpUrl destination_;
+    QUrl destination_;
     QStringList images_;
     QRegularExpression image_name_;
     ThreadSafeList<ExportMessage> message_buffer_;
@@ -218,7 +217,7 @@ protected slots:
 class LocalExportWorker: public ExportWorkerBase{
     Q_OBJECT
 public:
-    LocalExportWorker(int id, QSharedPointer<ThreadSafeQueue<WorkItem> > queue, const QString &source, const SftpUrl &destination, const QStringList& images, Barrier<ThreadSafeQueue<WorkItem> >& b);
+    LocalExportWorker(int id, QSharedPointer<ThreadSafeQueue<WorkItem> > queue, const QString &source, const QUrl &destination, const QStringList& images, Barrier<ThreadSafeQueue<WorkItem> >& b);
 protected:
     virtual void startImpl_();
     virtual void processNextImpl_();
@@ -233,28 +232,14 @@ public:
         NoOp,Stat,MkDir,Copy,DirStat,LinkStat,Link
     };
 
-    RemoteExportWorker(int id, QSharedPointer<ThreadSafeQueue<WorkItem> > queue, const QString &source, const SftpUrl &destination, const QStringList& images, Barrier<ThreadSafeQueue<WorkItem> >& b);
+    RemoteExportWorker(int id, QSharedPointer<ThreadSafeQueue<WorkItem> > queue, const QString &source, const QUrl &destination, const QStringList& images, Barrier<ThreadSafeQueue<WorkItem> >& b);
 protected:
     virtual void startImpl_();
     virtual void processNextImpl_();
-    virtual void copyFile_();
-    virtual void checkDestinationDirectory_();
-    virtual void createDirectory_();
-    virtual void createLink_();
-    QSsh::SshConnectionParameters connection_parameters_;
-    QSsh::SshConnection* ssh_connection_;
-    QSsh::SftpChannel::Ptr channel_;
-    QHash<QSsh::SftpJobId,OpType> sftp_ops_;
-    WorkItem current_item_;
-    QHash<QSsh::SftpJobId,QSharedPointer<QTemporaryFile> > temp_files_;
+    virtual void copyFile_(const WorkItem &item);
+    virtual void createDirectory_(const WorkItem &item);
+    SFTPSession sftp_session_;
 
-protected slots:
-    void connected_();
-    void connectionFailed_();
-    void initialized_();
-    void initializationFailed_();
-    void sftpOpFinished_(QSsh::SftpJobId job, const QString &err);
-    void fileInfo_(QSsh::SftpJobId job, const QList<QSsh::SftpFileInfo> &fileInfoList);
 };
 
 
@@ -262,10 +247,10 @@ class ParallelExporter : public QObject
 {
     Q_OBJECT
 public:
-    explicit ParallelExporter(const QString &source, const SftpUrl &destination,const QStringList& images, int num_threads=1,QObject *parent = nullptr);
+    explicit ParallelExporter(const QString &source, const QUrl &destination,const QStringList& images, int num_threads=1,QObject *parent = nullptr);
     ~ParallelExporter();
     void addImages(const QStringList& files, bool filter);
-    SftpUrl destination() const;
+    QUrl destination() const;
     int numFiles() const;
 signals:
     void newFiles();
@@ -279,7 +264,7 @@ public slots:
 protected slots:
 protected:
     QString source_;
-    SftpUrl destination_;
+    QUrl destination_;
     QStringList images_;
     int num_threads_;
     QSharedPointer<ThreadSafeQueue<WorkItem> > queue_;

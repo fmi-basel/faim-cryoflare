@@ -24,12 +24,11 @@
 #include <QMouseEvent>
 #include <QGraphicsItem>
 #include "positionchartview.h"
-#include <algorithm>
 
 PositionChartView::PositionChartView(QWidget *parent):
     QGraphicsView(parent)
 {
-    setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform | QPainter::HighQualityAntialiasing);
+    setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
 }
 
 void PositionChartView::setScene(QGraphicsScene *s)
