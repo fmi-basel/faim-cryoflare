@@ -76,6 +76,9 @@ RemoteFileDialog::~RemoteFileDialog()
 void RemoteFileDialog::connect(bool con)
 {
     if(con){
+        remote_path_.setHost(ui->host->text());
+        remote_path_.setUserName(ui->user->text());
+        remote_path_.setPort(ui->port->text().toInt());
         if(model_->connect(remote_path_)){
             ui->message->setText("Connected");
             ui->connect->setText("Disconnect");

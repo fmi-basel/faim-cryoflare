@@ -26,8 +26,6 @@ greaterThan(QT_MAJOR_VERSION, 5): QT += widgets
 TARGET = cryoflare
 TEMPLATE = app
 PRE_TARGETDEPS += ../mrcio/libmrcio.a
-PRE_TARGETDEPS += ../external/botan2/libbotan2.a
-PRE_TARGETDEPS += ../external/qssh/libqssh.a
 CONFIG(debug, debug|release) {
     PRE_TARGETDEPS += ../external/limereport/3rdparty/libQtZintd.a
     PRE_TARGETDEPS += ../external/limereport/limereport/liblimereportd.a
@@ -180,8 +178,6 @@ FORMS    += \
     datachartform.ui
 
 LIBS += ../mrcio/libmrcio.a
-LIBS += ../external/qssh/libqssh.a
-LIBS += ../external/botan2/libbotan2.a
 CONFIG(debug, debug|release) {
     LIBS += ../external/limereport/limereport/liblimereportd.a
     LIBS += ../external/limereport/3rdparty/libQtZintd.a

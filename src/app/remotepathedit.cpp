@@ -45,7 +45,7 @@ QUrl RemotePathEdit::remotePath() const
 void RemotePathEdit::setRemotePath(const QUrl &path)
 {
     remote_path_=path;
-    path_widget_->setText(path.toString(QUrl::RemovePassword));
+    path_widget_->setText(path.toString(QUrl::RemovePassword|QUrl::PreferLocalFile|QUrl::NormalizePathSegments|QUrl::RemoveScheme));
 }
 
 void RemotePathEdit::onRemoteBrowse()
@@ -67,8 +67,7 @@ void RemotePathEdit::onRemoteBrowse()
     }
     QUrl new_path=RemoteFileDialog::getRemotePath(sanitized_path);
     if(new_path.isValid()){
-        path_widget_->setText(new_path.toString(QUrl::RemovePassword|QUrl::PreferLocalFile|QUrl::NormalizePathSegments|QUrl::RemoveScheme));
-        remote_path_=new_path;
+        setRemotePath(new_path);
     }
 
 }
