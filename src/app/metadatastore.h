@@ -44,7 +44,7 @@ class PersistenDataWriter: public QObject
 {
  Q_OBJECT
 public slots:
-    void writeData(QJsonObject data, const QString &basename);
+    void writeData(Data data, const QString &basename);
 };
 
 
@@ -94,7 +94,7 @@ signals:
     void micrographsUpdated(const QSet<QString> & ids, const QSet<QString> & keys);
     void foilholeUpdated(const QString & id, const QSet<QString> & keys);
     void gridsquareUpdated(const QString & id, const QSet<QString> & keys);
-    void saveData(QJsonObject data,const QString& basename);
+    void saveData(Data data,const QString& basename);
 protected slots:
     void readPersistentData_();
 

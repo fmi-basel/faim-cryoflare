@@ -38,14 +38,17 @@
 static const bool BINARY_STORAGE = true;
 
 
-void PersistenDataWriter::writeData(QJsonObject data, const QString &basename){
+void PersistenDataWriter::writeData(Data data, const QString &basename){
+    if(!data.isModifed()){
+        return;
+    }
     QString filename=QDir(CRYOFLARE_DIRECTORY).filePath(QString(BINARY_STORAGE ? "%1.dat":"%1.json").arg(basename));
     QFile save_file(filename);
     if (!save_file.open(QIODevice::WriteOnly)) {
         qWarning() << "Couldn't save file: " <<filename;
         return;
     }
-    save_file.write(BINARY_STORAGE ? QCborValue::fromJsonValue(data).toCbor() :  QJsonDocument(data).toJson());
+    save_file.write(BINARY_STORAGE ? QCborValue::fromJsonValue(data.toJsonObject()).toCbor() :  QJsonDocument(data.toJsonObject()).toJson());
 }
 
 MetaDataStore::MetaDataStore(TaskConfiguration* task_configuration, QObject *parent):
@@ -62,6 +65,7 @@ MetaDataStore::MetaDataStore(TaskConfiguration* task_configuration, QObject *par
     queued_mic_ids_(),
     queued_mic_keys_()
 {
+    qRegisterMetaType<Data>("Data");
     Settings settings;
     data_folder_watcher_=createFolderWatcher_(settings.value("import").toString(),settings.value("import_image_pattern").toString());
     connect(data_folder_watcher_,&DataFolderWatcher::newDataAvailable,this, [=](const ParsedData& parsed_data) {updateData(parsed_data,true);});
@@ -204,6 +208,7 @@ QSet<QString> MetaDataStore::sharedRawKeys() const
 void MetaDataStore::saveMicrographData_(const QString &id, const QSet<QString> & keys)
 {
     emit saveData(micrographs_.value(id),id);
+    micrographs_[id].setModified(false);
     if(updates_stopped_){
         queued_mic_ids_.insert(id);
         queued_mic_keys_.unite(keys);
@@ -215,12 +220,15 @@ void MetaDataStore::saveMicrographData_(const QString &id, const QSet<QString> &
 void MetaDataStore::saveFoilholeData_(const QString &id, const QSet<QString> & keys)
 {
     emit saveData(foil_holes_.value(id),QString("%1/%2").arg(CRYOFLARE_FOILHOLES_DIRECTORY).arg(id));
+    foil_holes_[id].setModified(false);
+
     emit foilholeUpdated(id, keys);
 }
 
 void MetaDataStore::saveGridsquareData_(const QString &id, const QSet<QString> & keys)
 {
     emit saveData(grid_squares_.value(id),QString("%1/%2").arg(CRYOFLARE_GRIDSQUARES_DIRECTORY).arg(id));
+    grid_squares_[id].setModified(false);
     emit gridsquareUpdated(id, keys);
 }
 
@@ -295,7 +303,9 @@ void MetaDataStore::updateData(const ParsedData &data, bool save)
             QStringList key_list=d.keys();
             saveMicrographData_(d.id(),QSet<QString>(key_list.begin(),key_list.end()));
         }
+        //qDebug() << "updateData before update parent";
         update_parent(this,foil_holes_,mic_data,&MetaDataStore::newFoilhole,&MetaDataStore::saveFoilholeData_,save);
+        //qDebug() << "updateData after update parent";
     }
     resumeUpdates();
     foreach(Data d, data.foil_holes){
@@ -338,6 +348,8 @@ void MetaDataStore::readPersistentData_()
         [[maybe_unused]] typedef Data result_type;
         Data operator()(const QString& path)
         {
+            QElapsedTimer timer;
+            timer.start();
             QFile load_file(QDir(dirpath_).absoluteFilePath(path));
             if(!load_file.open(QIODevice::ReadOnly)){
                 qWarning() << "Couldn't open file: " << QDir(dirpath_).absoluteFilePath(path);
@@ -579,17 +591,33 @@ void MetaDataStore::exportMicrographs(const QUrl &export_path, const QUrl &raw_e
         unfiltered_shared_files.unite(unfiltered_shared_raw_files);
     }
     files.append(unfiltered_shared_files.values());
+    QFileDevice::Permissions permissions;
+    permissions|= settings.value("data_ur",1).toBool() ?QFileDevice::ReadOwner:QFileDevice::Permissions();
+    permissions|= settings.value("data_uw",1).toBool() ?QFileDevice::WriteOwner:QFileDevice::Permissions();
+    permissions|= settings.value("data_ux",1).toBool() ?QFileDevice::ExeOwner:QFileDevice::Permissions();
+    permissions|= settings.value("data_gr",1).toBool() ?QFileDevice::ReadGroup:QFileDevice::Permissions();
+    permissions|= settings.value("data_gw",1).toBool() ?QFileDevice::WriteGroup:QFileDevice::Permissions();
+    permissions|= settings.value("data_gx",1).toBool() ?QFileDevice::ExeGroup:QFileDevice::Permissions();
+    permissions|= settings.value("data_or",1).toBool() ?QFileDevice::ReadOther:QFileDevice::Permissions();
+    permissions|= settings.value("data_ow",1).toBool() ?QFileDevice::WriteOther:QFileDevice::Permissions();
+    permissions|= settings.value("data_ox",1).toBool() ?QFileDevice::ExeOther:QFileDevice::Permissions();
     if(!files.empty() || !filtered_shared_files.empty()){
-        ParallelExporter* exporter=new ParallelExporter(parent_dir.path(),export_path,selectedMicrographIDs(),num_processes);
-        exporter->addImages(filtered_shared_files.values(),true);
-        exporter->addImages(files,false);
+        ParallelExporter* exporter=new ParallelExporter(parent_dir.path(),export_path,selectedMicrographIDs(),files,filtered_shared_files.values(),permissions,num_processes);
         exporters_.enqueue(exporter);
     }
     raw_files.append(unfiltered_shared_raw_files.values());
     if(separate_raw_export && ! (raw_files.empty() && filtered_shared_raw_files.empty() )){
-        ParallelExporter* raw_exporter=new ParallelExporter(parent_dir.path(),raw_export_path,selectedMicrographIDs(),num_processes);
-        raw_exporter->addImages(filtered_shared_raw_files.values(),true);
-        raw_exporter->addImages(raw_files,false);
+        QFileDevice::Permissions raw_permissions;
+        raw_permissions|= settings.value("raw_data_ur",1).toBool() ?QFileDevice::ReadOwner:QFileDevice::Permissions();
+        raw_permissions|= settings.value("raw_data_uw",1).toBool() ?QFileDevice::WriteOwner:QFileDevice::Permissions();
+        raw_permissions|= settings.value("raw_data_ux",1).toBool() ?QFileDevice::ExeOwner:QFileDevice::Permissions();
+        raw_permissions|= settings.value("raw_data_gr",1).toBool() ?QFileDevice::ReadGroup:QFileDevice::Permissions();
+        raw_permissions|= settings.value("raw_data_gw",1).toBool() ?QFileDevice::WriteGroup:QFileDevice::Permissions();
+        raw_permissions|= settings.value("raw_data_gx",1).toBool() ?QFileDevice::ExeGroup:QFileDevice::Permissions();
+        raw_permissions|= settings.value("raw_data_or",1).toBool() ?QFileDevice::ReadOther:QFileDevice::Permissions();
+        raw_permissions|= settings.value("raw_data_ow",1).toBool() ?QFileDevice::WriteOther:QFileDevice::Permissions();
+        raw_permissions|= settings.value("raw_data_ox",1).toBool() ?QFileDevice::ExeOther:QFileDevice::Permissions();
+        ParallelExporter* raw_exporter=new ParallelExporter(parent_dir.path(),raw_export_path,selectedMicrographIDs(),raw_files,filtered_shared_raw_files.values(),raw_permissions,num_processes);
         exporters_.enqueue(raw_exporter);
     }
     startNextExport_();

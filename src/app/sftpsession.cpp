@@ -9,6 +9,7 @@
 
 namespace {
     mode_t qt2unixperms(QFileDevice::Permissions permissions){
+        mode_t ux_perm=(permissions & 0x7) | ((permissions & 0x70)>>1) | ((permissions & 0x700)>>2) | ((permissions & 0x7000)>>6);
         return (permissions & 0x7) | ((permissions & 0x70)>>1) | ((permissions & 0x700)>>2) | ((permissions & 0x7000)>>6);
     }
 
@@ -38,6 +39,23 @@ namespace {
                 QString(ssh_string_get_char(attributes->extended_data))
             };
         }
+
+    QHash<int,QString> const sftp_error_strings={
+        {0,"OK"},
+        {1,"EOF"},
+        {2,"NO_SUCH_FILE"},
+        {3,"PERMISSION_DENIED"},
+        {4,"FAILURE"},
+        {5,"BAD_MESSAGE"},
+        {6,"NO_CONNECTION"},
+        {7,"CONNECTION_LOST"},
+        {8,"OP_UNSUPPORTE"},
+        {9,"INVALID_HANDLE"},
+        {10,"NO_SUCH_PATH"},
+        {11,"FILE_ALREADY_EXISTS"},
+        {12,"WRITE_PROTECT"},
+        {13,"_NO_MEDIA"}
+    };
 
 }
 
@@ -85,12 +103,22 @@ QUrl SFTPSession::getUrl() const
     return ssh_session_.getUrl();
 }
 
-int SFTPSession::getError()
+int SFTPSession::getError() const
 {
     if(!isValid()){
         return 0;
     }
     return sftp_get_error(session());
+}
+
+QString SFTPSession::getErrorString() const
+{
+    int error=getError();
+    if(!sftp_error_strings.contains(error)){
+            return "UNKNOWN ERROR";
+    }else{
+        return sftp_error_strings.value(error);
+    }
 }
 
 bool SFTPSession::mkDir(const QString &path, QFileDevice::Permissions permissions)

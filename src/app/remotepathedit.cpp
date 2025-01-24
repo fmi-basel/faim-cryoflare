@@ -34,7 +34,7 @@ RemotePathEdit::RemotePathEdit(QWidget *parent):
     layout()->addWidget(remote_browse_);
     remote_browse_->setToolTip("Browse remote folder");
     connect(remote_browse_, &QPushButton::clicked,this,&RemotePathEdit::onRemoteBrowse);
-    connect(path_widget_,&QLineEdit::textChanged,this,&RemotePathEdit::updateUrl);
+    connect(path_widget_,&QLineEdit::textEdited,this,&RemotePathEdit::updateUrl);
 }
 
 QUrl RemotePathEdit::remotePath() const
@@ -45,7 +45,7 @@ QUrl RemotePathEdit::remotePath() const
 void RemotePathEdit::setRemotePath(const QUrl &path)
 {
     remote_path_=path;
-    path_widget_->setText(path.toString(QUrl::RemovePassword|QUrl::PreferLocalFile|QUrl::NormalizePathSegments|QUrl::RemoveScheme));
+    path_widget_->setText(path.toString(QUrl::RemovePassword|QUrl::PreferLocalFile|QUrl::NormalizePathSegments));
 }
 
 void RemotePathEdit::onRemoteBrowse()

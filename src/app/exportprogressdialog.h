@@ -24,6 +24,10 @@
 
 #include <QDialog>
 #include "parallelexporter.h"
+
+//fw decl
+class MessageSyntaxHighlighter;
+
 namespace Ui {
 class ExportProgressDialog;
 }
@@ -40,9 +44,10 @@ public slots:
     void update(const QList<ExportMessage>& messages,int num_left);
     void update(const QList<ExportMessage>& messages);
     void finish();
-
+    void setVerbose(int v);
 private:
     Ui::ExportProgressDialog *ui;
+    MessageSyntaxHighlighter *highlighter_;
 };
 
 #endif // EXPORTPROGRESSDIALOG_H

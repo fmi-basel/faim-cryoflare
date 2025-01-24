@@ -34,14 +34,23 @@ SSHSession SSHSession::createAuthenticatedSession(const QUrl &url)
     case SSH_KNOWN_HOSTS_OK:
         break;
     case SSH_KNOWN_HOSTS_CHANGED:
-        QMessageBox::critical(nullptr,QObject::tr("SSH host verification changed"),QObject::tr("Host key for server changed: it is now:\n%1\nFor security reasons, connection will be stopped").arg(host_ver.hexa));
+        QMessageBox::critical(nullptr,QObject::tr("SSH host verification changed"),QObject::tr("Host key for server %1 changed: it is now:\n%2\nFor security reasons, connection will be stopped").arg(url.host()).arg(host_ver.hexa));
         return SSHSession();
     case SSH_KNOWN_HOSTS_OTHER:
-        QMessageBox::critical(nullptr,QObject::tr("SSH host verification changed"),QObject::tr("The host key for this server was not found but an other type of key exists.\nAn attacker might change the default server key to confuse your client into thinking the key does not exist.\nFor security reasons, connection will be stopped."));
+        QMessageBox::critical(nullptr,QObject::tr("SSH host verification changed"),QObject::tr("The host key for host %1 was not found but an other type of key exists.\nAn attacker might change the default server key to confuse your client into thinking the key does not exist.\nFor security reasons, connection will be stopped.").arg(url.host()));
         return SSHSession();
     case SSH_KNOWN_HOSTS_NOT_FOUND:
+        if(QMessageBox::Yes==QMessageBox::question(nullptr, QObject::tr("SSH known hosts missing"), QObject::tr("Could not find know hosts file. Do you trust the host key for host %1?\n%2\nIf you accept the file will be automatically creted").arg(url.host()).arg(host_ver.hexa), QMessageBox::Yes|QMessageBox::No, QMessageBox::Yes)){
+            if(!session.updateKnownHosts()){
+                QMessageBox::critical(nullptr,QObject::tr("SSH known host update"),QObject::tr("Failed to update known host file. Aborting."));
+                return SSHSession();
+            }
+            break;
+        }else{
+            return SSHSession();
+        }
     case SSH_KNOWN_HOSTS_UNKNOWN:
-        if(QMessageBox::Yes==QMessageBox::question(nullptr, QObject::tr("SSH host unknown"), QObject::tr("The server is unknown. Do you trust the host key?"), QMessageBox::Yes|QMessageBox::No, QMessageBox::Yes)){
+        if(QMessageBox::Yes==QMessageBox::question(nullptr, QObject::tr("SSH host unknown"), QObject::tr("The server %1 is unknown. Do you trust the host key?\n%2").arg(url.host()).arg(host_ver.hexa), QMessageBox::Yes|QMessageBox::No, QMessageBox::Yes)){
             if(!session.updateKnownHosts()){
                 QMessageBox::critical(nullptr,QObject::tr("SSH known host update"),QObject::tr("Failed to update known host file. Aborting."));
                 return SSHSession();
@@ -52,6 +61,7 @@ SSHSession SSHSession::createAuthenticatedSession(const QUrl &url)
         }
     default:
         QMessageBox::critical(nullptr,QObject::tr("SSH host verification error"),QObject::tr("Unknown host verification error (status %1)").arg(host_ver.status));
+        return SSHSession();
     }
     int auth_methods = session.getUserAuthList();
     if(SSH_AUTH_METHOD_PUBLICKEY & auth_methods && SSH_AUTH_SUCCESS==session.authenticatePubKey()){

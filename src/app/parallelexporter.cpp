@@ -21,6 +21,7 @@
 //------------------------------------------------------------------------------
 
 #include <unistd.h>
+#include <algorithm>
 #include <QDir>
 #include <QDebug>
 #include <QApplication>
@@ -32,20 +33,38 @@
 #include "parallelexporter.h"
 #include "exportprogressdialog.h"
 
-ExportWorkerBase::ExportWorkerBase(int id, QSharedPointer<ThreadSafeQueue<WorkItem> > queue, const QString &source, const QUrl &destination, const QStringList &images, Barrier<ThreadSafeQueue<WorkItem> > &b):
+QAtomicInteger<quint64> ExportMessage::counter=0;
+
+bool operator<(const ExportMessage& lhs, const ExportMessage& rhs){
+    return lhs.timestamp==rhs.timestamp ? lhs.counter_<rhs.counter_ : lhs.timestamp<rhs.timestamp;
+}
+
+
+ExportWorkerBase::ExportWorkerBase(int id, QSharedPointer<ThreadSafeQueue<FileItem> > queue, const QString &source, const QUrl &destination, const QStringList &export_micrographs, QFileDevice::Permissions permissions):
     QObject(),
     queue_(queue),
     source_(source),
     destination_(destination),
-    images_(images),
+    exported_micrographs_(export_micrographs),
     image_name_("\\d{8}_\\d{6}"),
     message_buffer_(),
-    barrier_(b),
     id_(id),
-    busy_(false)
+    busy_(false),
+    permissions_(permissions),
+    dir_permissions_(permissions)
 {
+    if(permissions && QFileDevice::ReadOwner){
+        dir_permissions_|=QFileDevice::ExeOwner;
+    }
+    if(permissions && QFileDevice::ReadGroup){
+        dir_permissions_|=QFileDevice::ExeGroup;
+    }
+    if(permissions && QFileDevice::ReadOther){
+        dir_permissions_|=QFileDevice::ExeOther;
+    }
     // queued connection here to allow signal to reach main event loop as well
-    connect(this,&ExportWorkerBase::next,this,&ExportWorkerBase::processNext_,Qt::QueuedConnection);
+    connect(this,&ExportWorkerBase::nextFile,this,&ExportWorkerBase::copyFile,Qt::QueuedConnection);
+
 }
 
 ExportWorkerBase::~ExportWorkerBase()
@@ -67,11 +86,6 @@ QList<ExportMessage> ExportWorkerBase::messages()
     return result;
 }
 
-void ExportWorkerBase::startExport()
-{
-    startImpl_();
-}
-
 void ExportWorkerBase::error_(const QString &error)
 {
     message_buffer_.append(ExportMessage(id_,ExportMessage::ERROR,error));
@@ -82,24 +96,26 @@ void ExportWorkerBase::message_(const QString &message)
     message_buffer_.append(ExportMessage(id_,ExportMessage::MESSAGE,message));
 }
 
-QByteArray ExportWorkerBase::filter_(const QString &source_path) const
+QByteArray ExportWorkerBase::filter_(const QString &source_path)
 {
-    QByteArray filtered_data;
-    QTextStream out_stream(filtered_data);
+    QByteArray filtered_data("");
+    QTextStream out_stream(&filtered_data);
     QFile file(source_path);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)){
-        return filtered_data;
+        error_(QString("Couldn't read: %1").arg(source_path));
+        return QByteArray();
     }
     while (!file.atEnd()) {
         QByteArray line = file.readLine();
         QRegularExpressionMatch match = image_name_.match(line);
         if(match.hasMatch()){
-            if(images_.contains(match.captured(0))){
+            if(exported_micrographs_.contains(match.captured(0))){
                 out_stream<<line;
             }
         }else{
             out_stream<<line;
         }
+        out_stream.flush();
     }
     return filtered_data;
 }
@@ -109,226 +125,217 @@ int ExportWorkerBase::id() const
     return id_;
 }
 
-void ExportWorkerBase::processNext_()
+void ExportWorkerBase::createDirectories(const QStringList& directories)
 {
-    processNextImpl_();
-}
-
-
-LocalExportWorker::LocalExportWorker(int id, QSharedPointer<ThreadSafeQueue<WorkItem> > queue, const QString &source, const QUrl &destination, const QStringList &images, Barrier<ThreadSafeQueue<WorkItem> > &b):
-    ExportWorkerBase(id,queue,source,destination,images,b)
-{
-
-}
-
-void LocalExportWorker::startImpl_()
-{
-    if(!busy()){
-        processNext_();
+    init_();
+    foreach(QString dirname, directories){
+        QString abs_dir_name=QDir(destination_.path()).absoluteFilePath(dirname);
+        createDirectory_(abs_dir_name);
     }
+    emit directoriesCreated();
 }
 
-void LocalExportWorker::processNextImpl_()
+void ExportWorkerBase::copyFile()
 {
-    busy_=true;
-    ThreadSafeQueue<WorkItem>::result_pair result=queue_->checkEmptyAndFirst();
+    init_();
+    ThreadSafeQueue<FileItem>::result_pair result=queue_->checkEmptyAndDequeue();
     if(result.first){
         busy_=false;
+        emit finished();
         return;
     }
-    if(result.second.type==WorkItem::BARRIER){
-        barrier_.wait();
-    }else{
-        result=queue_->checkEmptyAndDequeue();
-        if(result.first){
-            busy_=false;
-            return;
-        }
-        WorkItem item=result.second;
-        switch(item.type){
-        case WorkItem::FILE:
-            copyFile_(item);
-            break;
-        case WorkItem::DIRECTORY:
-            createDirectory_(item);
-            break;
-        default:
-            break;
-        }
-    }
-    emit next();
-}
-void LocalExportWorker::copyFile_(const WorkItem &item)
-{
-    QString path=source_.absoluteFilePath(item.filename);
+    FileItem item=result.second;
+    QString path=source_.absoluteFilePath(item.path);
     if(!QFileInfo(path).exists()){
-        error_(QString("Skipping missing file: %1").arg(item.filename));
+        error_(QString("Skipping missing file: %1").arg(item.path));
     }else{
-        QString destination_file(QDir(destination_.path()).absoluteFilePath(item.filename));
-        if(QFile::exists(destination_file)){
-            QFile::remove(destination_file);
-        }
-        // filter file
-        QSharedPointer<QFile> source_file;
         if(item.filter){
             QByteArray data=filter_(path);
-            QFile dest(destination_file);
-            if (!dest.open(QIODevice::WriteOnly | QIODevice::Text)){
-                error_("Error filering and copying file: "+item.filename);
+            if(data.isNull()){
             }else{
-                dest.write(data);
-                message_("Copied and filtered: "+item.filename);
+                copyFilteredFile_(item.path,data);
             }
         }else{
-            QFile source_file(path);
-            if(!source_file.copy(destination_file)){
-                error_("Error copying file: "+item.filename);
-            }else{
-                message_("Copied: "+item.filename);
-            }
+            copyFile_(item.path);
         }
     }
+    emit nextFile();
 }
 
-void LocalExportWorker::createDirectory_(const WorkItem& item)
-{
-    foreach(QString dirname, item.directories){
-        QString abs_dir_name=QDir(destination_.path()).absoluteFilePath(dirname);
-        QDir dir(abs_dir_name);
-        if(!dir.exists()){
-            QString dirname=dir.dirName();
-            dir.cdUp();
-            if(!dir.mkpath(dirname)){
-                error_("Error creating directory: "+dirname);
-            }
-        }
-    }
-}
-
-
-RemoteExportWorker::RemoteExportWorker(int id, QSharedPointer<ThreadSafeQueue<WorkItem> > queue, const QString &source, const QUrl &destination, const QStringList &images, Barrier<ThreadSafeQueue<WorkItem> > &b):
-    ExportWorkerBase(id,queue,source,destination,images,b),
-    sftp_session_()
+LocalExportWorker::LocalExportWorker(int id, QSharedPointer<ThreadSafeQueue<FileItem> > queue, const QString &source, const QUrl &destination, const QStringList &exported_micrographs, QFileDevice::Permissions permissions):
+    ExportWorkerBase(id,queue,source,destination,exported_micrographs,permissions)
 {
 }
 
-void RemoteExportWorker::startImpl_()
+void LocalExportWorker::copyFile_(const QString& path)
+{
+    QString abs_source_path=source_.absoluteFilePath(path);
+    QString destination_file(QDir(destination_.path()).absoluteFilePath(path));
+    if(QFile::exists(destination_file)){
+        QFile::remove(destination_file);
+    }
+    QFile source_file(path);
+    if(!source_file.copy(destination_file)){
+        error_("Error copying file: "+path);
+    }else{
+        QFile(destination_file).setPermissions(permissions_);
+        message_("Copied: "+path);
+    }
+}
+void LocalExportWorker::copyFilteredFile_(const QString& path, const QByteArray& data)
+{
+    QString destination_file(QDir(destination_.path()).absoluteFilePath(path));
+    QFile dest(destination_file);
+    if (!dest.open(QIODevice::WriteOnly | QIODevice::Text)){
+        error_("Error filering and copying file: "+path);
+    }else{
+        dest.write(data);
+        dest.setPermissions(permissions_);
+        message_("Copied and filtered: "+path);
+    }
+}
+
+void LocalExportWorker::createDirectory_(const QString& directory)
+{
+    QDir dir(directory);
+    if(!dir.exists()){
+        QString dirname=dir.dirName();
+        dir.cdUp();
+        if(!dir.mkpath(dirname)){
+            error_("Error creating directory: "+dirname);
+        }
+        QFile(directory).setPermissions(dir_permissions_);
+    }
+}
+
+
+RemoteExportWorker::RemoteExportWorker(int id, QSharedPointer<ThreadSafeQueue<FileItem> > queue, const QString &source, const QUrl &destination, const QStringList &exported_micrographs, QFileDevice::Permissions permissions, int msec_delay):
+    ExportWorkerBase(id,queue,source,destination,exported_micrographs,permissions),
+    sftp_session_(),
+    msec_delay_(msec_delay)
+{
+}
+
+
+void RemoteExportWorker::init_()
 {
     if(!busy()){
         if(!sftp_session_.isValid()){
+            QThread::msleep(msec_delay_);
             message_("Initializing connection");
             if(!sftp_session_.connect(destination_)){
                 error_("SFTP session inizialization failed");
                 return;
             }
         }
-        processNext_();
     }
-}
-
-
-void RemoteExportWorker::processNextImpl_()
-{
     busy_=true;
-    ThreadSafeQueue<WorkItem>::result_pair result=queue_->checkEmptyAndFirst();
-    if(result.first){
-        busy_=false;
-        return;
-    }
-    if(result.second.type==WorkItem::BARRIER){
-        barrier_.wait();
-    }else{
-        result=queue_->checkEmptyAndDequeue();
-        if(result.first){
-            busy_=false;
-            return;
-        }
-        WorkItem current_item=result.second;
-        switch(current_item.type){
-        case WorkItem::FILE:
-            copyFile_(current_item);
-            break;
-        case WorkItem::DIRECTORY:
-            createDirectory_(current_item);
-            break;
-        default:
-            break;
-        }
-    }
-    emit next();
 }
 
-void RemoteExportWorker::copyFile_(const WorkItem &item)
+void RemoteExportWorker::copyFile_(const QString& path)
 {
-    QString path=source_.absoluteFilePath(item.filename);
-    if(!QFileInfo(path).exists()){
-        error_(QString("Skipping missing file: %1").arg(item.filename));
-        emit next();
-        return;
-    }
-    if(QFileInfo(path).isSymLink()){
+    QString abs_source_path=source_.absoluteFilePath(path);
+    if(QFileInfo(abs_source_path).isSymLink()){
         QByteArray buffer(2048,0);
-        ssize_t len=readlink(source_.absoluteFilePath(item.filename).toLatin1().data(), buffer.data(), static_cast<size_t>(buffer.size()));
+        ssize_t len=readlink(source_.absoluteFilePath(path).toLatin1().data(), buffer.data(), static_cast<size_t>(buffer.size()));
         if(len>0){
             QString target=QString::fromLatin1(buffer.data(),len);
-            sftp_session_.createLink(QString(buffer),QDir(destination_.path()).absoluteFilePath(item.filename));
+            sftp_session_.createLink(QString(buffer),QDir(destination_.path()).absoluteFilePath(path));
         }else{
-            error_(QString("Error reading local symlink: %1").arg(item.filename));
+            error_(QString("Error reading local symlink: %1").arg(path));
         }
     }else{
-        if(item.filter){
-            QByteArray data=filter_(path);
-            QDataStream data_stream(data);
-            if(sftp_session_.writeFile(data_stream, QDir(destination_.path()).absoluteFilePath(item.filename))){
-                message_(QString("Copied and filtered file: %1").arg(QDir(destination_.path()).absoluteFilePath(item.filename)));
-            }else{
-                error_(QString("Couldn't copy and filter file: %1 (error %2)").arg(QDir(destination_.path()).absoluteFilePath(item.filename)).arg(sftp_session_.getError()));
-            }
+        if(sftp_session_.writeFile(abs_source_path, QDir(destination_.path()).absoluteFilePath(path),permissions_)){
+            message_(QString("Copied file: %1").arg(QDir(destination_.path()).absoluteFilePath(path)));
         }else{
-            if(sftp_session_.writeFile(path, QDir(destination_.path()).absoluteFilePath(item.filename))){
-                message_(QString("Copied file: %1").arg(QDir(destination_.path()).absoluteFilePath(item.filename)));
-            }else{
-                error_(QString("Couldn't copy file: %1 (error %2)").arg(QDir(destination_.path()).absoluteFilePath(item.filename)).arg(sftp_session_.getError()));
-            }
+            error_(QString("Couldn't copy file to: %1 (error %2, %3)").arg(QDir(destination_.path()).absoluteFilePath(path)).arg(sftp_session_.getError()).arg(sftp_session_.getErrorString()));
         }
     }
 }
 
-void RemoteExportWorker::createDirectory_(const WorkItem &item)
+void RemoteExportWorker::copyFilteredFile_(const QString& path, const QByteArray& data)
 {
-    QString dir_path(QDir(destination_.path()).absoluteFilePath(item.directories.first()));
-    if(!sftp_session_.isDir(dir_path)){
-        if(!sftp_session_.mkDir(dir_path)){
-            error_(QString("Couldn't create directory: %1 (error %2)").arg(dir_path).arg(sftp_session_.getError()));
-        }
-
+    QDataStream data_stream(data);
+    if(sftp_session_.writeFile(data_stream, QDir(destination_.path()).absoluteFilePath(path),permissions_)){
+        message_(QString("Copied and filtered file: %1").arg(QDir(destination_.path()).absoluteFilePath(path)));
+    }else{
+        error_(QString("Couldn't copy and filter file to: %1 (error %2, %3)").arg(QDir(destination_.path()).absoluteFilePath(path)).arg(sftp_session_.getError()).arg(sftp_session_.getErrorString()));
     }
 }
 
-ParallelExporter::ParallelExporter(const QString &source, const QUrl &destination, const QStringList& images, int num_threads, QObject *parent):
+void RemoteExportWorker::createDirectory_(const QString& directory)
+{
+    if(!sftp_session_.isDir(directory)){
+        message_(QString("Creating directory: %1").arg(directory));
+        if(!sftp_session_.mkDir(directory,dir_permissions_)){
+            error_(QString("Couldn't create directory: %1 (error %2)").arg(directory).arg(sftp_session_.getError()));
+        }
+
+    }else{
+        message_(QString("Using existing directory: %1").arg(directory));
+    }
+}
+
+ParallelExporter::ParallelExporter(const QString &source, const QUrl &destination, const QStringList& exported_micrographs, const QStringList &files, const QStringList &filtered_files, QFileDevice::Permissions permissions, int num_threads, QObject *parent):
     QObject(parent),
     source_(source),
     destination_(destination),
-    images_(images),
+    exported_micrographs_(exported_micrographs),
     num_threads_(num_threads),
-    queue_(new ThreadSafeQueue<WorkItem>()),
+    queue_(new ThreadSafeQueue<FileItem>()),
+    directories_(),
     started_(false),
     workers_(),
     message_timer_(),
-    barrier_(queue_.data(),num_threads),
     export_progress_dialog_(new ExportProgressDialog())
 {
+    QList<FileItem> file_items;
+    //generate directories to create at destination
+    QHash<QString,QSet<QString>> directory_hash;
+    foreach(QString f,files+filtered_files){
+        QString path=QFileInfo(f).path();
+        if(path=="."){
+            continue;
+        }
+        QStringList splitted_path=path.split("/",Qt::SkipEmptyParts);
+        if(!directory_hash.contains(splitted_path[0])){
+            directory_hash.insert(splitted_path[0],QSet<QString>());
+        }
+        for(int i=1;i<=splitted_path.size();++i){
+            directory_hash[splitted_path[0]].insert(splitted_path.mid(0,i).join("/"));
+        }
+    }
+    if(!directory_hash.empty()){
+        foreach(QString key,directory_hash.keys()){
+            QStringList dir_paths=directory_hash[key].values();
+            std::sort(dir_paths.begin(),dir_paths.end());
+            directories_.append(dir_paths);
+        }
+    }
+    // create file queue
+    foreach(QString f,files){
+        file_items.append(FileItem(f,false));
+    }
+    foreach(QString f,filtered_files){
+        file_items.append(FileItem(f,true));
+    }
+    queue_->append(file_items);
+    //setup worker threads
     for(int i=0;i<num_threads_ ;++i){
         QThread* thread = new QThread();
         ExportWorkerBase* w;
         if(destination.isLocalFile()){
-            w=new LocalExportWorker(i+1, queue_,source, destination, images,barrier_);
+            w=new LocalExportWorker(i+1, queue_,source, destination, exported_micrographs,permissions);
         }else{
-            w=new RemoteExportWorker(i+1, queue_,source, destination, images,barrier_);
+            w=new RemoteExportWorker(i+1, queue_,source, destination, exported_micrographs,permissions, i*20);
         }
         workers_.append(w);
         w->moveToThread(thread);
-        connect(this,&ParallelExporter::newFiles,w,&ExportWorkerBase::startExport);
+        if(i==0){
+            connect(this,&ParallelExporter::createDirectories,w,&ExportWorkerBase::createDirectories);
+            connect(w,&ExportWorkerBase::directoriesCreated,this,&ParallelExporter::directoriesCreated);
+        }
+        connect(this,&ParallelExporter::copyFiles,w,&ExportWorkerBase::copyFile);
         // Proper connect sequence crucial here
         // See https://mayaposch.wordpress.com/2011/11/01/how-to-really-truly-use-qthreads-the-full-explanation/ for details
         connect(this,&ParallelExporter::deleteThreads,thread,&QThread::quit);
@@ -347,44 +354,6 @@ ParallelExporter::~ParallelExporter()
     emit deleteThreads();
 }
 
-void ParallelExporter::addImages(const QStringList &files, bool filter)
-{
-    QList<WorkItem> work_items;
-    QHash<QString,QSet<QString>> directories;
-    foreach(QString f,files){
-        QString path=QFileInfo(f).path();
-        if(path=="."){
-            continue;
-        }
-        QStringList splitted_path=path.split("/",Qt::SkipEmptyParts);
-        if(!directories.contains(splitted_path[0])){
-            directories.insert(splitted_path[0],QSet<QString>());
-        }
-        for(int i=1;i<=splitted_path.size();++i){
-            directories[splitted_path[0]].insert(splitted_path.mid(0,i).join("/"));
-        }
-    }
-    if(!directories.empty()){
-        work_items.append(WorkItem::createBarrier());
-        foreach(QString key,directories.keys()){
-            QList<QString> dir_paths=directories[key].values();
-            std::sort(dir_paths.begin(),dir_paths.end());
-            work_items.append(WorkItem::createDirectory(dir_paths));
-        }
-        work_items.append(WorkItem::createBarrier());
-    }
-    foreach(QString f,files){
-        if(filter){
-            work_items.append(WorkItem::createFile(f,true));
-        }else{
-            work_items.append(WorkItem::createFile(f,false));
-        }
-    }
-    queue_->append(work_items);
-    if(started_){
-        emit newFiles();
-    }
-}
 
 QUrl ParallelExporter::destination() const
 {
@@ -399,7 +368,6 @@ int ParallelExporter::numFiles() const
 void ParallelExporter::cancel()
 {
     queue_->clear();
-    barrier_.release();
     emit finished();
 }
 
@@ -407,7 +375,7 @@ void ParallelExporter::start()
 {
     started_=true;
     export_progress_dialog_->start(destination().toString(QUrl::RemovePassword),numFiles());
-    emit newFiles();
+    emit createDirectories(directories_);
 }
 
 void ParallelExporter::getMessages()
@@ -421,11 +389,17 @@ void ParallelExporter::getMessages()
         }
         messages.append(w->messages());
     }
+    std::sort(messages.begin(),messages.end());
     export_progress_dialog_->update(messages,left+n_busy);
     if(left==0 && n_busy==0){
         export_progress_dialog_->finish();
         emit finished();
     }
+}
+
+void ParallelExporter::directoriesCreated()
+{
+    emit copyFiles();
 }
 
 

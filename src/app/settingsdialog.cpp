@@ -117,6 +117,24 @@ void save_to_settings(SETTINGS* settings, Ui::SettingsDialog* ui){
     }
     settings->setValue("export_num_processes", ui->export_num_processes->value());
     settings->setValue("report_template",ui->report_template->path());
+    settings->setValue("data_ur", ui->data_ur->isChecked());
+    settings->setValue("data_uw", ui->data_uw->isChecked());
+    settings->setValue("data_ux", ui->data_ux->isChecked());
+    settings->setValue("data_gr", ui->data_gr->isChecked());
+    settings->setValue("data_gw", ui->data_gw->isChecked());
+    settings->setValue("data_gx", ui->data_gx->isChecked());
+    settings->setValue("data_or", ui->data_or->isChecked());
+    settings->setValue("data_ow", ui->data_ow->isChecked());
+    settings->setValue("data_ox", ui->data_ox->isChecked());
+    settings->setValue("raw_data_ur", ui->raw_data_ur->isChecked());
+    settings->setValue("raw_data_uw", ui->raw_data_uw->isChecked());
+    settings->setValue("raw_data_ux", ui->raw_data_ux->isChecked());
+    settings->setValue("raw_data_gr", ui->raw_data_gr->isChecked());
+    settings->setValue("raw_data_gw", ui->raw_data_gw->isChecked());
+    settings->setValue("raw_data_gx", ui->raw_data_gx->isChecked());
+    settings->setValue("raw_data_or", ui->raw_data_or->isChecked());
+    settings->setValue("raw_data_ow", ui->raw_data_ow->isChecked());
+    settings->setValue("raw_data_ox", ui->raw_data_ox->isChecked());
     settings->beginGroup("Tasks");
     settings->remove("");
     save_task(settings,ui->task_tree->invisibleRootItem());
@@ -149,6 +167,25 @@ void load_from_settings(SETTINGS* settings, Ui::SettingsDialog* ui){
     }
     ui->export_num_processes->setValue(settings->value("export_num_processes").toInt());
     ui->report_template->setPath(settings->value("report_template").toString());
+    //file permissions during export
+    ui->data_ur->setChecked(settings->value("data_ur").toBool());
+    ui->data_uw->setChecked(settings->value("data_uw").toBool());
+    ui->data_ux->setChecked(settings->value("data_ux").toBool());
+    ui->data_gr->setChecked(settings->value("data_gr").toBool());
+    ui->data_gw->setChecked(settings->value("data_gw").toBool());
+    ui->data_gx->setChecked(settings->value("data_gx").toBool());
+    ui->data_or->setChecked(settings->value("data_or").toBool());
+    ui->data_ow->setChecked(settings->value("data_ow").toBool());
+    ui->data_ox->setChecked(settings->value("data_ox").toBool());
+    ui->raw_data_ur->setChecked(settings->value("raw_data_ur").toBool());
+    ui->raw_data_uw->setChecked(settings->value("raw_data_uw").toBool());
+    ui->raw_data_ux->setChecked(settings->value("raw_data_ux").toBool());
+    ui->raw_data_gr->setChecked(settings->value("raw_data_gr").toBool());
+    ui->raw_data_gw->setChecked(settings->value("raw_data_gw").toBool());
+    ui->raw_data_gx->setChecked(settings->value("raw_data_gx").toBool());
+    ui->raw_data_or->setChecked(settings->value("raw_data_or").toBool());
+    ui->raw_data_ow->setChecked(settings->value("raw_data_ow").toBool());
+    ui->raw_data_ox->setChecked(settings->value("raw_data_ox").toBool());
     settings->beginGroup("Tasks");
     ui->task_tree->clear();
     load_task(settings,ui->task_tree->invisibleRootItem());
