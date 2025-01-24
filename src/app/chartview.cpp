@@ -26,7 +26,6 @@
 #include <QPushButton>
 #include <QTimer>
 #include <QValueAxis>
-#include <QOpenGLWidget>
 
 ChartView::ChartView(QWidget *parent):
     QtCharts::QChartView(parent),
@@ -39,7 +38,6 @@ ChartView::ChartView(QWidget *parent):
     rubberband_(new QRubberBand(QRubberBand::Rectangle,this)),
     timer_(new QTimer(this))
 {
-    setViewport(new QOpenGLWidget);
     QIcon icon;
     icon.addFile(":/icons/fit-to-window.png",QSize(),QIcon::Normal,QIcon::On);
     icon.addFile(":/icons/fit-to-window-inactive.png",QSize(),QIcon::Normal,QIcon::Off);
