@@ -162,6 +162,7 @@ ParsedData readEPUMicrographXML(const QFileInfo &info, const QString& project_di
     QString avg_s_path= info.absoluteDir().absolutePath();
     QString relative_path=QDir(project_dir).relativeFilePath(avg_s_path);
     QString stack_s_path=QString("%1/%2").arg(movie_dir).arg(relative_path);
+    result.insert("movie_dir",movie_dir);
     result.insert("destination_path",QDir::currentPath());
     result.insert("stack_source_path",stack_s_path);
     result.insert("avg_source_path",avg_s_path);
