@@ -30,12 +30,12 @@
 #include <QFileInfo>
 #include <QGraphicsLayout>
 #include <QGroupBox>
-#include <QImageReader>
 #include <QLabel>
 #include <QLineEdit>
 #include <QLineSeries>
 #include <QMenu>
 #include <QPicture>
+#include <QImage>
 #include <QSpinBox>
 #include <QCheckBox>
 #include <QMenuBar>
@@ -242,19 +242,11 @@ void MicrographsForm::updateDetails_()
             }
             if(static_cast<VariableType>(type.toInt())==Image){
                 QString path=data.value(label.toString()).toString();
-                QPicture p;
                 if(! path.isEmpty() && QFileInfo::exists(path)){
-                    QImageReader reader(path);
-                    QSize image_size=reader.size();
-                    double scalefactor=std::min(512.0/image_size.width(),512.0/image_size.height());
-                    int reduced_x=static_cast<int>(scalefactor*image_size.width());
-                    int reduced_y=static_cast<int>(scalefactor*image_size.height());
-                    reader.setScaledSize(QSize(reduced_x,reduced_y));
-                    QImage image=reader.read();
-                    QPainter painter(&p);
-                    painter.drawImage(QRect(QPoint((512-reduced_x)/2,(512-reduced_x/2)),QSize(reduced_x,reduced_y)), image, QRect(QPoint(0,0),QSize(reduced_x,reduced_y)));
+                    qlabel->setPixmap(QPixmap(path).scaled(QSize(512,512),Qt::KeepAspectRatio,Qt::SmoothTransformation));
+                }else{
+                    qlabel->setPixmap(QPixmap());
                 }
-                qlabel->setPicture(p);
             }else if(static_cast<VariableType>(type.toInt())==Bool || static_cast<VariableType>(type.toInt())==String || static_cast<VariableType>(type.toInt())==Float || static_cast<VariableType>(type.toInt())==Int){
                 qlabel->setText(data.value(label.toString()).toString());
             }
@@ -373,8 +365,6 @@ void MicrographsForm::updateTaskWidget_(Settings *settings, QFormLayout *parent_
                     case Image:
                         output_layout->addRow(new QLabel(iov.key));
                         label->setFixedSize(512,512);
-                        QPicture p;
-                        label->setPicture(p);
                         output_layout->addRow(label);
                         break;
                 }
