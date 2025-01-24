@@ -198,7 +198,7 @@ RESOURCES += \
 
 DISTFILES += \
     license_header.txt \
-    git_versio.sh
+    git_version.sh
 
 
 # debug flags for address sanitizer
