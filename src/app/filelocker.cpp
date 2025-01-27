@@ -105,7 +105,7 @@ int FileLocker::getLockOwner()
     QString line;
     do {
         line = in.readLine();
-        QStringList sp=line.split(" ",QString::SkipEmptyParts);
+        QStringList sp=line.split(" ",Qt::SkipEmptyParts);
         if(sp.size()<6){
             continue;
         }

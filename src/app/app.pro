@@ -26,8 +26,6 @@ greaterThan(QT_MAJOR_VERSION, 5): QT += widgets
 TARGET = cryoflare
 TEMPLATE = app
 PRE_TARGETDEPS += ../mrcio/libmrcio.a
-PRE_TARGETDEPS += ../external/botan2/libbotan2.a
-PRE_TARGETDEPS += ../external/qssh/libqssh.a
 CONFIG(debug, debug|release) {
     PRE_TARGETDEPS += ../external/limereport/3rdparty/libQtZintd.a
     PRE_TARGETDEPS += ../external/limereport/limereport/liblimereportd.a
@@ -53,8 +51,10 @@ SOURCES += \
     mainwindow.cpp \
     filesystemwatcher.cpp \
     filesystemwatcherimpl.cpp \
-    epuimageinfo.cpp \
     processwrapper.cpp \
+    sftpfilesystemmodel.cpp \
+    sftpsession.cpp \
+    sshsession.cpp \
     task.cpp \
     imagetablemodel.cpp \
     tasktreewidgetitem.cpp \
@@ -77,14 +77,10 @@ SOURCES += \
     remotefiledialog.cpp \
     remotepathedit.cpp \
     exportprogressdialog.cpp \
-    sshauthenticationdialog.cpp \
-    sshauthenticationstore.cpp \
-    sftpurl.cpp \
     diskusagewidget.cpp \
     lastimagetimer.cpp \
     metadatastore.cpp \
     datasourcebase.cpp \
-    epudatasource.cpp \
     collection.cpp \
     collectionstartingcondition.cpp \
     collectiondefinition.cpp \
@@ -115,8 +111,10 @@ HEADERS  += \
     mainwindow.h \
     filesystemwatcher.h \
     filesystemwatcherimpl.h \
-    epuimageinfo.h \
     processwrapper.h \
+    sftpfilesystemmodel.h \
+    sftpsession.h \
+    sshsession.h \
     task.h \
     imagetablemodel.h \
     pathedit.h \
@@ -140,14 +138,10 @@ HEADERS  += \
     remotefiledialog.h \
     remotepathedit.h \
     exportprogressdialog.h \
-    sshauthenticationdialog.h \
-    sshauthenticationstore.h \
-    sftpurl.h \
     diskusagewidget.h \
     lastimagetimer.h \
     metadatastore.h \
     datasourcebase.h \
-    epudatasource.h \
     collection.h \
     collectionstartingcondition.h \
     collectiondefinition.h \
@@ -179,14 +173,11 @@ FORMS    += \
     exportdialog.ui \
     remotefiledialog.ui \
     exportprogressdialog.ui \
-    sshauthenticationdialog.ui \
     micrographsform.ui \
     gridsquareform.ui \
     datachartform.ui
 
 LIBS += ../mrcio/libmrcio.a
-LIBS += ../external/qssh/libqssh.a
-LIBS += ../external/botan2/libbotan2.a
 CONFIG(debug, debug|release) {
     LIBS += ../external/limereport/limereport/liblimereportd.a
     LIBS += ../external/limereport/3rdparty/libQtZintd.a
@@ -195,6 +186,7 @@ CONFIG(debug, debug|release) {
     LIBS += ../external/limereport/3rdparty/libQtZint.a
 }
 LIBS += -ldl
+LIBS += -lssh
 CONFIG += static
 static {
     DEFINES += STATIC
@@ -206,7 +198,7 @@ RESOURCES += \
 
 DISTFILES += \
     license_header.txt \
-    git_versio.sh
+    git_version.sh
 
 
 # debug flags for address sanitizer

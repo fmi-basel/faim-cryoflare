@@ -49,13 +49,11 @@ PhasePlateChart::PhasePlateChart(QWidget *parent):
     int num_rows=4;
     int num_columns=19;
     qreal pos_size=0.1;
-    qreal post_dist=0.12;
     QPainterPath phase_plate_pos_path;
     phase_plate_pos_path.addEllipse(-pos_size*0.5,-pos_size*0.5,pos_size,pos_size);
     for(int row=0;row<num_rows;++row){
         for(int column=0;column<num_columns;++column){
-            QGraphicsPathItem *item=dynamic_cast<QGraphicsPathItem*>(scene_.addPath(phase_plate_pos_path));
-
+            scene_.addPath(phase_plate_pos_path);
         }
     }
 }

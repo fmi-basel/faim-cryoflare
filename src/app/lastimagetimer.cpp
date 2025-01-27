@@ -23,7 +23,7 @@
 
 LastImageTimer::LastImageTimer():
     timer_(),
-    time_()
+    elapsed_timer_()
 {
     setText("");
     connect(&timer_,&QTimer::timeout,this,&LastImageTimer::update_);
@@ -32,7 +32,7 @@ LastImageTimer::LastImageTimer():
 void LastImageTimer::reset()
 {
     timer_.start(1000);
-    time_.start();
+    elapsed_timer_.start();
 }
 
 void LastImageTimer::stop()
@@ -43,6 +43,6 @@ void LastImageTimer::stop()
 
 void LastImageTimer::update_()
 {
-    setText(QString("%1s since last image").arg(time_.elapsed()/1000));
+    setText(QString("%1s since last image").arg(elapsed_timer_.elapsed()/1000));
 }
 

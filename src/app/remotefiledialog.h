@@ -24,13 +24,10 @@
 
 #include <QDialog>
 #include <QSortFilterProxyModel>
-#include <sftpurl.h>
+#include <QUrl>
 
 //fw decl
-namespace QSsh {
-class SftpFileSystemModel;
-} //ns Qssh
-
+class SFTPFileSystemModel;
 namespace Ui {
 class RemoteFileDialog;
 }
@@ -40,28 +37,17 @@ class RemoteFileDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit RemoteFileDialog(const SftpUrl& remote_path=SftpUrl(),QWidget *parent = nullptr);
-    SftpUrl remotePath() const;
-    static SftpUrl getRemotePath(const SftpUrl& path );
+    explicit RemoteFileDialog(const QUrl& remote_path=QUrl(),QWidget *parent = nullptr);
+    QUrl remotePath() const;
+    static QUrl getRemotePath(const QUrl& path );
     ~RemoteFileDialog();
 public slots:
-    void connectToHost(bool con);
-    void onConnectionEstablished();
-    void onConnectionError(const QString &error);
-protected slots:
-    void modelReady_();
+    void connect(bool con);
 private:
-    void initSftpFileSystemModel_();
-    void tryNextAuth_();
-    void disconnect_();
     Ui::RemoteFileDialog *ui;
-    QSsh::SftpFileSystemModel* model_;
+    SFTPFileSystemModel* model_;
     QSortFilterProxyModel* proxy_;
-    SftpUrl remote_path_;
-    QStringList initial_path_;
-    QModelIndex initial_idx_;
-    QStringList default_keys_;
-    bool stored_connection_;
+    QUrl remote_path_;
 };
 
 #endif // REMOTEFILEDIALOG_H

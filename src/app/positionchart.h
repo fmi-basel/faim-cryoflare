@@ -26,6 +26,7 @@
 #include<QGraphicsScene>
 #include <QGradient>
 #include<QVector>
+#include<QPainterPath>
 
 class PositionChart : public QGraphicsScene
 {

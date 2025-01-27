@@ -34,23 +34,23 @@ RemotePathEdit::RemotePathEdit(QWidget *parent):
     layout()->addWidget(remote_browse_);
     remote_browse_->setToolTip("Browse remote folder");
     connect(remote_browse_, &QPushButton::clicked,this,&RemotePathEdit::onRemoteBrowse);
-    connect(path_widget_,&QLineEdit::textChanged,this,&RemotePathEdit::updateUrl);
+    connect(path_widget_,&QLineEdit::textEdited,this,&RemotePathEdit::updateUrl);
 }
 
-SftpUrl RemotePathEdit::remotePath() const
+QUrl RemotePathEdit::remotePath() const
 {
     return remote_path_;
 }
 
-void RemotePathEdit::setRemotePath(const SftpUrl &path)
+void RemotePathEdit::setRemotePath(const QUrl &path)
 {
     remote_path_=path;
-    path_widget_->setText(path.toString(QUrl::RemovePassword));
+    path_widget_->setText(path.toString(QUrl::RemovePassword|QUrl::PreferLocalFile|QUrl::NormalizePathSegments));
 }
 
 void RemotePathEdit::onRemoteBrowse()
 {
-    // todo implement path_types for remote locations ( probably in SftpFilesystemModel)
+    // todo implement path_types for remote locations ( probably in SFTPFilesystemModel)
     switch(path_type_){
     case ExistingDirectory:
         break;
@@ -60,26 +60,22 @@ void RemotePathEdit::onRemoteBrowse()
         break;
     }
 
-
-    SftpUrl new_path=RemoteFileDialog::getRemotePath(remote_path_);
+    QUrl sanitized_path=remote_path_;
+    sanitized_path.setScheme("sftp");
+    if(sanitized_path.port()==-1){
+        sanitized_path.setPort(22);
+    }
+    QUrl new_path=RemoteFileDialog::getRemotePath(sanitized_path);
     if(new_path.isValid()){
-        path_widget_->setText(new_path.toString(QUrl::RemovePassword));
-        remote_path_=new_path;
+        setRemotePath(new_path);
     }
 
 }
 
 void RemotePathEdit::updateUrl(const QString &text)
 {
-    SftpUrl new_url=QUrl::fromUserInput(text);
+    QUrl new_url=QUrl::fromUserInput(text);
     if(new_url.isValid()){
-        if( !new_url.isLocalFile()){
-            if(remote_path_.authType()==QSsh::SshConnectionParameters::AuthenticationByPassword){
-                new_url.setPassword(remote_path_.password());
-            }else{
-                new_url.setKey(remote_path_.key());
-            }
-        }
         remote_path_=new_url;
     }
 }

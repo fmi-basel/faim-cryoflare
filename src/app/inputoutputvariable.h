@@ -35,7 +35,7 @@ public:
         SUM_SUMMARY,
         AVG_SUMMARY
     };
-    InputOutputVariable(const QString& key_="name", const QString &label_="variable",const VariableType& type_=String, bool in_column_=false,SummaryType summary_type_=NO_SUMMARY):
+    InputOutputVariable(const QString& key_="name", const QString &label_="variable",VariableType type_=String, bool in_column_=false,SummaryType summary_type_=NO_SUMMARY):
         key(key_),
         label(label_),
         type(type_),

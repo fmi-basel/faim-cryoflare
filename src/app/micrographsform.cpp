@@ -30,16 +30,15 @@
 #include <QFileInfo>
 #include <QGraphicsLayout>
 #include <QGroupBox>
-#include <QImageReader>
 #include <QLabel>
 #include <QLineEdit>
 #include <QLineSeries>
 #include <QMenu>
 #include <QPicture>
+#include <QImage>
 #include <QSpinBox>
 #include <QCheckBox>
 #include <QMenuBar>
-#include <cmath>
 MicrographsForm::MicrographsForm(QMainWindow *parent) :
     QWidget(parent),
     ui(new Ui::MicrographsForm),
@@ -69,20 +68,20 @@ MicrographsForm::MicrographsForm(QMainWindow *parent) :
     ui->image_list_summary->setSibling(ui->image_list);
     ui->image_list_summary->setStyleSheet("QHeaderView::section { padding-left: 1 px}");
     ui->image_list->horizontalHeader()->setStyleSheet("QHeaderView::section { padding-left:  8 px}");
-    ui->linear_chart->setRenderHints(QPainter::HighQualityAntialiasing|QPainter::TextAntialiasing|QPainter::SmoothPixmapTransform|QPainter::Antialiasing);
+    ui->linear_chart->setRenderHints(QPainter::TextAntialiasing|QPainter::SmoothPixmapTransform|QPainter::Antialiasing);
     ui->linear_chart->setOptimizationFlag(QGraphicsView::DontSavePainterState);
     ui->linear_chart->setOptimizationFlag(QGraphicsView::DontAdjustForAntialiasing);
-    ui->histogram->setRenderHints(QPainter::HighQualityAntialiasing|QPainter::TextAntialiasing|QPainter::SmoothPixmapTransform|QPainter::Antialiasing);
+    ui->histogram->setRenderHints(QPainter::TextAntialiasing|QPainter::SmoothPixmapTransform|QPainter::Antialiasing);
     ui->histogram->setOptimizationFlag(QGraphicsView::DontSavePainterState);
     ui->histogram->setOptimizationFlag(QGraphicsView::DontAdjustForAntialiasing);
     connect(ui->linear_chart, &LinearChartView::indexClicked,ui->image_list , &ImageTableView::jumpToMicrograph);
     
     micrograph_menu_->addAction(ui->image_list->selectAllAction());
-    micrograph_menu_->addAction(ui->image_list->unselectAllAction());
+    micrograph_menu_->addAction(ui->image_list->deselectAllAction());
     micrograph_menu_->addAction(ui->image_list->selectAboveAction());
-    micrograph_menu_->addAction(ui->image_list->unselectAboveAction());
+    micrograph_menu_->addAction(ui->image_list->deselectAboveAction());
     micrograph_menu_->addAction(ui->image_list->selectBelowAction());
-    micrograph_menu_->addAction(ui->image_list->unselectBelowAction());
+    micrograph_menu_->addAction(ui->image_list->deselectBelowAction());
     micrograph_menu_->addAction(ui->image_list->invertSelectionAction());
     micrograph_menu_->addSeparator();
     QAction* reprocess_all=new QAction("Reprocess all images",this);
@@ -243,19 +242,11 @@ void MicrographsForm::updateDetails_()
             }
             if(static_cast<VariableType>(type.toInt())==Image){
                 QString path=data.value(label.toString()).toString();
-                QPicture p;
                 if(! path.isEmpty() && QFileInfo::exists(path)){
-                    QImageReader reader(path);
-                    QSize image_size=reader.size();
-                    double scalefactor=std::min(512.0/image_size.width(),512.0/image_size.height());
-                    int reduced_x=static_cast<int>(scalefactor*image_size.width());
-                    int reduced_y=static_cast<int>(scalefactor*image_size.height());
-                    reader.setScaledSize(QSize(reduced_x,reduced_y));
-                    QImage image=reader.read();
-                    QPainter painter(&p);
-                    painter.drawImage(QRect(QPoint((512-reduced_x)/2,(512-reduced_x/2)),QSize(reduced_x,reduced_y)), image, QRect(QPoint(0,0),QSize(reduced_x,reduced_y)));
+                    qlabel->setPixmap(QPixmap(path).scaled(QSize(512,512),Qt::KeepAspectRatio,Qt::SmoothTransformation));
+                }else{
+                    qlabel->setPixmap(QPixmap());
                 }
-                qlabel->setPicture(p);
             }else if(static_cast<VariableType>(type.toInt())==Bool || static_cast<VariableType>(type.toInt())==String || static_cast<VariableType>(type.toInt())==Float || static_cast<VariableType>(type.toInt())==Int){
                 qlabel->setText(data.value(label.toString()).toString());
             }
@@ -303,7 +294,6 @@ void MicrographsForm::updateTaskWidget_(Settings *settings, QFormLayout *parent_
                     script_input_settings.setValue(settings_key,"");
                     script_input_settings.saveToFile(CRYOFLARE_INI, QStringList(), QStringList() << settings_key);
                 }
-                local_widget=le_widget;
                 connect(le_widget,&PathEdit::pathChanged,this,&MicrographsForm::inputDataChanged);
                 le_widget->setPath(script_input_settings.value(settings_key).toString());
                 local_widget=le_widget;
@@ -375,8 +365,6 @@ void MicrographsForm::updateTaskWidget_(Settings *settings, QFormLayout *parent_
                     case Image:
                         output_layout->addRow(new QLabel(iov.key));
                         label->setFixedSize(512,512);
-                        QPicture p;
-                        label->setPicture(p);
                         output_layout->addRow(label);
                         break;
                 }
@@ -558,17 +546,19 @@ void MicrographsForm::phasePlateSelectionFinished(QRect rubberBandRect, QPointF 
         foreach(QGraphicsItem * item,items){
             ids.insert(item->toolTip());
         }
+        QSet<QString> ids_to_update;
         foreach(QString id, meta_data_store_->selectedMicrographIDs() ){
             Data data=meta_data_store_->micrograph(id);
             if(invert){
                 if(ids.contains(data.value(tag).toString())){
-                    meta_data_store_->setMicrographExport(id,false);
+                    ids_to_update.insert(id);
                 }
             }else{
                 if(!ids.contains(data.value(tag).toString())){
-                    meta_data_store_->setMicrographExport(id,false);
+                    ids_to_update.insert(id);
                 }
             }
         }
+        meta_data_store_->setMicrographsExport(ids_to_update,false);
     }
 }

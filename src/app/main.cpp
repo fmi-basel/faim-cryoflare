@@ -33,7 +33,6 @@
 #include  "settings.h"
 #include "filelocker.h"
 #include "metadatastore.h"
-#include "epudatasource.h"
 #include "flatfolderdatasource.h"
 #include "task.h"
 

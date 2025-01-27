@@ -60,12 +60,14 @@ private:
     void handleFailure_();
     void writeLog_(const QString& text);
     void writeErrorLog_(const QString& text);
+    static QProcessEnvironment getProcessEnvironment_();
     QProcess *process_;
     TaskPtr task_;
     int timeout_;
     int gpu_id_;
     QTimer* timeout_timer_;
     MetaDataStore* meta_data_store_;
+    static QProcessEnvironment process_environment_;
 
 };
 

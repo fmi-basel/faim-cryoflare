@@ -15,7 +15,7 @@
  ***************************************************************************/
 
 #include "qzint.h"
-#include <stdio.h>
+#include <QPainterPath>
 
 Zint::QZint* createWidget() {
      Zint::QZint *z = new  Zint::QZint();

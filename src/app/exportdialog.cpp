@@ -22,14 +22,13 @@
 #include <QListWidget>
 #include <QMessageBox>
 #include "exportdialog.h"
+#include <QInputDialog>
+#include "sshsession.h"
 #include "ui_exportdialog.h"
-#include "remotefiledialog.h"
-#include "sshauthenticationdialog.h"
 
 ExportDialog::ExportDialog(const QStringList &raw_keys, const QStringList &output_keys,const QStringList& shared_raw_keys, const QStringList &shared_keys, QWidget *parent) :
     QDialog(parent),
-    ui(new Ui::ExportDialog),
-    connection_(nullptr)
+    ui(new Ui::ExportDialog)
 {
     ui->setupUi(this);
     ui->data_path->setPathType(PathEdit::ExistingDirectory);
@@ -49,12 +48,12 @@ ExportDialog::~ExportDialog()
     delete ui;
 }
 
-SftpUrl ExportDialog::destinationPath() const
+QUrl ExportDialog::destinationPath() const
 {
     return ui->data_path->remotePath();
 }
 
-SftpUrl ExportDialog::rawDestinationPath() const
+QUrl ExportDialog::rawDestinationPath() const
 {
     if(ui->separate_raw_path->isChecked()){
         return ui->raw_data_path->remotePath();
@@ -63,12 +62,12 @@ SftpUrl ExportDialog::rawDestinationPath() const
     }
 }
 
-void ExportDialog::setDestinationPath(const SftpUrl &url)
+void ExportDialog::setDestinationPath(const QUrl &url)
 {
     ui->data_path->setRemotePath(url);
 }
 
-void ExportDialog::setRawDestinationPath(const SftpUrl &url)
+void ExportDialog::setRawDestinationPath(const QUrl &url)
 {
     ui->raw_data_path->setRemotePath(url);
 }
@@ -92,6 +91,17 @@ void ExportDialog::setDuplicateRaw(bool f)
 {
     ui->duplicate_raw->setChecked(f);
 }
+
+bool ExportDialog::exportReportMetadata() const
+{
+    return ui->export_report_metadata->isChecked();
+}
+
+void ExportDialog::setExportReportMetadata(bool f)
+{
+    ui->export_report_metadata->setChecked(f);
+}
+
 
 QStringList ExportDialog::selectedOutputKeys() const
 {
@@ -131,77 +141,22 @@ QStringList ExportDialog::selectedSharedRawKeys() const
 
 void ExportDialog::verifyDestinations()
 {
-    if(destinationPath().isLocalFile()){
-        destinationVerified();
-    }else{
-        connection_=new QSsh::SshConnection(destinationPath().toConnectionParameters(),this);
-        connect(connection_,&QSsh::SshConnection::connected,this,&ExportDialog::destinationVerified);
-        connect(connection_,&QSsh::SshConnection::error,this,&ExportDialog::destinationVerificationError);
-        connection_->connectToHost();
-    }
-}
-
-void ExportDialog::destinationVerified()
-{
-    if(separateRawPath()){
-        if(rawDestinationPath().isLocalFile()){
-            accept();
+    if(!destinationPath().isLocalFile()){
+        SSHSession session=SSHSession::createAuthenticatedSession(destinationPath());
+        if(session.isConnected()){
+            setDestinationPath(session.getUrl());
         }else{
-            connection_->deleteLater();
-            connection_=new QSsh::SshConnection(rawDestinationPath().toConnectionParameters(),this);
-            connect(connection_,&QSsh::SshConnection::connected,this,&ExportDialog::accept);
-            connect(connection_,&QSsh::SshConnection::error,this,&ExportDialog::rawDestinationVerificationError);
-            connection_->connectToHost();
+            return;
         }
-    }else{
-        accept();
     }
-
-}
-
-void ExportDialog::destinationVerificationError(QSsh::SshError e)
-{
-    SftpUrl dest=destinationPath();
-    if(e==QSsh::SshError::SshAuthenticationError){
-        SshAuthenticationDialog::auth_type auth=SshAuthenticationDialog::getSshAuthentication(QString("Authentication for: %1").arg(dest.toString(QUrl::RemovePassword)));
-        if(auth.second!=""){
-            dest.setAuthType(auth.first);
-            if(auth.first==QSsh::SshConnectionParameters::AuthenticationByPassword){
-                dest.setPassword(auth.second);
-            }else{
-                dest.setKey(auth.second);
-            }
-            setDestinationPath(dest);
-            verifyDestinations();
+    if(separateRawPath() && !rawDestinationPath().isLocalFile()){
+        SSHSession session=SSHSession::createAuthenticatedSession(rawDestinationPath());
+        if(session.isConnected()){
+            setRawDestinationPath(session.getUrl());
+        }else{
+            return;
         }
-    }else{
-        QMessageBox message_box;
-        message_box.setIcon(QMessageBox::Critical);
-        message_box.setText(QString("Error connecting to %1: %2").arg(dest.toString(QUrl::RemovePassword)).arg(connection_->errorString()));
-        message_box.exec();
     }
-}
-
-void ExportDialog::rawDestinationVerificationError(QSsh::SshError e)
-{
-    SftpUrl raw_dest=rawDestinationPath();
-    if(e==QSsh::SshError::SshAuthenticationError){
-        SshAuthenticationDialog::auth_type auth=SshAuthenticationDialog::getSshAuthentication(QString("Authentication for: %1").arg(raw_dest.toString(QUrl::RemovePassword)));
-        if(auth.second!=""){
-            raw_dest.setAuthType(auth.first);
-            if(auth.first==QSsh::SshConnectionParameters::AuthenticationByPassword){
-                raw_dest.setPassword(auth.second);
-            }else{
-                raw_dest.setKey(auth.second);
-            }
-            setRawDestinationPath(raw_dest);
-            verifyDestinations();
-        }
-    }else{
-        QMessageBox message_box;
-        message_box.setIcon(QMessageBox::Critical);
-        message_box.setText(QString("Error connecting to %1: %2").arg(raw_dest.toString(QUrl::RemovePassword)).arg(connection_->errorString()));
-        message_box.exec();
-    }
+    accept();
 }
 

@@ -27,7 +27,6 @@
 #include "metadatastore.h"
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include "epuimageinfo.h"
 #include "pathedit.h"
 #include <QtDebug>
 #include <QFileDialog>
@@ -155,7 +154,7 @@ void MainWindow::onMoviePathChanged(const QString &/*dir*/)
 
 void MainWindow::onSettings()
 {
-    SettingsDialog settings_dialog(task_configuration_, this);
+    SettingsDialog settings_dialog(meta_data_store_,task_configuration_, this);
     if (QDialog::Accepted==settings_dialog.exec()){
         settings_dialog.saveSettings();
         Settings settings;
@@ -168,8 +167,9 @@ void MainWindow::onSettings()
 void MainWindow::onExport()
 {
     Settings settings;
-    ExportDialog dialog(meta_data_store_->rawKeys().toList(),meta_data_store_->outputKeys().toList(),meta_data_store_->sharedRawKeys().toList(),meta_data_store_->sharedKeys().toList());
+    ExportDialog dialog(meta_data_store_->rawKeys().values(),meta_data_store_->outputKeys().values(),meta_data_store_->sharedRawKeys().values(),meta_data_store_->sharedKeys().values());
     dialog.setDuplicateRaw(settings.value("duplicate_raw_export").toBool());
+    dialog.setExportReportMetadata(settings.value("export_report_metadata").toBool());
     dialog.setSeparateRawPath(settings.value("separate_raw_export").toBool());
     dialog.setDestinationPath(QUrl::fromUserInput(settings.value("export_path").toString()));
     if(settings.value("separate_raw_export").toBool()){
@@ -179,11 +179,12 @@ void MainWindow::onExport()
         settings.setValue("export_path",dialog.destinationPath().toString(QUrl::RemovePassword));
         settings.setValue("separate_raw_export",dialog.separateRawPath());
         settings.setValue("duplicate_raw_export",dialog.duplicateRaw());
+        settings.setValue("export_report_metadata",dialog.exportReportMetadata());
         if(dialog.separateRawPath()){
             settings.setValue("raw_export_path",dialog.rawDestinationPath().toString(QUrl::RemovePassword));
         }
-        settings.saveToFile(CRYOFLARE_INI, QStringList(), QStringList() << "export_path" << "raw_export_path" << "separate_raw_export" << "duplicate_raw_export");
-        meta_data_store_->exportMicrographs(dialog.destinationPath(),dialog.rawDestinationPath(),dialog.selectedOutputKeys(),dialog.selectedRawKeys(),dialog.selectedSharedKeys(),dialog.selectedSharedRawKeys(),dialog.duplicateRaw());
+        settings.saveToFile(CRYOFLARE_INI, QStringList(), QStringList() << "export_path" << "raw_export_path" << "separate_raw_export" << "duplicate_raw_export" << "export_report_metadata");
+        meta_data_store_->exportMicrographs(dialog.destinationPath(),dialog.rawDestinationPath(),dialog.selectedOutputKeys(),dialog.selectedRawKeys(),dialog.selectedSharedKeys(),dialog.selectedSharedRawKeys(),dialog.duplicateRaw(),dialog.exportReportMetadata());
     }
 }
 

@@ -69,6 +69,8 @@ Data readEPUXML(const QString &path)
             result.insert("phase_plate_num",phase_plate_str.right(phase_plate_str.size()-1));
         }    else if(node.firstChild().toElement().text()=="PhasePlatePosition"){
             result.insert("phase_plate_pos",node.lastChild().toElement().text());
+        }    else if(node.firstChild().toElement().text()=="DetectorCommercialName"){
+            result.insert("detector_commercial_name",node.lastChild().toElement().text());
         }
         node = node.nextSibling();
     }

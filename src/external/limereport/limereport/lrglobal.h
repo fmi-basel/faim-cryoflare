@@ -43,7 +43,7 @@
 #endif
 
 namespace LimeReport {
-
+Q_NAMESPACE
 #ifdef __GNUC__
 #define VARIABLE_IS_NOT_USED __attribute__ ((unused))
 #else

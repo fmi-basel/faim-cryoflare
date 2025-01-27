@@ -33,11 +33,13 @@ QStringList MRCIOPlugin::keys() const
 
 QImageIOPlugin::Capabilities MRCIOPlugin::capabilities(QIODevice *device, const QByteArray &format) const
 {
-	if (format == "mrc")
-		return Capabilities(CanRead | CanWrite);
-	if (!(format.isEmpty() && device->isOpen()))
-		return 0;
-
+    if(!device){
+        if (format == "mrc"){
+            return Capabilities(CanRead | CanWrite);
+        }else {
+            return Capabilities();
+        }
+    }
 	Capabilities cap;
 	if (device->isReadable() && MRCIOHandler::canRead(device))
 		cap |= CanRead;

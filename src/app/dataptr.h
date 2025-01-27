@@ -25,13 +25,14 @@
 #include <QJsonObject>
 #include <QString>
 #include <QSet>
+#include <QMap>
 #include <QSharedPointer>
 #include <QDateTime>
 #include <QJsonArray>
 
 const QString timeformat("yyyy-MM-dd hh:mm:ss.z");
 
-class Data: public QJsonObject{
+class Data: protected QJsonObject{
 public:
     Data(const QJsonObject& other):
         QJsonObject(other)
@@ -73,7 +74,7 @@ public:
         QSet<QString> result;
         if(contains("children")){
             foreach(QJsonValue val, value("children").toArray())
-            result << val.toString();
+            result.insert(val.toString());
         }
         return result;
     }
@@ -99,7 +100,38 @@ public:
             addChild(child);
         }
     }
+    QJsonObject::iterator	insert(const QString &key, const QJsonValue &v){
+        if(! contains(key) || v!=value(key)){
+            modified_=true;
+        }
+        return QJsonObject::insert(key,v);
+    }
+    QJsonValue	value(const QString &key) const{
+        return QJsonObject::value(key);
+    }
+    QStringList	keys() const{
+        return QJsonObject::keys();
+    }
+    bool	contains(const QString &key) const{
+        return QJsonObject::contains(key);
+    }
+    bool empty() const{
+        return QJsonObject::empty();
+    }
+    QJsonObject toJsonObject() const{
+        return *this;
+    }
+    bool isModifed() const{
+        return modified_;
+    }
+    void setModified(bool modified){
+        modified_=modified;
+    }
+protected:
+    bool modified_;
 };
+
+Q_DECLARE_METATYPE(Data)
 typedef QSharedPointer<Data> DataPtr;
 
 #endif // DATAPTR_H

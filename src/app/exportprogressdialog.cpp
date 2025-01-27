@@ -19,16 +19,53 @@
 // along with CryoFLARE.  If not, see <http://www.gnu.org/licenses/>.
 //
 //------------------------------------------------------------------------------
+#include <QSyntaxHighlighter>
+#include <QTextBlock>
 #include "exportprogressdialog.h"
 #include "ui_exportprogressdialog.h"
 
+class MessageSyntaxHighlighter: public QSyntaxHighlighter{
+public:
+    MessageSyntaxHighlighter(QTextDocument *doc):
+        QSyntaxHighlighter(doc),
+        verbosity_(0),
+        formats_()
+    {
+        QTextCharFormat info;
+        formats_.append(info);
+        QTextCharFormat error;
+        error.setFontWeight(QFont::Bold);
+        error.setForeground(QColor("#ffaaaa"));
+        formats_.append(error);
+    }
+    void setVerbosity(int v){
+        verbosity_=v;
+        rehighlight();
+    }
+    void highlightBlock(const QString &text){
+        if(verbosity_<=currentBlock().userState()){
+            currentBlock().setVisible(true);
+            setFormat(0,text.size(),formats_[currentBlock().userState()]);
+        }else{
+            currentBlock().setVisible(false);
+        }
+    }
+protected:
+    int verbosity_;
+    QList<QTextCharFormat> formats_;
+} ;
+
 ExportProgressDialog::ExportProgressDialog(QWidget *parent) :
     QDialog(parent),
-    ui(new Ui::ExportProgressDialog)
+    ui(new Ui::ExportProgressDialog),
+    highlighter_()
 {
     ui->setupUi(this);
+    highlighter_=new MessageSyntaxHighlighter(ui->details->document());
     ui->details->setReadOnly(true);
     ui->details->setMaximumBlockCount(100000);
+    setVerbose(Qt::Unchecked);
+    connect(ui->verbose,&QCheckBox::stateChanged,this,&ExportProgressDialog::setVerbose);
     setModal(true);
     hide();
 }
@@ -48,7 +85,6 @@ void ExportProgressDialog::start(const QString &title, int num)
     ui->details->clear();
     open();
 }
-
 void ExportProgressDialog::update(const QList<ExportMessage> &messages, int num_left)
 {
     ui->progress->setValue(ui->progress->maximum()-num_left);
@@ -60,20 +96,28 @@ void ExportProgressDialog::update(const QList<ExportMessage> &messages)
     if(messages.empty()){
         return;
     }
-    QStringList new_messages;
+    //QStringList new_messages;
     foreach( ExportMessage m,messages){
+        ui->details->appendHtml(QString("%1 (%2): %3: %4").arg(m.timestamp.toString(Qt::ISODateWithMs)).arg(m.counter_).arg(m.id).arg(m.text));
         if(m.type==ExportMessage::ERROR){
-            new_messages.append(QString("<font color=red><b>%1: %2</b></font>").arg(m.id).arg(m.text));
+            ui->details->document()->lastBlock().setUserState(1);
         }else{
-            new_messages.append(QString("%1: %2").arg(m.id).arg(m.text));
+            ui->details->document()->lastBlock().setUserState(0);
         }
     }
-    //ui->details->setText(ui->details->text()+new_messages);
-    ui->details->appendHtml(new_messages.join("<br>"));
 }
 
 void ExportProgressDialog::finish()
 {
     ui->finish->show();
     ui->cancel->hide();
+}
+
+void ExportProgressDialog::setVerbose(int v)
+{
+    if(v==Qt::Checked){
+        highlighter_->setVerbosity(0);
+    }else{
+        highlighter_->setVerbosity(1);
+    }
 }

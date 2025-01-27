@@ -24,8 +24,7 @@
 
 #include <QDialog>
 #include <QProgressDialog>
-#include "../external/qssh/sshconnection.h"
-#include "sftpurl.h"
+#include <libssh/libssh.h>
 
 namespace Ui {
 class ExportDialog;
@@ -38,14 +37,16 @@ class ExportDialog : public QDialog
 public:
     explicit ExportDialog(const QStringList& raw_keys, const QStringList& output_keys,const QStringList& shared_raw_keys,const QStringList& shared_keys, QWidget *parent = nullptr);
     ~ExportDialog();
-    SftpUrl destinationPath() const;
-    SftpUrl rawDestinationPath() const;
-    void setDestinationPath(const SftpUrl& url);
-    void setRawDestinationPath(const SftpUrl& url);
+    QUrl destinationPath() const;
+    QUrl rawDestinationPath() const;
+    void setDestinationPath(const QUrl& url);
+    void setRawDestinationPath(const QUrl& url);
     bool separateRawPath() const;
     void setSeparateRawPath( bool f);
     bool duplicateRaw() const;
     void setDuplicateRaw( bool f);
+    bool exportReportMetadata() const;
+    void setExportReportMetadata( bool f);
     QStringList selectedOutputKeys() const;
     QStringList selectedRawKeys() const;
     QStringList selectedSharedKeys() const;
@@ -53,14 +54,13 @@ public:
 
 public slots:
     void verifyDestinations();
-    void destinationVerified();
-    void destinationVerificationError(QSsh::SshError e);
-    void rawDestinationVerificationError(QSsh::SshError e);
+    //void destinationVerified();
+    //void destinationVerificationError(QSsh::SshError e);
+    //void rawDestinationVerificationError(QSsh::SshError e);
 
 
 private:
     Ui::ExportDialog *ui;
-    QSsh::SshConnection* connection_;
 };
 
 #endif // EXPORTDIALOG_H

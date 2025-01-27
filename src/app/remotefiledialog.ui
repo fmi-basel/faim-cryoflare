@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
-<comment>
+ <comment>
 ------------------------------------------------------------------------------
 
 Author: Andreas Schenk
@@ -197,7 +197,7 @@ along with CryoFLARE.  If not, see http://www.gnu.org/licenses/ .
    <sender>connect</sender>
    <signal>clicked(bool)</signal>
    <receiver>RemoteFileDialog</receiver>
-   <slot>connectToHost(bool)</slot>
+   <slot>connect(bool)</slot>
    <hints>
     <hint type="sourcelabel">
      <x>887</x>
@@ -211,6 +211,6 @@ along with CryoFLARE.  If not, see http://www.gnu.org/licenses/ .
   </connection>
  </connections>
  <slots>
-  <slot>connectToHost(bool)</slot>
+  <slot>connect(bool)</slot>
  </slots>
 </ui>
